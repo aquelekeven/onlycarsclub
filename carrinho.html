@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Carrinho — Only Cars Club</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260724-13">
+  <script src="assets/js/main.js?v=20260724-11" defer></script>
+</head>
+<body data-page="loja">
+<header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
+<nav class="bottom-nav"><a href="index.html" data-page="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg><span>Início</span></a><a href="loja.html" data-page="loja"><svg viewBox="0 0 24 24"><path d="M4 9v11h16V9M3 9l2-5h14l2 5M8 9a4 4 0 0 0 8 0M9 20v-6h6v6"/></svg><span>Loja</span></a><a href="sobre.html" data-page="sobre"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg><span>O clube</span></a><a href="contato.html" data-page="contato"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H8l-4 4Z"/><path d="m5 6 7 6 7-6"/></svg><span>Contato</span></a></nav>
+<main class="cart-page">
+  <section class="cart-heading">
+    <p class="eyebrow">Loja oficial</p>
+    <h1>Seu carrinho.</h1>
+    <p>Confira os itens escolhidos antes de continuar.</p>
+    <ol class="checkout-steps" data-checkout-steps data-current-step="2" aria-label="Etapas da compra">
+      <li data-step="1"><a href="loja.html" aria-label="Ir para produtos"><span>1</span><b>Produtos</b></a></li>
+      <li data-step="2"><a href="carrinho.html" aria-label="Ir para o carrinho"><span>2</span><b>Carrinho</b></a></li>
+      <li data-step="3"><a href="entrega.html" aria-label="Ir para entrega"><span>3</span><b>Entrega</b></a></li>
+      <li data-step="4"><a href="pagamento.html" aria-label="Ir para pagamento"><span>4</span><b>Pagamento</b></a></li>
+    </ol>
+  </section>
+  <section class="cart-content" data-cart-page>
+    <div class="cart-empty" data-cart-empty hidden>
+      <span class="cart-empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+      <h2>Seu carrinho está vazio</h2>
+      <p>Escolha algo na loja para começar.</p>
+      <a class="button primary" href="loja.html">Voltar para a loja</a>
+    </div>
+    <div class="cart-layout" data-cart-layout hidden>
+      <div class="cart-items" data-cart-items></div>
+      <aside class="cart-summary">
+        <p>Resumo</p>
+        <div><span>Itens</span><strong data-cart-items-total>0</strong></div>
+        <div class="cart-grand-total"><span>Total</span><strong data-cart-grand-total>R$ 0,00</strong></div>
+        <a class="cart-checkout" data-cart-checkout href="entrega.html">Continuar</a>
+        <a class="cart-keep-shopping" href="loja.html">Escolher mais itens</a>
+        <button class="cart-clear" type="button" data-cart-clear>Limpar carrinho</button>
+      </aside>
+    </div>
+  </section>
+</main>
+<footer class="footer"><img class="brand-logo footer-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"><p>Cultura automotiva, comunidade e respeito.</p><small>© 2026 Only Cars Club. Todos os direitos reservados.</small></footer>
+</body>
+</html>

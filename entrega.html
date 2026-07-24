@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Entrega — Only Cars Club</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260724-13">
+  <script src="assets/js/main.js?v=20260724-11" defer></script>
+</head>
+<body data-page="loja">
+<header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
+<main class="checkout-page">
+  <section class="checkout-heading">
+    <p class="eyebrow">Etapa 3 de 4</p>
+    <h1>Como você quer receber?</h1>
+    <p>A entrega será combinada diretamente com o Only pelo WhatsApp.</p>
+    <ol class="checkout-steps" data-checkout-steps data-current-step="3" aria-label="Etapas da compra">
+      <li data-step="1"><a href="loja.html" aria-label="Ir para produtos"><span>1</span><b>Produtos</b></a></li>
+      <li data-step="2"><a href="carrinho.html" aria-label="Ir para o carrinho"><span>2</span><b>Carrinho</b></a></li>
+      <li data-step="3"><a href="entrega.html" aria-label="Ir para entrega"><span>3</span><b>Entrega</b></a></li>
+      <li data-step="4"><a href="pagamento.html" aria-label="Ir para pagamento"><span>4</span><b>Pagamento</b></a></li>
+    </ol>
+  </section>
+  <form class="checkout-options" data-delivery-form>
+    <label class="checkout-option">
+      <input type="radio" name="delivery" value="Retirar no próximo evento do Only" required>
+      <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v3M19 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m9 14 2 2 4-5"/></svg></span>
+      <span><strong>Retirar no próximo evento do Only</strong><small>Seu pedido fica reservado para retirada no próximo encontro.</small></span>
+      <i aria-hidden="true"></i>
+    </label>
+    <label class="checkout-option">
+      <input type="radio" name="delivery" value="Pedir um motoboy para retirar" required>
+      <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h4l-2-6h4l3 6M13 8h4M4 11h4l2 3"/></svg></span>
+      <span><strong>Pedir um motoboy para retirar</strong><small>Você solicita e acompanha o motoboy; combinamos a retirada.</small></span>
+      <i aria-hidden="true"></i>
+    </label>
+    <label class="checkout-option">
+      <input type="radio" name="delivery" value="Vou retirar pessoalmente" required>
+      <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6 20v-9l6-5 6 5v9M9 20v-6h6v6"/><path d="M9 8V4h6v4"/></svg></span>
+      <span><strong>Vou retirar pessoalmente</strong><small>Local e horário serão confirmados pelo WhatsApp.</small></span>
+      <i aria-hidden="true"></i>
+    </label>
+    <p class="checkout-error" data-checkout-error role="alert"></p>
+    <button class="checkout-next" type="submit">Continuar para pagamento</button>
+    <a class="checkout-back" href="carrinho.html">Voltar ao carrinho</a>
+  </form>
+</main>
+</body>
+</html>
