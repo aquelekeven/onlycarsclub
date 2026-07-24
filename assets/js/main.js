@@ -527,6 +527,45 @@ function setupCheckoutFlow() {
   }
 }
 
+function setupLiquidGlass() {
+  const selectors = [
+    ".bottom-nav",
+    ".cart-shortcut",
+    ".product-back",
+    ".carousel-control",
+    ".carousel-reset",
+    ".button",
+    ".category-strip button",
+    ".product-card",
+    ".card",
+    ".event-item",
+    ".product-visual button",
+    ".option-list label",
+    ".quantity-control",
+    ".cart-toast",
+    ".cart-item",
+    ".cart-summary",
+    ".checkout-option",
+    ".checkout-order-total",
+    ".confirm-modal-dialog",
+    ".account-panel"
+  ];
+  const elements = qsa(selectors.join(","));
+  elements.forEach((element) => {
+    element.classList.add("liquid-glass");
+    element.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "touch") return;
+      const box = element.getBoundingClientRect();
+      element.style.setProperty("--glass-x", `${event.clientX - box.left}px`);
+      element.style.setProperty("--glass-y", `${event.clientY - box.top}px`);
+    }, { passive:true });
+    element.addEventListener("pointerleave", () => {
+      element.style.setProperty("--glass-x", "50%");
+      element.style.setProperty("--glass-y", "50%");
+    }, { passive:true });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setActiveNavigation();
   setupTypingReplay();
@@ -537,5 +576,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
+  setupLiquidGlass();
   updateCartCount();
 });

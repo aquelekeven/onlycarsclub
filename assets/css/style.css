@@ -389,3 +389,515 @@ body.modal-open { overflow:hidden; }
   .checkout-option strong { font-size:14px; }
   .checkout-option small { font-size:10px; }
 }
+
+/* Liquid Glass — adapted from the visual language of liquid-glass-react.
+   The advanced refraction is progressively enhanced; Safari keeps the
+   translucent, highlighted fallback without losing contrast. */
+:root {
+  --glass-dark:rgba(18,18,18,.58);
+  --glass-dark-strong:rgba(15,15,15,.76);
+  --glass-light:rgba(255,255,255,.58);
+  --glass-light-strong:rgba(255,255,255,.78);
+  --glass-stroke:rgba(255,255,255,.22);
+  --glass-stroke-dark:rgba(10,10,10,.11);
+  --glass-shadow:0 18px 48px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.2);
+  --glass-shadow-light:0 18px 46px rgba(31,31,25,.10),inset 0 1px 0 rgba(255,255,255,.82);
+  --glass-blur:22px;
+  --glass-saturation:145%;
+}
+
+.liquid-glass {
+  --glass-x:50%;
+  --glass-y:50%;
+  isolation:isolate;
+}
+
+.button.liquid-glass,.carousel-control.liquid-glass,.carousel-reset.liquid-glass,
+.category-strip button.liquid-glass,.product-card.liquid-glass,.card.liquid-glass,
+.event-item.liquid-glass,.product-visual button.liquid-glass,.option-list label.liquid-glass,
+.quantity-control.liquid-glass,.cart-toast.liquid-glass,.cart-item.liquid-glass,
+.checkout-option.liquid-glass,.checkout-order-total.liquid-glass,
+.confirm-modal-dialog.liquid-glass,.account-panel.liquid-glass {
+  position:relative;
+  overflow:hidden;
+}
+
+.liquid-glass::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:.58;
+  background:
+    radial-gradient(circle at var(--glass-x) var(--glass-y),rgba(255,255,255,.28),transparent 34%),
+    linear-gradient(135deg,rgba(255,255,255,.18),transparent 38%,rgba(244,201,0,.045) 72%,rgba(255,255,255,.08));
+  mix-blend-mode:screen;
+  transition:opacity .25s ease;
+}
+
+.liquid-glass:hover::after { opacity:.88; }
+.liquid-glass>* { position:relative; z-index:1; }
+
+.header {
+  background:linear-gradient(180deg,rgba(13,13,13,.68),rgba(8,8,8,.46));
+  border-bottom:1px solid rgba(255,255,255,.16);
+  box-shadow:0 12px 38px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter:blur(26px) saturate(160%);
+  -webkit-backdrop-filter:blur(26px) saturate(160%);
+}
+
+.bottom-nav {
+  overflow:hidden;
+  border-color:rgba(255,255,255,.23);
+  background:linear-gradient(145deg,rgba(34,34,34,.72),rgba(12,12,12,.58));
+  box-shadow:0 20px 58px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(28px) saturate(165%);
+  -webkit-backdrop-filter:blur(28px) saturate(165%);
+}
+
+.bottom-nav a { position:relative; overflow:hidden; }
+.bottom-nav a.active {
+  background:linear-gradient(145deg,#ffe65f,#efc100);
+  box-shadow:0 7px 18px rgba(244,201,0,.24),inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+.cart-shortcut,.product-back,.carousel-control,.carousel-reset,.product-visual button {
+  overflow:hidden;
+  border-color:var(--glass-stroke);
+  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.055));
+  box-shadow:0 12px 30px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.22);
+  backdrop-filter:blur(18px) saturate(155%);
+  -webkit-backdrop-filter:blur(18px) saturate(155%);
+}
+
+.button:not(.primary),.category-strip button,.cart-toast a,.checkout-back {
+  border:1px solid rgba(255,255,255,.2);
+  background:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.055));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.17),0 9px 24px rgba(0,0,0,.15);
+  backdrop-filter:blur(16px) saturate(145%);
+  -webkit-backdrop-filter:blur(16px) saturate(145%);
+}
+
+.button.primary,.add-cart-button,.cart-checkout,.checkout-next {
+  background:linear-gradient(145deg,#ffe45a 0%,#f4c900 54%,#dbaa00 100%);
+  box-shadow:0 12px 28px rgba(244,201,0,.2),inset 0 1px 0 rgba(255,255,255,.72),inset 0 -1px 0 rgba(123,91,0,.2);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+
+.button.primary:hover,.add-cart-button:hover,.cart-checkout:hover,.checkout-next:hover {
+  transform:translateY(-2px);
+  filter:saturate(1.06);
+  box-shadow:0 16px 34px rgba(244,201,0,.28),inset 0 1px 0 rgba(255,255,255,.78);
+}
+
+.card,.event-item,.product-card,.cart-item,.checkout-option,.account-panel {
+  border-color:rgba(19,19,16,.11);
+  background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.5));
+  box-shadow:var(--glass-shadow-light);
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+
+.dark .card,.account-panel {
+  border-color:var(--glass-stroke);
+  background:linear-gradient(145deg,rgba(32,32,32,.68),rgba(12,12,12,.55));
+  box-shadow:var(--glass-shadow);
+}
+
+.product-card {
+  overflow:hidden;
+  transition:transform .28s cubic-bezier(.2,.75,.2,1),box-shadow .28s ease,border-color .28s ease;
+}
+
+.product-card:hover {
+  transform:translateY(-6px) scale(1.008);
+  border-color:rgba(255,255,255,.78);
+  box-shadow:0 22px 52px rgba(25,25,20,.16),inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.product-visual,.product-detail-image,.cart-item-image {
+  background:
+    radial-gradient(circle at 30% 18%,rgba(255,255,255,.92),transparent 38%),
+    linear-gradient(145deg,rgba(235,235,230,.88),rgba(211,211,204,.7));
+}
+
+.category-strip {
+  scrollbar-width:none;
+}
+
+.category-strip button {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(16,16,14,.1);
+  background:rgba(255,255,255,.52);
+  color:#4b4b48;
+  box-shadow:0 8px 24px rgba(20,20,16,.07),inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.category-strip button.active {
+  border-color:rgba(244,201,0,.55);
+  background:linear-gradient(145deg,rgba(255,230,83,.95),rgba(244,201,0,.82));
+  color:#111;
+  box-shadow:0 10px 24px rgba(244,201,0,.18),inset 0 1px 0 rgba(255,255,255,.72);
+}
+
+.option-list label,.color-options label {
+  overflow:hidden;
+  border-color:rgba(15,15,13,.11);
+  background:rgba(255,255,255,.48);
+  box-shadow:0 7px 20px rgba(20,20,16,.06),inset 0 1px 0 rgba(255,255,255,.86);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+}
+
+.option-list label:has(input:checked) {
+  border-color:rgba(20,20,18,.75);
+  background:rgba(255,255,255,.84);
+  box-shadow:0 0 0 2px rgba(244,201,0,.72),0 10px 24px rgba(20,20,16,.1),inset 0 1px 0 #fff;
+}
+
+.quantity-control {
+  border-color:rgba(15,15,13,.1);
+  background:rgba(255,255,255,.56);
+  box-shadow:0 9px 26px rgba(20,20,16,.08),inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+}
+
+.quantity-control button {
+  background:rgba(255,255,255,.48);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.92);
+}
+
+.quantity-control button:hover {
+  background:#fff;
+  box-shadow:0 5px 14px rgba(20,20,16,.1),inset 0 1px 0 #fff;
+}
+
+.cart-toast {
+  overflow:hidden;
+  border-color:var(--glass-stroke);
+  background:linear-gradient(145deg,rgba(35,35,35,.78),rgba(10,10,10,.66));
+  box-shadow:0 22px 58px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.19);
+  backdrop-filter:blur(28px) saturate(165%);
+  -webkit-backdrop-filter:blur(28px) saturate(165%);
+}
+
+.cart-summary,.checkout-order-total {
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(145deg,rgba(31,31,31,.82),rgba(8,8,8,.74));
+  box-shadow:0 22px 54px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.15);
+  backdrop-filter:blur(24px) saturate(155%);
+  -webkit-backdrop-filter:blur(24px) saturate(155%);
+}
+
+.checkout-option {
+  overflow:hidden;
+  min-height:78px;
+  border-radius:22px;
+  transition:transform .28s cubic-bezier(.2,.75,.2,1),box-shadow .25s ease,border-color .25s ease;
+}
+
+.checkout-option:hover { transform:translateY(-3px); }
+.checkout-option:has(input:checked) {
+  border-color:rgba(244,201,0,.66);
+  background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,218,.68));
+  box-shadow:0 0 0 2px rgba(244,201,0,.28),0 18px 40px rgba(35,31,8,.11),inset 0 1px 0 #fff;
+}
+
+.checkout-option i {
+  border-color:rgba(20,20,18,.18);
+  background:rgba(255,255,255,.62);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.05),0 3px 9px rgba(0,0,0,.05);
+}
+
+.checkout-steps span {
+  border-color:rgba(255,255,255,.2);
+  background:rgba(10,10,10,.46);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+
+.checkout-heading .checkout-steps span {
+  border-color:rgba(15,15,13,.12);
+  background:rgba(255,255,255,.5);
+  box-shadow:0 6px 18px rgba(20,20,16,.07),inset 0 1px 0 rgba(255,255,255,.88);
+}
+
+.checkout-steps .active span {
+  border-color:rgba(255,222,48,.9);
+  background:linear-gradient(145deg,rgba(55,51,15,.86),rgba(15,15,12,.72));
+  color:#ffe454;
+  box-shadow:0 0 12px rgba(246,213,0,.58),0 0 30px rgba(246,213,0,.23),inset 0 1px 0 rgba(255,255,255,.2);
+}
+
+.confirm-modal {
+  background:rgba(0,0,0,.42);
+  backdrop-filter:blur(18px) saturate(125%);
+  -webkit-backdrop-filter:blur(18px) saturate(125%);
+}
+
+.confirm-modal-dialog {
+  overflow:hidden;
+  border-color:rgba(255,255,255,.72);
+  border-radius:28px;
+  background:linear-gradient(145deg,rgba(255,255,255,.84),rgba(244,244,240,.64));
+  box-shadow:0 30px 90px rgba(0,0,0,.38),inset 0 1px 0 #fff;
+  backdrop-filter:blur(34px) saturate(165%);
+  -webkit-backdrop-filter:blur(34px) saturate(165%);
+}
+
+.confirm-modal button {
+  border:1px solid rgba(20,20,18,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+}
+
+.confirm-modal-cancel { background:rgba(231,231,227,.74); }
+.confirm-modal-delete { background:linear-gradient(145deg,#ff6259,#d92d25); }
+
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  .header,.bottom-nav,.cart-toast,.cart-summary,.checkout-order-total,.dark .card,.account-panel { background:rgba(18,18,18,.94); }
+  .card,.event-item,.product-card,.cart-item,.checkout-option,.confirm-modal-dialog { background:rgba(255,255,255,.96); }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .liquid-glass::after,.product-card,.checkout-option,.button,.quantity-control button { transition:none!important; }
+  .product-card:hover,.checkout-option:hover,.button:hover { transform:none!important; }
+}
+
+@media(max-width:620px) {
+  :root { --glass-blur:18px; }
+  .bottom-nav { border-radius:26px; }
+  .product-card:hover,.checkout-option:hover { transform:none; }
+  .confirm-modal-dialog { border-radius:25px; }
+}
+
+/* v1.3 — Liquid Glass de alta presença */
+:root {
+  --glass-blur:32px;
+  --glass-saturation:185%;
+  --glass-edge:rgba(255,255,255,.48);
+  --glass-shine:rgba(255,255,255,.26);
+  --glass-yellow:rgba(244,201,0,.22);
+}
+
+.header {
+  background:
+    linear-gradient(180deg,rgba(24,24,22,.62),rgba(4,4,4,.34))!important;
+  border-bottom-color:rgba(255,255,255,.22)!important;
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.32),
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -1px 0 rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(34px) saturate(190%) contrast(108%)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(190%) contrast(108%)!important;
+}
+
+.bottom-nav {
+  overflow:hidden;
+  isolation:isolate;
+  border:1px solid rgba(255,255,255,.38)!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.20),rgba(255,255,255,.04) 38%,rgba(7,7,7,.34) 72%),
+    rgba(13,13,13,.46)!important;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.58),
+    0 0 0 1px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.56),
+    inset 0 -1px 0 rgba(255,255,255,.10)!important;
+  backdrop-filter:blur(38px) saturate(210%) contrast(112%)!important;
+  -webkit-backdrop-filter:blur(38px) saturate(210%) contrast(112%)!important;
+}
+
+.bottom-nav::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-70% -15% 45%;
+  border-radius:50%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.34),rgba(244,201,0,.18),transparent);
+  filter:blur(13px);
+  transform:rotate(-4deg);
+  pointer-events:none;
+}
+
+.bottom-nav::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:180px;
+  height:90px;
+  left:var(--glass-x,50%);
+  top:var(--glass-y,50%);
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.25),transparent 68%);
+  filter:blur(12px);
+  transform:translate(-50%,-50%);
+  opacity:.8;
+  pointer-events:none;
+  transition:left .16s ease,top .16s ease;
+}
+
+.bottom-nav a {
+  border:1px solid transparent;
+  color:rgba(255,255,255,.64)!important;
+}
+
+.bottom-nav a:hover {
+  border-color:rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);
+  color:#fff!important;
+}
+
+.bottom-nav a.active {
+  border-color:rgba(255,229,91,.86)!important;
+  background:
+    linear-gradient(145deg,rgba(255,231,105,.98),rgba(244,201,0,.82))!important;
+  color:#090909!important;
+  box-shadow:
+    0 8px 28px rgba(244,201,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.86),
+    inset 0 -1px 0 rgba(110,83,0,.15)!important;
+}
+
+.liquid-glass {
+  isolation:isolate;
+  transform:translateZ(0);
+}
+
+.liquid-glass::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(135deg,rgba(255,255,255,.70),rgba(255,255,255,.08) 34%,rgba(244,201,0,.22) 67%,rgba(255,255,255,.38));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+}
+
+.liquid-glass::after {
+  opacity:.78!important;
+  background:
+    radial-gradient(circle at var(--glass-x) var(--glass-y),rgba(255,255,255,.54),rgba(255,255,255,.13) 17%,transparent 38%),
+    linear-gradient(118deg,rgba(255,255,255,.22),transparent 28%,transparent 68%,rgba(244,201,0,.13))!important;
+  mix-blend-mode:screen;
+}
+
+.dark .card,
+.event-item,
+.account-panel,
+.cart-summary,
+.checkout-order-total,
+.cart-toast {
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.035) 46%,rgba(7,7,7,.23)),
+    rgba(13,13,13,.52)!important;
+  border-color:rgba(255,255,255,.30)!important;
+  box-shadow:
+    0 24px 65px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -1px 0 rgba(255,255,255,.07)!important;
+  backdrop-filter:blur(34px) saturate(190%)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(190%)!important;
+}
+
+.product-card,
+.card:not(.dark .card),
+.cart-item,
+.checkout-option,
+.confirm-modal-dialog,
+.shop-search {
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.50) 55%,rgba(242,240,224,.32))!important;
+  border-color:rgba(255,255,255,.92)!important;
+  box-shadow:
+    0 22px 55px rgba(34,32,18,.15),
+    0 0 0 1px rgba(25,25,20,.06),
+    inset 0 1px 0 #fff,
+    inset 0 -1px 0 rgba(255,255,255,.44)!important;
+  backdrop-filter:blur(30px) saturate(180%)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(180%)!important;
+}
+
+.product-card:hover,
+.checkout-option:hover {
+  transform:translateY(-5px) scale(1.008);
+  box-shadow:
+    0 30px 75px rgba(34,32,18,.21),
+    0 0 0 1px rgba(244,201,0,.18),
+    inset 0 1px 0 #fff!important;
+}
+
+.checkout-option.selected,
+.checkout-option:has(input:checked) {
+  border-color:rgba(244,201,0,.95)!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,241,164,.46)),
+    rgba(255,255,255,.62)!important;
+  box-shadow:
+    0 20px 58px rgba(244,201,0,.18),
+    0 0 0 2px rgba(244,201,0,.34),
+    inset 0 1px 0 #fff!important;
+}
+
+.quantity-control {
+  border-color:rgba(255,255,255,.72)!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.30))!important;
+  box-shadow:
+    0 10px 26px rgba(20,20,15,.12),
+    inset 0 1px 0 #fff,
+    inset 0 -1px 0 rgba(0,0,0,.05)!important;
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+}
+
+.quantity-control button {
+  background:rgba(255,255,255,.38);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.84);
+}
+
+.quantity-control button:hover {
+  background:rgba(255,255,255,.84);
+  box-shadow:0 5px 16px rgba(0,0,0,.13),inset 0 1px 0 #fff;
+}
+
+.confirm-modal {
+  background:rgba(2,2,2,.38)!important;
+  backdrop-filter:blur(24px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(145%)!important;
+}
+
+.confirm-modal-dialog {
+  border-color:rgba(255,255,255,.95)!important;
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.50),
+    0 0 70px rgba(255,255,255,.09),
+    inset 0 1px 0 #fff!important;
+}
+
+.checkout-steps .active span {
+  color:#ffe15a!important;
+  text-shadow:0 0 8px rgba(244,201,0,.72),0 0 22px rgba(244,201,0,.42);
+}
+
+@media(max-width:620px) {
+  .header {
+    background:linear-gradient(180deg,rgba(18,18,17,.68),rgba(5,5,5,.40))!important;
+  }
+  .bottom-nav {
+    background:
+      linear-gradient(135deg,rgba(255,255,255,.19),rgba(255,255,255,.035) 44%,rgba(6,6,6,.36)),
+      rgba(12,12,12,.50)!important;
+    backdrop-filter:blur(28px) saturate(205%)!important;
+    -webkit-backdrop-filter:blur(28px) saturate(205%)!important;
+  }
+}
