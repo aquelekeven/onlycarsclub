@@ -3,8 +3,56 @@ const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)
 
 function setActiveNavigation() {
   const page = document.body.dataset.page || "home";
-  qsa(".bottom-nav a").forEach((link) => {
+  const navigation = qs(".bottom-nav");
+  const links = qsa(".bottom-nav a");
+  links.forEach((link) => {
     link.classList.toggle("active", link.dataset.page === page);
+  });
+  if (!navigation || !links.length) return;
+  let indicator = qs(".bottom-nav-indicator", navigation);
+  if (!indicator) {
+    indicator = document.createElement("i");
+    indicator.className = "bottom-nav-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    navigation.prepend(indicator);
+  }
+  const activeIndex = Math.max(0, links.findIndex((link) => link.classList.contains("active")));
+  navigation.style.setProperty("--nav-index", activeIndex);
+  links.forEach((link, index) => link.addEventListener("click", () => {
+    navigation.style.setProperty("--nav-index", index);
+    links.forEach((item) => item.classList.toggle("active", item === link));
+  }));
+}
+
+function navigateWithTransition(url, replace = false) {
+  if (!url) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (replace) location.replace(url);
+    else location.href = url;
+    return;
+  }
+  document.body.classList.add("page-leaving");
+  window.setTimeout(() => {
+    if (replace) location.replace(url);
+    else location.href = url;
+  }, 260);
+}
+
+function setupPageTransitions() {
+  document.documentElement.classList.add("motion-enabled");
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("page-ready")));
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    const target = new URL(link.href, location.href);
+    if (target.origin !== location.origin || target.pathname === location.pathname && target.search === location.search && target.hash) return;
+    event.preventDefault();
+    navigateWithTransition(target.href);
+  });
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("page-leaving");
+    requestAnimationFrame(() => document.body.classList.add("page-ready"));
   });
 }
 
@@ -298,8 +346,15 @@ function setupCheckoutSteps() {
 function updateCartCount(cart = getCart()) {
   const count = cart.reduce((total, item) => total + Math.max(0, Number(item.quantity) || 0), 0);
   qsa("[data-cart-count]").forEach((badge) => {
+    const previous = Number(badge.dataset.count || count);
     badge.textContent = count;
+    badge.dataset.count = String(count);
     badge.hidden = count === 0;
+    if (count > previous) {
+      badge.classList.remove("count-bump");
+      void badge.offsetWidth;
+      badge.classList.add("count-bump");
+    }
   });
 }
 
@@ -481,7 +536,7 @@ function setupCheckoutFlow() {
         return;
       }
       sessionStorage.setItem("onlyCarsDelivery", selected);
-      location.href = "pagamento.html";
+      navigateWithTransition("pagamento.html");
     });
   }
 
@@ -567,6 +622,7 @@ function setupLiquidGlass() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  setupPageTransitions();
   setActiveNavigation();
   setupTypingReplay();
   setupStats();
