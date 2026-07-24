@@ -1148,3 +1148,50 @@ body.modal-open { overflow:hidden; }
     transition:none!important;
   }
 }
+
+/* v1.8 — leitura reforçada e destaque completo da aba ativa */
+.bottom-nav a,
+.bottom-nav a.active {
+  color:#b8b8b8!important;
+  opacity:1!important;
+}
+
+.bottom-nav a svg {
+  color:#b8b8b8;
+  opacity:.9;
+}
+
+.bottom-nav a span {
+  color:#b8b8b8;
+  opacity:.88;
+}
+
+.bottom-nav a:hover svg,
+.bottom-nav a:hover span {
+  color:#e4e4e4;
+  opacity:1;
+}
+
+.bottom-nav a.active svg,
+.bottom-nav a.active span,
+.bottom-nav.nav-dragging a.nav-drag-active svg,
+.bottom-nav.nav-dragging a.nav-drag-active span {
+  color:var(--yellow)!important;
+  opacity:1;
+}
+
+.bottom-nav a.active span,
+.bottom-nav.nav-dragging a.nav-drag-active span {
+  text-shadow:
+    0 0 5px rgba(246,213,0,.7),
+    0 0 13px rgba(246,213,0,.34);
+}
+
+.bottom-nav.nav-dragging a.active:not(.nav-drag-active) svg,
+.bottom-nav.nav-dragging a.active:not(.nav-drag-active) span {
+  color:#b8b8b8!important;
+  filter:none;
+  text-shadow:none;
+  transform:none;
+  opacity:.88;
+}
