@@ -1084,3 +1084,67 @@ body.modal-open { overflow:hidden; }
   }
   [data-cart-count].count-bump { animation:none!important; }
 }
+
+/* v1.7 — seleção minimalista e navegação por arraste */
+.bottom-nav {
+  touch-action:pan-y;
+  -webkit-user-select:none;
+  user-select:none;
+}
+
+.bottom-nav .bottom-nav-indicator {
+  display:none!important;
+}
+
+.bottom-nav a,
+.bottom-nav a.active {
+  color:#888!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+.bottom-nav a::before,
+.bottom-nav a::after {
+  display:none!important;
+}
+
+.bottom-nav a svg {
+  color:#888;
+  filter:none;
+  transition:
+    color .22s ease,
+    filter .28s ease,
+    transform .3s cubic-bezier(.22,1,.36,1);
+}
+
+.bottom-nav a span {
+  color:#888;
+  text-shadow:none;
+  transition:color .22s ease,opacity .22s ease;
+}
+
+.bottom-nav a.active svg,
+.bottom-nav.nav-dragging a.nav-drag-active svg {
+  color:var(--yellow);
+  filter:
+    drop-shadow(0 0 4px rgba(246,213,0,.7))
+    drop-shadow(0 0 11px rgba(246,213,0,.32));
+  transform:translateY(-1px) scale(1.08);
+}
+
+.bottom-nav.nav-dragging a.active:not(.nav-drag-active) svg {
+  color:#888;
+  filter:none;
+  transform:none;
+}
+
+.bottom-nav.nav-dragging a.nav-drag-active span {
+  color:#aaa;
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .bottom-nav a svg,
+  .bottom-nav a span {
+    transition:none!important;
+  }
+}

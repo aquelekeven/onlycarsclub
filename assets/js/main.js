@@ -9,19 +9,85 @@ function setActiveNavigation() {
     link.classList.toggle("active", link.dataset.page === page);
   });
   if (!navigation || !links.length) return;
-  let indicator = qs(".bottom-nav-indicator", navigation);
-  if (!indicator) {
-    indicator = document.createElement("i");
-    indicator.className = "bottom-nav-indicator";
-    indicator.setAttribute("aria-hidden", "true");
-    navigation.prepend(indicator);
-  }
   const activeIndex = Math.max(0, links.findIndex((link) => link.classList.contains("active")));
   navigation.style.setProperty("--nav-index", activeIndex);
   links.forEach((link, index) => link.addEventListener("click", () => {
     navigation.style.setProperty("--nav-index", index);
     links.forEach((item) => item.classList.toggle("active", item === link));
   }));
+  setupBottomNavigationDrag(navigation, links, activeIndex);
+}
+
+function setupBottomNavigationDrag(navigation, links, activeIndex) {
+  let pointerId = null;
+  let startX = 0;
+  let startY = 0;
+  let previewIndex = activeIndex;
+  let dragging = false;
+  let suppressClick = false;
+
+  const indexAt = (clientX) => {
+    const box = navigation.getBoundingClientRect();
+    const position = Math.max(0, Math.min(box.width - 1, clientX - box.left));
+    return Math.min(links.length - 1, Math.floor(position / (box.width / links.length)));
+  };
+
+  const preview = (index) => {
+    previewIndex = index;
+    navigation.classList.add("nav-dragging");
+    links.forEach((link, linkIndex) => {
+      link.classList.toggle("nav-drag-active", linkIndex === index);
+    });
+  };
+
+  const resetPreview = () => {
+    navigation.classList.remove("nav-dragging");
+    links.forEach((link) => link.classList.remove("nav-drag-active"));
+  };
+
+  navigation.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    previewIndex = indexAt(event.clientX);
+    dragging = false;
+    suppressClick = false;
+    navigation.setPointerCapture?.(pointerId);
+  });
+
+  navigation.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    if (!dragging && Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      dragging = true;
+      suppressClick = true;
+    }
+    if (dragging) preview(indexAt(event.clientX));
+  }, { passive:true });
+
+  const finish = (event, cancelled = false) => {
+    if (event.pointerId !== pointerId) return;
+    const destination = previewIndex;
+    const changed = dragging && !cancelled && destination !== activeIndex;
+    pointerId = null;
+    dragging = false;
+    resetPreview();
+    if (changed) {
+      links.forEach((link, index) => link.classList.toggle("active", index === destination));
+      window.setTimeout(() => navigateWithTransition(links[destination].href), 70);
+    }
+  };
+
+  navigation.addEventListener("pointerup", (event) => finish(event));
+  navigation.addEventListener("pointercancel", (event) => finish(event, true));
+  navigation.addEventListener("click", (event) => {
+    if (!suppressClick) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    suppressClick = false;
+  }, true);
 }
 
 function navigateWithTransition(url, replace = false) {
