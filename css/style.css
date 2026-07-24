@@ -1,4 +1,3 @@
-
 :root { --yellow:#f4c900; --yellow-soft:#ffe04d; --ink:#090909; --paper:#f5f4f0; --muted:#a4a4a4; --radius:22px; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
@@ -23,7 +22,7 @@ button { font:inherit; }
 .bottom-nav a:hover { color:#ddd; }
 .bottom-nav a.active { color:#090909; background:var(--yellow); }
 .hero { min-height:78vh; position:relative; isolation:isolate; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:128px 7vw 72px; background:#080808; }
-.hero::before { content:""; position:absolute; inset:-30px; z-index:-2; background:url("../images/insta-1.png") center 62%/cover no-repeat; filter:blur(14px); transform:scale(1.05); opacity:.64; }
+.hero::before { content:""; position:absolute; inset:-30px; z-index:-2; background:url("../assets/images/insta-1.png") center 62%/cover no-repeat; filter:blur(14px); transform:scale(1.05); opacity:.64; }
 .hero::after { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#050505e8 0%,#0505059c 55%,#050505a8 100%); }
 .hero-content { position:relative; width:min(830px,100%); z-index:2; }
 .eyebrow { color:var(--yellow); font-size:11px; font-weight:900; letter-spacing:.26em; text-transform:uppercase; }
@@ -117,7 +116,7 @@ body[data-page="loja"] .page-hero { min-height:440px; padding-top:125px; padding
 .form input,.form textarea { border:1px solid #bbb; background:white; padding:16px; font:inherit; width:100%; }
 .form textarea { min-height:150px; }
 .shop-item { display:flex; flex-direction:column; }
-.product-image { min-height:220px; background:#eee url("../images/teste.png") center/contain no-repeat; }
+.product-image { min-height:220px; background:#eee url("../assets/images/teste.png") center/contain no-repeat; }
 .price { color:#9a7d00; font-family:Gotham, "Montserrat", Arial, sans-serif; font-weight:700; font-size:28px; }
 .shop-hero { min-height:430px; padding:132px 7vw 62px; display:flex; align-items:flex-end; justify-content:space-between; gap:32px; background:#080808; }
 .shop-hero-copy { max-width:780px; }
