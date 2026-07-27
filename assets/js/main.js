@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-5`;
+  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-6`;
 
 function setupBottomNavigationStructure() {
   const navigation = qs(".bottom-nav");
@@ -445,7 +445,7 @@ function setupProductPage() {
   qs("[data-product-price]").textContent = product.price;
   qs("[data-product-description]").textContent = product.description;
   document.title = `${product.name} — Only Cars Club`;
-  const productImage = qs("[data-product-image]");
+  const productImageElement = qs("[data-product-image]");
   const gallery = qs("[data-product-gallery]");
   const thumbnails = qs("[data-product-thumbnails]");
   const previousImage = qs("[data-product-previous]");
@@ -455,8 +455,8 @@ function setupProductPage() {
   let activeImage = 0;
   const showImage = (index) => {
     activeImage = (index + productImages.length) % productImages.length;
-    productImage.src = productImages[activeImage];
-    productImage.alt = product.imageAlts?.[activeImage] || product.name;
+    productImageElement.src = productImages[activeImage];
+    productImageElement.alt = product.imageAlts?.[activeImage] || product.name;
     if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
     qsa("button", thumbnails).forEach((button, buttonIndex) => {
       button.classList.toggle("active", buttonIndex === activeImage);
