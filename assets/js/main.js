@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-10`;
+  `assets/images/${key}.${extension}?v=20260727-11`;
 
 function setupBottomNavigationStructure() {
   const navigation = qs(".bottom-nav");
