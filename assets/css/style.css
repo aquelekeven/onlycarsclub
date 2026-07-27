@@ -1475,7 +1475,7 @@ body.modal-open { overflow:hidden; }
   object-fit:cover;
   object-position:center;
   filter:saturate(.82) contrast(1.08) brightness(.78);
-  transform:scale(1.045);
+  transform:scale(1.08);
   transition:filter .65s ease,transform .8s cubic-bezier(.22,1,.36,1);
 }
 
@@ -1496,7 +1496,7 @@ body.modal-open { overflow:hidden; }
   object-fit:contain;
   object-position:center bottom;
   filter:drop-shadow(0 16px 25px rgba(0,0,0,.5));
-  transform:translate3d(0,0,0) scale(1.045);
+  transform:translate3d(0,0,0) scale(1.055);
   transition:transform .72s cubic-bezier(.22,1,.36,1),opacity .42s ease;
   pointer-events:none;
 }
@@ -1578,7 +1578,7 @@ body.modal-open { overflow:hidden; }
 
 .admin-card.is-open .admin-person {
   opacity:.94;
-  transform:translate3d(58%,2%,0) scale(1.045);
+  transform:translate3d(58%,2%,0) scale(1.055);
 }
 
 .admin-card.is-open .admin-name {
@@ -1597,7 +1597,7 @@ body.modal-open { overflow:hidden; }
 
 .admin-card.is-open .admin-car {
   filter:saturate(.95) contrast(1.06) brightness(.88);
-  transform:scale(1.065);
+  transform:scale(1.09);
 }
 
 .admin-card.is-open .admin-shade {
