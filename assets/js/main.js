@@ -480,26 +480,20 @@ function setupProductPage() {
     if (galleryTransitioning) return;
     galleryTransitioning = true;
 
-    const direction = index < activeImage ? "backward" : "forward";
-    gallery.classList.remove("gallery-transition-forward", "gallery-transition-backward");
-    gallery.classList.add(`gallery-transition-${direction}`, "gallery-transition-cover");
+    gallery.classList.remove("gallery-transition-blur");
+    void gallery.offsetWidth;
+    gallery.classList.add("gallery-transition-blur");
     gallery.setAttribute("aria-busy", "true");
 
     window.setTimeout(() => {
       commitImage(nextIndex);
-      gallery.classList.add("gallery-transition-reveal");
-    }, 390);
+    }, 310);
 
     window.setTimeout(() => {
-      gallery.classList.remove(
-        "gallery-transition-cover",
-        "gallery-transition-reveal",
-        "gallery-transition-forward",
-        "gallery-transition-backward"
-      );
+      gallery.classList.remove("gallery-transition-blur");
       gallery.removeAttribute("aria-busy");
       galleryTransitioning = false;
-    }, 760);
+    }, 620);
   };
 
   if (thumbnails) {
