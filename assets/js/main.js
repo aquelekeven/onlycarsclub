@@ -744,9 +744,19 @@ function setupValuesStack() {
 
   const cards = () => qsa(".value-card", stack);
   const update = () => {
-    cards().forEach((card, index) => {
+    const orderedCards = cards();
+    const total = orderedCards.length;
+    orderedCards.forEach((card, index) => {
+      const visibleDepth = Math.min(index, 3);
+      const rotation = visibleDepth === 0 ? 0 : (visibleDepth % 2 === 0 ? -1 : 1) * (.28 + visibleDepth * .13);
+      card.style.setProperty("--stack-index", visibleDepth);
+      card.style.setProperty("--stack-scale", `${1 - visibleDepth * .018}`);
+      card.style.setProperty("--stack-rotation", `${rotation}deg`);
+      card.style.setProperty("--stack-opacity", index > 3 ? "0" : `${1 - visibleDepth * .07}`);
+      card.style.zIndex = `${total - index}`;
       card.classList.toggle("is-front", index === 0);
       card.tabIndex = index === 0 ? 0 : -1;
+      card.setAttribute("aria-hidden", index === 0 ? "false" : "true");
       if (index === 0) {
         const title = qs("h3", card)?.textContent?.trim() || "Valor";
         card.setAttribute("aria-label", `${title}. Arraste ou toque para ver o próximo valor`);
