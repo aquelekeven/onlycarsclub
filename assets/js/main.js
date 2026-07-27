@@ -452,9 +452,13 @@ function setupProductPage() {
   const nextImage = qs("[data-product-next]");
   const galleryCount = qs("[data-product-gallery-count]");
   const productImages = product.images?.length ? product.images : ["assets/images/teste.png"];
+  const hasMultipleImages = productImages.length > 1;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let activeImage = 0;
-  const showImage = (index) => {
-    activeImage = (index + productImages.length) % productImages.length;
+  let galleryTransitioning = false;
+
+  const commitImage = (index) => {
+    activeImage = index;
     productImageElement.src = productImages[activeImage];
     productImageElement.alt = product.imageAlts?.[activeImage] || product.name;
     if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
@@ -463,6 +467,41 @@ function setupProductPage() {
       button.setAttribute("aria-current", buttonIndex === activeImage ? "true" : "false");
     });
   };
+
+  const showImage = (index, immediate = false) => {
+    const nextIndex = (index + productImages.length) % productImages.length;
+    if (nextIndex === activeImage && !immediate) return;
+
+    if (immediate || !hasMultipleImages || reducedMotion.matches || !gallery) {
+      commitImage(nextIndex);
+      return;
+    }
+
+    if (galleryTransitioning) return;
+    galleryTransitioning = true;
+
+    const direction = index < activeImage ? "backward" : "forward";
+    gallery.classList.remove("gallery-transition-forward", "gallery-transition-backward");
+    gallery.classList.add(`gallery-transition-${direction}`, "gallery-transition-cover");
+    gallery.setAttribute("aria-busy", "true");
+
+    window.setTimeout(() => {
+      commitImage(nextIndex);
+      gallery.classList.add("gallery-transition-reveal");
+    }, 390);
+
+    window.setTimeout(() => {
+      gallery.classList.remove(
+        "gallery-transition-cover",
+        "gallery-transition-reveal",
+        "gallery-transition-forward",
+        "gallery-transition-backward"
+      );
+      gallery.removeAttribute("aria-busy");
+      galleryTransitioning = false;
+    }, 760);
+  };
+
   if (thumbnails) {
     thumbnails.innerHTML = productImages.map((image, index) => `
       <button type="button" aria-label="Ver foto ${index + 1} de ${productImages.length}">
@@ -471,7 +510,6 @@ function setupProductPage() {
     `).join("");
     qsa("button", thumbnails).forEach((button, index) => button.addEventListener("click", () => showImage(index)));
   }
-  const hasMultipleImages = productImages.length > 1;
   if (previousImage) previousImage.hidden = !hasMultipleImages;
   if (nextImage) nextImage.hidden = !hasMultipleImages;
   if (galleryCount) galleryCount.hidden = !hasMultipleImages;
@@ -492,7 +530,7 @@ function setupProductPage() {
     showImage(activeImage + (distance < 0 ? 1 : -1));
   });
   gallery?.addEventListener("pointercancel", () => swipeStartX = null);
-  showImage(0);
+  showImage(0, true);
   const renderOptions = (target, name, values, swatches = false) => {
     target.classList.toggle("color-options", swatches);
     target.innerHTML = values.map((value, index) => {
