@@ -1639,7 +1639,7 @@ body.modal-open { overflow:hidden; }
   }
 }
 
-/* v3.0 — card stack real e mais compacto */
+/* v3.1 — card stack real, compacto e com conteúdo centralizado */
 .values-section {
   display:grid;
   grid-template-columns:minmax(0,1.05fr) minmax(300px,.72fr);
@@ -1685,7 +1685,9 @@ body.modal-open { overflow:hidden; }
   padding:clamp(24px,4vw,36px);
   display:flex;
   flex-direction:column;
-  justify-content:flex-end;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
   border-radius:30px;
   transform:translate3d(0,0,0) scale(var(--stack-scale)) rotate(var(--stack-rotation));
   transform-origin:50% 50%;
@@ -1752,7 +1754,7 @@ body.modal-open { overflow:hidden; }
 }
 
 .value-card h3 {
-  max-width:92%;
+  max-width:94%;
   margin:0 0 16px;
   font-size:clamp(25px,3.5vw,38px);
   line-height:.98;
@@ -1760,7 +1762,7 @@ body.modal-open { overflow:hidden; }
 }
 
 .value-card p {
-  max-width:96%;
+  max-width:94%;
   margin:0;
   font-size:clamp(11px,1.15vw,14px);
   line-height:1.55;
@@ -1812,7 +1814,7 @@ body.modal-open { overflow:hidden; }
   }
 
   .value-card h3 {
-    max-width:88%;
+    max-width:92%;
     margin-bottom:12px;
     font-size:clamp(23px,7.2vw,31px);
   }
