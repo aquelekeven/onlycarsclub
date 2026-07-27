@@ -11,7 +11,7 @@ function setupBottomNavigationStructure() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
     </a>
     <a href="loja.html" data-page="loja" aria-label="Loja">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v11h16V9M3 9l2-5h14l2 5M8 9a4 4 0 0 0 8 0M9 20v-6h6v6"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l1 13H5L6 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
     </a>
     <a href="proximo-evento.html" data-page="proximo-evento" class="next-event-nav" aria-label="Próximo evento">
       <span class="next-event-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="m9 15 2 2 4-5"/></svg></span>

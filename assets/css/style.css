@@ -1389,3 +1389,32 @@ body.modal-open { overflow:hidden; }
     animation:none;
   }
 }
+
+/* v2.0 — alinhamentos do header/menu e ícone de sacolinha */
+.header .cart-shortcut,
+.header .cart-shortcut.liquid-glass {
+  top:50%!important;
+  bottom:auto!important;
+  transform:translateY(-50%) translateZ(0)!important;
+}
+
+.bottom-nav .next-event-nav {
+  align-self:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.bottom-nav .next-event-icon {
+  transform:none;
+}
+
+.bottom-nav .next-event-nav:hover .next-event-icon,
+.bottom-nav .next-event-nav.active .next-event-icon,
+.bottom-nav.nav-dragging .next-event-nav.nav-drag-active .next-event-icon {
+  transform:scale(1.06);
+}
+
+.bottom-nav.nav-dragging .next-event-nav.active:not(.nav-drag-active) .next-event-icon {
+  transform:none;
+}
