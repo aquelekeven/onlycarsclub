@@ -1,10 +1,148 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
+function setupBottomNavigationStructure() {
+  const navigation = qs(".bottom-nav");
+  if (!navigation) return;
+
+  navigation.setAttribute("aria-label", "Navegação principal");
+  navigation.innerHTML = `
+    <a href="index.html" data-page="home" aria-label="Início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
+    </a>
+    <a href="loja.html" data-page="loja" aria-label="Loja">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l1 13H5L6 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+    </a>
+    <a href="proximo-evento.html" data-page="proximo-evento" class="next-event-nav" aria-label="Próximo evento">
+      <span class="next-event-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="m9 15 2 2 4-5"/></svg></span>
+    </a>
+    <a href="sobre.html" data-page="sobre" aria-label="O clube">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>
+    </a>
+    <a href="https://www.instagram.com/onlycars.club/" data-page="instagram" aria-label="Instagram do Only Cars Club">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" class="instagram-dot"/></svg>
+    </a>
+  `;
+}
+
 function setActiveNavigation() {
   const page = document.body.dataset.page || "home";
-  qsa(".bottom-nav a").forEach((link) => {
+  const navigation = qs(".bottom-nav");
+  const links = qsa(".bottom-nav a");
+  links.forEach((link) => {
     link.classList.toggle("active", link.dataset.page === page);
+  });
+  if (!navigation || !links.length) return;
+  const activeIndex = Math.max(0, links.findIndex((link) => link.classList.contains("active")));
+  navigation.style.setProperty("--nav-index", activeIndex);
+  links.forEach((link, index) => link.addEventListener("click", () => {
+    navigation.style.setProperty("--nav-index", index);
+    links.forEach((item) => item.classList.toggle("active", item === link));
+  }));
+  setupBottomNavigationDrag(navigation, links, activeIndex);
+}
+
+function setupBottomNavigationDrag(navigation, links, activeIndex) {
+  let pointerId = null;
+  let startX = 0;
+  let startY = 0;
+  let previewIndex = activeIndex;
+  let dragging = false;
+  let suppressClick = false;
+
+  const indexAt = (clientX) => {
+    const box = navigation.getBoundingClientRect();
+    const position = Math.max(0, Math.min(box.width - 1, clientX - box.left));
+    return Math.min(links.length - 1, Math.floor(position / (box.width / links.length)));
+  };
+
+  const preview = (index) => {
+    previewIndex = index;
+    navigation.classList.add("nav-dragging");
+    links.forEach((link, linkIndex) => {
+      link.classList.toggle("nav-drag-active", linkIndex === index);
+    });
+  };
+
+  const resetPreview = () => {
+    navigation.classList.remove("nav-dragging");
+    links.forEach((link) => link.classList.remove("nav-drag-active"));
+  };
+
+  navigation.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    previewIndex = indexAt(event.clientX);
+    dragging = false;
+    suppressClick = false;
+    navigation.setPointerCapture?.(pointerId);
+  });
+
+  navigation.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    if (!dragging && Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      dragging = true;
+      suppressClick = true;
+    }
+    if (dragging) preview(indexAt(event.clientX));
+  }, { passive:true });
+
+  const finish = (event, cancelled = false) => {
+    if (event.pointerId !== pointerId) return;
+    const destination = previewIndex;
+    const changed = dragging && !cancelled && destination !== activeIndex;
+    pointerId = null;
+    dragging = false;
+    resetPreview();
+    if (changed) {
+      links.forEach((link, index) => link.classList.toggle("active", index === destination));
+      window.setTimeout(() => navigateWithTransition(links[destination].href), 70);
+    }
+  };
+
+  navigation.addEventListener("pointerup", (event) => finish(event));
+  navigation.addEventListener("pointercancel", (event) => finish(event, true));
+  navigation.addEventListener("click", (event) => {
+    if (!suppressClick) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    suppressClick = false;
+  }, true);
+}
+
+function navigateWithTransition(url, replace = false) {
+  if (!url) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (replace) location.replace(url);
+    else location.href = url;
+    return;
+  }
+  document.body.classList.add("page-leaving");
+  window.setTimeout(() => {
+    if (replace) location.replace(url);
+    else location.href = url;
+  }, 260);
+}
+
+function setupPageTransitions() {
+  document.documentElement.classList.add("motion-enabled");
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("page-ready")));
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    const target = new URL(link.href, location.href);
+    if (target.origin !== location.origin || target.pathname === location.pathname && target.search === location.search && target.hash) return;
+    event.preventDefault();
+    navigateWithTransition(target.href);
+  });
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("page-leaving");
+    requestAnimationFrame(() => document.body.classList.add("page-ready"));
   });
 }
 
@@ -172,8 +310,7 @@ function setupShop() {
   const labels = {
     Todos: "Todos os produtos",
     Roupas: "Roupas",
-    Chaveiros: "Chaveiros",
-    Adesivos: "Adesivos"
+    Chaveiros: "Chaveiros"
   };
   let category = "Todos";
   const apply = () => {
@@ -198,17 +335,103 @@ function setupProductPage() {
   const form = qs("[data-product-form]");
   if (!form) return;
   const products = {
-    "camiseta-oversized": { name:"Camiseta oversized", category:"Roupas · Unissex", price:"R$ 120,00", value:120, description:"Camiseta oversized Only Cars com modelagem ampla e confortável.", sizes:["P","M","G","GG","EG"], variants:["Preto","Branco","Amarelo"], colorOptions:true },
-    cropped: { name:"Cropped", category:"Roupas · Feminino", price:"R$ 80,00", value:80, description:"Cropped feminino Only Cars, leve e confortável.", sizes:["P","M","G","GG"], variants:["Preto"], colorOptions:true },
-    "camiseta-streetwear": { name:"Camiseta streetwear", category:"Roupas · Unissex", price:"R$ 80,00", value:80, description:"Camiseta streetwear unissex com identidade Only Cars.", sizes:["P","M","G","GG","EG"], variants:["Preto","Branco","Amarelo"], colorOptions:true },
-    moletom: { name:"Moletom", category:"Roupas · Unissex", price:"R$ 195,00", value:195, description:"Moletom unissex Only Cars para acompanhar os rolês em qualquer clima.", sizes:["P","M","G","XG"], variants:["Preto"], colorOptions:true },
-    "chaveiro-onlynho-1": { name:"Chaveiro Onlynho", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Chaveiro do mascote Onlynho para levar o clube com você.", sizes:["Único"], variants:["Onlynho 1"] },
-    "chaveiro-onlynho-2": { name:"Chaveiro Onlynho 2", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Segunda versão do chaveiro do mascote Onlynho.", sizes:["Único"], variants:["Onlynho 2"] },
-    "chaveiro-onlynho-3": { name:"Chaveiro Onlynho 3", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Terceira versão do chaveiro do mascote Onlynho.", sizes:["Único"], variants:["Onlynho 3"] },
-    "chaveiro-logotipo": { name:"Chaveiro logotipo", category:"Chaveiros · Logotipo", price:"R$ 24,90", value:24.9, description:"Chaveiro com o logotipo oficial do Only Cars Club.", sizes:["Único"], variants:["Preto","Amarelo"] },
-    "adesivo-japones": { name:"Adesivo japonês", category:"Adesivos", price:"R$ 9,90", value:9.9, description:"Adesivo japonês Only Cars disponível em três tamanhos.", sizes:["Pequeno","Médio","Grande"], variants:["Branco","Amarelo"], sizePrices:{"Pequeno":9.9,"Médio":14.9,"Grande":19.9} },
-    "adesivo-mascote-holografico": { name:"Adesivo mascote holográfico", category:"Adesivos · Mascote", price:"R$ 14,90", value:14.9, description:"Adesivo holográfico do mascote Onlynho em tamanho único.", sizes:["Único"], variants:["Holográfico"] },
-    "adesivo-mascote-branco": { name:"Adesivo mascote branco", category:"Adesivos · Mascote", price:"R$ 11,90", value:11.9, description:"Adesivo branco do mascote Onlynho em tamanho único.", sizes:["Único"], variants:["Branco"] }
+    "camiseta-oversized": {
+      name:"Camiseta oversized",
+      category:"Roupas · Unissex",
+      price:"R$ 120,00",
+      value:120,
+      description:"Camiseta oversized preta Only Cars, com modelagem ampla e confortável.",
+      sizes:["P","M","G","GG","EG"],
+      variants:["Preto"],
+      colorOptions:true,
+      images:[
+        "assets/images/camiseta-oversized-frente-modelo.webp",
+        "assets/images/camiseta-oversized-costas-modelo.webp",
+        "assets/images/camiseta-oversized-frente.webp",
+        "assets/images/camiseta-oversized-costas.webp"
+      ],
+      imageAlts:[
+        "Camiseta oversized preta Only Cars, vista frontal com modelo",
+        "Camiseta oversized preta Only Cars, vista traseira com modelo",
+        "Camiseta oversized preta Only Cars, vista frontal",
+        "Camiseta oversized preta Only Cars, vista traseira"
+      ]
+    },
+    moletom: {
+      name:"Moletom",
+      category:"Roupas · Unissex",
+      price:"R$ 195,00",
+      value:195,
+      description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
+      sizes:["P","M","G","XG"],
+      variants:["Preto"],
+      colorOptions:true,
+      images:[
+        "assets/images/moletom-frente-modelo.webp",
+        "assets/images/moletom-costas-modelo.webp",
+        "assets/images/moletom-frente.webp",
+        "assets/images/moletom-costas.webp"
+      ],
+      imageAlts:[
+        "Moletom preto Only Cars, vista frontal com modelo",
+        "Moletom preto Only Cars, vista traseira com modelo",
+        "Moletom preto Only Cars, vista frontal",
+        "Moletom preto Only Cars, vista traseira"
+      ]
+    },
+    "chaveiro-logotipo": {
+      name:"Chaveiro logotipo",
+      category:"Chaveiros · Logotipo",
+      price:"R$ 24,90",
+      value:24.9,
+      description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
+      sizes:["Único"],
+      variants:["Branco","Preto"],
+      colorOptions:true,
+      images:[
+        "assets/images/chaveiro-logo-branco.webp",
+        "assets/images/chaveiro-logo-preto.webp"
+      ],
+      imageAlts:[
+        "Chaveiro com logotipo branco do Only Cars Club",
+        "Chaveiro com logotipo preto do Only Cars Club"
+      ],
+      variantImageIndices:{ Branco:0, Preto:1 }
+    },
+    "chaveiro-onlynho-1": {
+      name:"Chaveiro Onlynho 1",
+      category:"Chaveiros · Mascote",
+      price:"R$ 29,90",
+      value:29.9,
+      description:"Primeiro modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+      sizes:["Único"],
+      variants:["Modelo 1"],
+      images:[
+        "assets/images/chaveiro-onlynho-1-frente.webp",
+        "assets/images/chaveiro-onlynho-1-costas.webp"
+      ],
+      imageAlts:[
+        "Chaveiro Onlynho modelo 1, vista frontal",
+        "Chaveiro Onlynho modelo 1, vista traseira"
+      ]
+    },
+    "chaveiro-onlynho-2": {
+      name:"Chaveiro Onlynho 2",
+      category:"Chaveiros · Mascote",
+      price:"R$ 29,90",
+      value:29.9,
+      description:"Segundo modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+      sizes:["Único"],
+      variants:["Modelo 2"],
+      images:[
+        "assets/images/chaveiro-onlynho-2-frente.webp",
+        "assets/images/chaveiro-onlynho-2-costas.webp"
+      ],
+      imageAlts:[
+        "Chaveiro Onlynho modelo 2, vista frontal",
+        "Chaveiro Onlynho modelo 2, vista traseira"
+      ]
+    }
   };
   const id = new URLSearchParams(location.search).get("id") || "camiseta-oversized";
   const product = products[id] || products["camiseta-oversized"];
@@ -216,8 +439,55 @@ function setupProductPage() {
   qs("[data-product-category]").textContent = product.category;
   qs("[data-product-price]").textContent = product.price;
   qs("[data-product-description]").textContent = product.description;
-  qs("[data-product-image]").alt = product.name;
   document.title = `${product.name} — Only Cars Club`;
+  const productImage = qs("[data-product-image]");
+  const gallery = qs("[data-product-gallery]");
+  const thumbnails = qs("[data-product-thumbnails]");
+  const previousImage = qs("[data-product-previous]");
+  const nextImage = qs("[data-product-next]");
+  const galleryCount = qs("[data-product-gallery-count]");
+  const productImages = product.images?.length ? product.images : ["assets/images/teste.png"];
+  let activeImage = 0;
+  const showImage = (index) => {
+    activeImage = (index + productImages.length) % productImages.length;
+    productImage.src = productImages[activeImage];
+    productImage.alt = product.imageAlts?.[activeImage] || product.name;
+    if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
+    qsa("button", thumbnails).forEach((button, buttonIndex) => {
+      button.classList.toggle("active", buttonIndex === activeImage);
+      button.setAttribute("aria-current", buttonIndex === activeImage ? "true" : "false");
+    });
+  };
+  if (thumbnails) {
+    thumbnails.innerHTML = productImages.map((image, index) => `
+      <button type="button" aria-label="Ver foto ${index + 1} de ${productImages.length}">
+        <img src="${image}" alt="">
+      </button>
+    `).join("");
+    qsa("button", thumbnails).forEach((button, index) => button.addEventListener("click", () => showImage(index)));
+  }
+  const hasMultipleImages = productImages.length > 1;
+  if (previousImage) previousImage.hidden = !hasMultipleImages;
+  if (nextImage) nextImage.hidden = !hasMultipleImages;
+  if (galleryCount) galleryCount.hidden = !hasMultipleImages;
+  if (thumbnails) thumbnails.hidden = !hasMultipleImages;
+  previousImage?.addEventListener("click", () => showImage(activeImage - 1));
+  nextImage?.addEventListener("click", () => showImage(activeImage + 1));
+  let swipeStartX = null;
+  gallery?.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    swipeStartX = event.clientX;
+    gallery.setPointerCapture?.(event.pointerId);
+  });
+  gallery?.addEventListener("pointerup", (event) => {
+    if (swipeStartX === null) return;
+    const distance = event.clientX - swipeStartX;
+    swipeStartX = null;
+    if (Math.abs(distance) < 45) return;
+    showImage(activeImage + (distance < 0 ? 1 : -1));
+  });
+  gallery?.addEventListener("pointercancel", () => swipeStartX = null);
+  showImage(0);
   const renderOptions = (target, name, values, swatches = false) => {
     target.classList.toggle("color-options", swatches);
     target.innerHTML = values.map((value, index) => {
@@ -231,6 +501,10 @@ function setupProductPage() {
   renderOptions(qs("[data-size-options]"), "size", product.sizes);
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
+  qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
+    const imageIndex = product.variantImageIndices?.[input.value];
+    if (Number.isInteger(imageIndex)) showImage(imageIndex);
+  }));
   const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   qsa('input[name="size"]', form).forEach((input) => input.addEventListener("change", () => {
     if (!product.sizePrices) return;
@@ -242,7 +516,10 @@ function setupProductPage() {
   qs("[data-quantity-plus]").addEventListener("click", () => quantity.value = Math.min(99, Number(quantity.value) + 1));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const item = { id, name:product.name, price:product.value, size:new FormData(form).get("size"), variant:new FormData(form).get("variant"), quantity:Number(quantity.value) || 1, image:"assets/images/teste.png" };
+    const data = new FormData(form);
+    const variant = data.get("variant");
+    const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;
+    const item = { id, name:product.name, price:product.value, size:data.get("size"), variant, quantity:Number(quantity.value) || 1, image:productImages[cartImageIndex] || productImages[0] };
     const cart = getCart();
     const existing = cart.find((entry) => entry.id === item.id && entry.size === item.size && entry.variant === item.variant && entry.price === item.price);
     if (existing) existing.quantity += item.quantity;
@@ -298,8 +575,15 @@ function setupCheckoutSteps() {
 function updateCartCount(cart = getCart()) {
   const count = cart.reduce((total, item) => total + Math.max(0, Number(item.quantity) || 0), 0);
   qsa("[data-cart-count]").forEach((badge) => {
+    const previous = Number(badge.dataset.count || count);
     badge.textContent = count;
+    badge.dataset.count = String(count);
     badge.hidden = count === 0;
+    if (count > previous) {
+      badge.classList.remove("count-bump");
+      void badge.offsetWidth;
+      badge.classList.add("count-bump");
+    }
   });
 }
 
@@ -481,7 +765,7 @@ function setupCheckoutFlow() {
         return;
       }
       sessionStorage.setItem("onlyCarsDelivery", selected);
-      location.href = "pagamento.html";
+      navigateWithTransition("pagamento.html");
     });
   }
 
@@ -537,7 +821,7 @@ function setupLiquidGlass() {
     ".button",
     ".category-strip button",
     ".product-card",
-    ".card",
+    ".card:not(.value-card)",
     ".event-item",
     ".product-visual button",
     ".option-list label",
@@ -566,7 +850,202 @@ function setupLiquidGlass() {
   });
 }
 
+function setupAdminCards() {
+  qsa(".admin-card").forEach((card) => {
+    const toggle = () => {
+      const open = card.classList.toggle("is-open");
+      const profileLabel = card.dataset.profileLabel || "Administrador. Toque para ver o carro";
+      const carLabel = card.dataset.carLabel || "Carro do administrador. Toque para voltar ao perfil";
+      card.setAttribute("aria-pressed", String(open));
+      card.setAttribute("aria-label", open ? carLabel : profileLabel);
+    };
+
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      toggle();
+    });
+  });
+}
+
+function setupValuesStack() {
+  const stack = qs(".values-stack");
+  if (!stack) return;
+
+  const cards = qsa(".value-card", stack);
+  const total = cards.length;
+  if (!total) return;
+
+  let currentIndex = 0;
+  let pointerId = null;
+  let startX = 0;
+  let startY = 0;
+  let lastX = 0;
+  let lastTime = 0;
+  let velocityX = 0;
+  let deltaX = 0;
+  let deltaY = 0;
+  let dragged = false;
+  let cycling = false;
+
+  const getDepth = (index) => (index - currentIndex + total) % total;
+
+  const setStack = (dragProgress = 0) => {
+    cards.forEach((card, index) => {
+      const depth = getDepth(index);
+      const visibleDepth = Math.min(depth, 3);
+      const easedProgress = Math.min(1, Math.max(0, dragProgress));
+      const baseScale = 1 - visibleDepth * .045;
+      const promotedScale = visibleDepth > 0
+        ? baseScale + .045 * easedProgress
+        : 1;
+      const baseRotation = visibleDepth === 0
+        ? 0
+        : [0, -2.4, 2.1, -1.2][visibleDepth];
+      const promotedRotation = baseRotation * (1 - easedProgress);
+
+      card.style.setProperty("--stack-scale", `${promotedScale}`);
+      card.style.setProperty("--stack-rotation", `${promotedRotation}deg`);
+      card.style.setProperty("--stack-opacity", depth > 3 ? "0" : `${1 - visibleDepth * .12}`);
+      card.style.zIndex = `${total - depth}`;
+      card.classList.toggle("is-front", depth === 0);
+      card.tabIndex = depth === 0 ? 0 : -1;
+      card.setAttribute("aria-hidden", depth === 0 ? "false" : "true");
+
+      if (depth === 0) {
+        const title = qs("h3", card)?.textContent?.trim() || "Valor";
+        card.setAttribute("aria-label", `${title}. Arraste ou toque para ver o próximo valor`);
+      }
+    });
+  };
+
+  const cycle = (direction = 1) => {
+    if (cycling) return;
+    const front = cards[currentIndex];
+    if (!front) return;
+
+    cycling = true;
+    const sign = direction < 0 ? -1 : 1;
+    const throwDistance = Math.max(window.innerWidth, stack.clientWidth * 2);
+    front.style.setProperty("--throw-x", `${sign * throwDistance}px`);
+    front.style.setProperty("--throw-y", `${Math.max(-36, Math.min(36, deltaY * .18))}px`);
+    front.style.setProperty("--throw-rotation", `${sign * 16}deg`);
+    front.classList.remove("is-dragging");
+    front.classList.add("is-leaving");
+    setStack(1);
+
+    window.setTimeout(() => {
+      currentIndex = (currentIndex + 1) % total;
+      front.classList.remove("is-leaving");
+      front.style.removeProperty("--throw-x");
+      front.style.removeProperty("--throw-y");
+      front.style.removeProperty("--throw-rotation");
+      front.style.removeProperty("transform");
+      setStack(0);
+      cycling = false;
+    }, 460);
+  };
+
+  stack.addEventListener("pointerdown", (event) => {
+    const front = cards[currentIndex];
+    if (!front || !front.contains(event.target) || cycling) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    lastX = event.clientX;
+    lastTime = performance.now();
+    velocityX = 0;
+    deltaX = 0;
+    deltaY = 0;
+    dragged = false;
+    front.setPointerCapture?.(pointerId);
+    front.classList.add("is-dragging");
+  });
+
+  stack.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId || cycling) return;
+    const front = cards[currentIndex];
+    if (!front) return;
+
+    const now = performance.now();
+    const elapsed = Math.max(1, now - lastTime);
+    velocityX = (event.clientX - lastX) / elapsed;
+    lastX = event.clientX;
+    lastTime = now;
+    deltaX = event.clientX - startX;
+    deltaY = event.clientY - startY;
+    if (Math.abs(deltaX) > 7) dragged = true;
+    if (!dragged) return;
+
+    const rotation = Math.max(-16, Math.min(16, deltaX / 16));
+    const progress = Math.min(1, Math.abs(deltaX) / (stack.clientWidth * .42));
+    front.style.transform = `translate3d(${deltaX}px,${deltaY * .16}px,40px) rotate(${rotation}deg) scale(${1 - progress * .018})`;
+    setStack(progress);
+  }, { passive:true });
+
+  const finish = (event, cancelled = false) => {
+    if (event.pointerId !== pointerId) return;
+    const front = cards[currentIndex];
+    pointerId = null;
+    if (!front) return;
+
+    front.classList.remove("is-dragging");
+    front.style.removeProperty("transform");
+    const passedDistance = Math.abs(deltaX) > Math.max(64, stack.clientWidth * .2);
+    const passedVelocity = Math.abs(velocityX) > .55;
+    if (!cancelled && (passedDistance || passedVelocity)) {
+      cycle(deltaX < 0 ? -1 : 1);
+      return;
+    }
+
+    setStack(0);
+    if (!cancelled && !dragged) cycle(1);
+  };
+
+  stack.addEventListener("pointerup", (event) => finish(event));
+  stack.addEventListener("pointercancel", (event) => finish(event, true));
+  stack.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " " && event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    cycle(event.key === "ArrowLeft" ? -1 : 1);
+  });
+
+  setStack();
+}
+
+function setupPageHeroParallax() {
+  const hero = qs('body[data-page="sobre"] .page-hero');
+  if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let ticking = false;
+  const render = () => {
+    const box = hero.getBoundingClientRect();
+    const visible = box.bottom > 0 && box.top < window.innerHeight;
+    if (visible) {
+      const strength = window.innerWidth <= 600 ? .065 : .1;
+      const distance = Math.max(-58, Math.min(58, -box.top * strength));
+      hero.style.setProperty("--page-hero-parallax", `${distance.toFixed(2)}px`);
+    }
+    ticking = false;
+  };
+
+  const requestRender = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(render);
+  };
+
+  render();
+  window.addEventListener("scroll", requestRender, { passive:true });
+  window.addEventListener("resize", requestRender, { passive:true });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  setupPageTransitions();
+  setupBottomNavigationStructure();
   setActiveNavigation();
   setupTypingReplay();
   setupStats();
@@ -576,6 +1055,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
+  setupAdminCards();
+  setupValuesStack();
+  setupPageHeroParallax();
   setupLiquidGlass();
   updateCartCount();
 });
