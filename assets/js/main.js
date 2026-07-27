@@ -1,5 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const productImage = (key, extension = "webp") =>
+  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-5`;
 
 function setupBottomNavigationStructure() {
   const navigation = qs(".bottom-nav");
@@ -305,13 +307,15 @@ function setupShop() {
   const buttons = qsa(".category-strip [data-category]");
   const cards = qsa(".product-grid .product-card");
   if (!buttons.length || !cards.length) return;
+  qsa("[data-product-image-key]").forEach((image) => {
+    image.src = productImage(image.dataset.productImageKey);
+  });
   const title = qs("[data-products-title]");
   const count = qs("[data-products-count]");
   const labels = {
     Todos: "Todos os produtos",
     Roupas: "Roupas",
-    Chaveiros: "Chaveiros",
-    Adesivos: "Adesivos"
+    Chaveiros: "Chaveiros"
   };
   let category = "Todos";
   const apply = () => {
@@ -336,17 +340,103 @@ function setupProductPage() {
   const form = qs("[data-product-form]");
   if (!form) return;
   const products = {
-    "camiseta-oversized": { name:"Camiseta oversized", category:"Roupas · Unissex", price:"R$ 120,00", value:120, description:"Camiseta oversized Only Cars com modelagem ampla e confortável.", sizes:["P","M","G","GG","EG"], variants:["Preto","Branco","Amarelo"], colorOptions:true },
-    cropped: { name:"Cropped", category:"Roupas · Feminino", price:"R$ 80,00", value:80, description:"Cropped feminino Only Cars, leve e confortável.", sizes:["P","M","G","GG"], variants:["Preto"], colorOptions:true },
-    "camiseta-streetwear": { name:"Camiseta streetwear", category:"Roupas · Unissex", price:"R$ 80,00", value:80, description:"Camiseta streetwear unissex com identidade Only Cars.", sizes:["P","M","G","GG","EG"], variants:["Preto","Branco","Amarelo"], colorOptions:true },
-    moletom: { name:"Moletom", category:"Roupas · Unissex", price:"R$ 195,00", value:195, description:"Moletom unissex Only Cars para acompanhar os rolês em qualquer clima.", sizes:["P","M","G","XG"], variants:["Preto"], colorOptions:true },
-    "chaveiro-onlynho-1": { name:"Chaveiro Onlynho", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Chaveiro do mascote Onlynho para levar o clube com você.", sizes:["Único"], variants:["Onlynho 1"] },
-    "chaveiro-onlynho-2": { name:"Chaveiro Onlynho 2", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Segunda versão do chaveiro do mascote Onlynho.", sizes:["Único"], variants:["Onlynho 2"] },
-    "chaveiro-onlynho-3": { name:"Chaveiro Onlynho 3", category:"Chaveiros · Mascote", price:"R$ 29,90", value:29.9, description:"Terceira versão do chaveiro do mascote Onlynho.", sizes:["Único"], variants:["Onlynho 3"] },
-    "chaveiro-logotipo": { name:"Chaveiro logotipo", category:"Chaveiros · Logotipo", price:"R$ 24,90", value:24.9, description:"Chaveiro com o logotipo oficial do Only Cars Club.", sizes:["Único"], variants:["Preto","Amarelo"] },
-    "adesivo-japones": { name:"Adesivo japonês", category:"Adesivos", price:"R$ 9,90", value:9.9, description:"Adesivo japonês Only Cars disponível em três tamanhos.", sizes:["Pequeno","Médio","Grande"], variants:["Branco","Amarelo"], sizePrices:{"Pequeno":9.9,"Médio":14.9,"Grande":19.9} },
-    "adesivo-mascote-holografico": { name:"Adesivo mascote holográfico", category:"Adesivos · Mascote", price:"R$ 14,90", value:14.9, description:"Adesivo holográfico do mascote Onlynho em tamanho único.", sizes:["Único"], variants:["Holográfico"] },
-    "adesivo-mascote-branco": { name:"Adesivo mascote branco", category:"Adesivos · Mascote", price:"R$ 11,90", value:11.9, description:"Adesivo branco do mascote Onlynho em tamanho único.", sizes:["Único"], variants:["Branco"] }
+    "camiseta-oversized": {
+      name:"Camiseta oversized",
+      category:"Roupas · Unissex",
+      price:"R$ 120,00",
+      value:120,
+      description:"Camiseta oversized preta Only Cars, com modelagem ampla e confortável.",
+      sizes:["P","M","G","GG","EG"],
+      variants:["Preto"],
+      colorOptions:true,
+      images:[
+        productImage("camiseta-oversized-frente-modelo"),
+        productImage("camiseta-oversized-costas-modelo"),
+        productImage("camiseta-oversized-frente"),
+        productImage("camiseta-oversized-costas")
+      ],
+      imageAlts:[
+        "Camiseta oversized preta Only Cars, vista frontal com modelo",
+        "Camiseta oversized preta Only Cars, vista traseira com modelo",
+        "Camiseta oversized preta Only Cars, vista frontal",
+        "Camiseta oversized preta Only Cars, vista traseira"
+      ]
+    },
+    moletom: {
+      name:"Moletom",
+      category:"Roupas · Unissex",
+      price:"R$ 195,00",
+      value:195,
+      description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
+      sizes:["P","M","G","XG"],
+      variants:["Preto"],
+      colorOptions:true,
+      images:[
+        productImage("moletom-frente-modelo"),
+        productImage("moletom-costas-modelo"),
+        productImage("moletom-frente"),
+        productImage("moletom-costas")
+      ],
+      imageAlts:[
+        "Moletom preto Only Cars, vista frontal com modelo",
+        "Moletom preto Only Cars, vista traseira com modelo",
+        "Moletom preto Only Cars, vista frontal",
+        "Moletom preto Only Cars, vista traseira"
+      ]
+    },
+    "chaveiro-logotipo": {
+      name:"Chaveiro logotipo",
+      category:"Chaveiros · Logotipo",
+      price:"R$ 24,90",
+      value:24.9,
+      description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
+      sizes:["Único"],
+      variants:["Branco","Preto"],
+      colorOptions:true,
+      images:[
+        productImage("chaveiro-logo-branco"),
+        productImage("chaveiro-logo-preto")
+      ],
+      imageAlts:[
+        "Chaveiro com logotipo branco do Only Cars Club",
+        "Chaveiro com logotipo preto do Only Cars Club"
+      ],
+      variantImageIndices:{ Branco:0, Preto:1 }
+    },
+    "chaveiro-onlynho-1": {
+      name:"Chaveiro Onlynho 1",
+      category:"Chaveiros · Mascote",
+      price:"R$ 29,90",
+      value:29.9,
+      description:"Primeiro modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+      sizes:["Único"],
+      variants:["Modelo 1"],
+      images:[
+        productImage("chaveiro-onlynho-1-frente"),
+        productImage("chaveiro-onlynho-1-costas")
+      ],
+      imageAlts:[
+        "Chaveiro Onlynho modelo 1, vista frontal",
+        "Chaveiro Onlynho modelo 1, vista traseira"
+      ]
+    },
+    "chaveiro-onlynho-2": {
+      name:"Chaveiro Onlynho 2",
+      category:"Chaveiros · Mascote",
+      price:"R$ 29,90",
+      value:29.9,
+      description:"Segundo modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+      sizes:["Único"],
+      variants:["Modelo 2"],
+      images:[
+        productImage("chaveiro-onlynho-2-frente"),
+        productImage("chaveiro-onlynho-2-costas")
+      ],
+      imageAlts:[
+        "Chaveiro Onlynho modelo 2, vista frontal",
+        "Chaveiro Onlynho modelo 2, vista traseira"
+      ]
+    }
   };
   const id = new URLSearchParams(location.search).get("id") || "camiseta-oversized";
   const product = products[id] || products["camiseta-oversized"];
@@ -354,8 +444,55 @@ function setupProductPage() {
   qs("[data-product-category]").textContent = product.category;
   qs("[data-product-price]").textContent = product.price;
   qs("[data-product-description]").textContent = product.description;
-  qs("[data-product-image]").alt = product.name;
   document.title = `${product.name} — Only Cars Club`;
+  const productImage = qs("[data-product-image]");
+  const gallery = qs("[data-product-gallery]");
+  const thumbnails = qs("[data-product-thumbnails]");
+  const previousImage = qs("[data-product-previous]");
+  const nextImage = qs("[data-product-next]");
+  const galleryCount = qs("[data-product-gallery-count]");
+  const productImages = product.images?.length ? product.images : ["assets/images/teste.png"];
+  let activeImage = 0;
+  const showImage = (index) => {
+    activeImage = (index + productImages.length) % productImages.length;
+    productImage.src = productImages[activeImage];
+    productImage.alt = product.imageAlts?.[activeImage] || product.name;
+    if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
+    qsa("button", thumbnails).forEach((button, buttonIndex) => {
+      button.classList.toggle("active", buttonIndex === activeImage);
+      button.setAttribute("aria-current", buttonIndex === activeImage ? "true" : "false");
+    });
+  };
+  if (thumbnails) {
+    thumbnails.innerHTML = productImages.map((image, index) => `
+      <button type="button" aria-label="Ver foto ${index + 1} de ${productImages.length}">
+        <img src="${image}" alt="">
+      </button>
+    `).join("");
+    qsa("button", thumbnails).forEach((button, index) => button.addEventListener("click", () => showImage(index)));
+  }
+  const hasMultipleImages = productImages.length > 1;
+  if (previousImage) previousImage.hidden = !hasMultipleImages;
+  if (nextImage) nextImage.hidden = !hasMultipleImages;
+  if (galleryCount) galleryCount.hidden = !hasMultipleImages;
+  if (thumbnails) thumbnails.hidden = !hasMultipleImages;
+  previousImage?.addEventListener("click", () => showImage(activeImage - 1));
+  nextImage?.addEventListener("click", () => showImage(activeImage + 1));
+  let swipeStartX = null;
+  gallery?.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    swipeStartX = event.clientX;
+    gallery.setPointerCapture?.(event.pointerId);
+  });
+  gallery?.addEventListener("pointerup", (event) => {
+    if (swipeStartX === null) return;
+    const distance = event.clientX - swipeStartX;
+    swipeStartX = null;
+    if (Math.abs(distance) < 45) return;
+    showImage(activeImage + (distance < 0 ? 1 : -1));
+  });
+  gallery?.addEventListener("pointercancel", () => swipeStartX = null);
+  showImage(0);
   const renderOptions = (target, name, values, swatches = false) => {
     target.classList.toggle("color-options", swatches);
     target.innerHTML = values.map((value, index) => {
@@ -369,6 +506,10 @@ function setupProductPage() {
   renderOptions(qs("[data-size-options]"), "size", product.sizes);
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
+  qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
+    const imageIndex = product.variantImageIndices?.[input.value];
+    if (Number.isInteger(imageIndex)) showImage(imageIndex);
+  }));
   const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   qsa('input[name="size"]', form).forEach((input) => input.addEventListener("change", () => {
     if (!product.sizePrices) return;
@@ -380,7 +521,10 @@ function setupProductPage() {
   qs("[data-quantity-plus]").addEventListener("click", () => quantity.value = Math.min(99, Number(quantity.value) + 1));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const item = { id, name:product.name, price:product.value, size:new FormData(form).get("size"), variant:new FormData(form).get("variant"), quantity:Number(quantity.value) || 1, image:"assets/images/teste.png" };
+    const data = new FormData(form);
+    const variant = data.get("variant");
+    const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;
+    const item = { id, name:product.name, price:product.value, size:data.get("size"), variant, quantity:Number(quantity.value) || 1, image:productImages[cartImageIndex] || productImages[0] };
     const cart = getCart();
     const existing = cart.find((entry) => entry.id === item.id && entry.size === item.size && entry.variant === item.variant && entry.price === item.price);
     if (existing) existing.quantity += item.quantity;
