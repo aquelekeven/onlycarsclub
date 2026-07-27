@@ -1430,7 +1430,7 @@ body.modal-open { overflow:hidden; }
 
 .admin-grid {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),396px));
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),350px));
   justify-content:center;
   align-items:start;
   gap:28px;
@@ -1440,7 +1440,7 @@ body.modal-open { overflow:hidden; }
   position:relative;
   isolation:isolate;
   width:100%;
-  max-width:396px;
+  max-width:350px;
   aspect-ratio:2 / 3;
   justify-self:center;
   overflow:hidden;
@@ -1475,7 +1475,7 @@ body.modal-open { overflow:hidden; }
   object-fit:cover;
   object-position:center;
   filter:saturate(.82) contrast(1.08) brightness(.78);
-  transform:scale(1);
+  transform:scale(1.045);
   transition:filter .65s ease,transform .8s cubic-bezier(.22,1,.36,1);
 }
 
@@ -1496,7 +1496,7 @@ body.modal-open { overflow:hidden; }
   object-fit:contain;
   object-position:center bottom;
   filter:drop-shadow(0 16px 25px rgba(0,0,0,.5));
-  transform:translate3d(0,0,0);
+  transform:translate3d(0,0,0) scale(1.045);
   transition:transform .72s cubic-bezier(.22,1,.36,1),opacity .42s ease;
   pointer-events:none;
 }
@@ -1546,13 +1546,15 @@ body.modal-open { overflow:hidden; }
 }
 
 .admin-car-info {
-  z-index:0;
-  left:28px;
-  top:50%;
-  max-width:55%;
+  z-index:2;
+  left:25px;
+  right:25px;
+  bottom:24px;
+  max-width:60%;
   color:#fff;
   opacity:0;
-  transform:translate3d(-22px,-50%,0);
+  text-shadow:0 2px 15px rgba(0,0,0,.8);
+  transform:translate3d(-22px,12px,0);
   transition:opacity .35s ease .08s,transform .6s cubic-bezier(.22,1,.36,1);
 }
 
@@ -1576,7 +1578,7 @@ body.modal-open { overflow:hidden; }
 
 .admin-card.is-open .admin-person {
   opacity:.94;
-  transform:translate3d(58%,2%,0);
+  transform:translate3d(58%,2%,0) scale(1.045);
 }
 
 .admin-card.is-open .admin-name {
@@ -1589,18 +1591,17 @@ body.modal-open { overflow:hidden; }
 }
 
 .admin-card.is-open .admin-car-info {
-  z-index:2;
   opacity:1;
-  transform:translate3d(0,-50%,0);
+  transform:translate3d(0,0,0);
 }
 
 .admin-card.is-open .admin-car {
-  filter:saturate(.95) contrast(1.08) brightness(.66);
-  transform:scale(1.025);
+  filter:saturate(.95) contrast(1.06) brightness(.88);
+  transform:scale(1.065);
 }
 
 .admin-card.is-open .admin-shade {
-  background:linear-gradient(90deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.42) 48%,rgba(0,0,0,.08) 100%);
+  background:linear-gradient(180deg,transparent 48%,rgba(0,0,0,.12) 63%,rgba(0,0,0,.78) 100%);
 }
 
 @media(max-width:600px) {
@@ -1614,7 +1615,7 @@ body.modal-open { overflow:hidden; }
   }
 
   .admin-card {
-    width:min(100%,calc((100svh - 230px) * .6667));
+    width:min(92%,330px,calc((100svh - 250px) * .6667));
     border-radius:25px;
   }
 
@@ -1624,7 +1625,9 @@ body.modal-open { overflow:hidden; }
   }
 
   .admin-car-info {
-    left:22px;
+    left:21px;
+    right:21px;
+    bottom:21px;
   }
 }
 
