@@ -711,6 +711,25 @@ function setupLiquidGlass() {
   });
 }
 
+function setupAdminCards() {
+  qsa(".admin-card").forEach((card) => {
+    const toggle = () => {
+      const open = card.classList.toggle("is-open");
+      card.setAttribute("aria-pressed", String(open));
+      card.setAttribute("aria-label", open
+        ? "Ford Escort 1995. Toque para voltar ao perfil de Keven Alves"
+        : "Keven Alves, co-fundador. Toque para ver o carro");
+    };
+
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      toggle();
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupPageTransitions();
   setupBottomNavigationStructure();
@@ -723,6 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
+  setupAdminCards();
   setupLiquidGlass();
   updateCartCount();
 });

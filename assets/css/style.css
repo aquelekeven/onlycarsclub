@@ -1418,3 +1418,213 @@ body.modal-open { overflow:hidden; }
 .bottom-nav.nav-dragging .next-event-nav.active:not(.nav-drag-active) .next-event-icon {
   transform:none;
 }
+
+/* v2.1 — card interativo da Administração */
+.administration {
+  overflow:hidden;
+}
+
+.administration > h2 {
+  margin-bottom:42px;
+}
+
+.admin-grid {
+  display:grid;
+  grid-template-columns:minmax(280px,430px);
+}
+
+.admin-card {
+  position:relative;
+  isolation:isolate;
+  width:100%;
+  aspect-ratio:4 / 5;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:30px;
+  background:#111;
+  box-shadow:0 24px 70px rgba(0,0,0,.42);
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.admin-card:focus-visible {
+  outline:2px solid var(--yellow);
+  outline-offset:5px;
+}
+
+.admin-car,
+.admin-person,
+.admin-shade,
+.admin-car-info,
+.admin-name,
+.admin-hint {
+  position:absolute;
+}
+
+.admin-car {
+  z-index:-3;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 53%;
+  filter:saturate(.82) contrast(1.08) brightness(.78);
+  transform:scale(1.025);
+  transition:filter .65s ease,transform .8s cubic-bezier(.22,1,.36,1);
+}
+
+.admin-shade {
+  z-index:-2;
+  inset:0;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.08) 28%,rgba(0,0,0,.82) 100%),
+    linear-gradient(90deg,rgba(0,0,0,.06),rgba(0,0,0,.18));
+  transition:background .6s ease;
+}
+
+.admin-person {
+  z-index:1;
+  left:5%;
+  bottom:-2%;
+  width:92%;
+  height:92%;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 16px 25px rgba(0,0,0,.5));
+  transform:translate3d(0,0,0);
+  transition:transform .72s cubic-bezier(.22,1,.36,1),opacity .42s ease;
+  pointer-events:none;
+}
+
+.admin-name {
+  z-index:3;
+  left:25px;
+  right:25px;
+  bottom:24px;
+  color:#fff;
+  text-shadow:0 2px 15px rgba(0,0,0,.8);
+  transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .35s ease;
+}
+
+.admin-name h3 {
+  margin:0;
+  font-size:clamp(25px,4vw,38px);
+  line-height:1;
+  letter-spacing:-.045em;
+}
+
+.admin-name p {
+  margin:8px 0 0;
+  color:var(--yellow);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.admin-hint {
+  z-index:3;
+  top:20px;
+  right:20px;
+  padding:8px 11px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:999px;
+  color:rgba(255,255,255,.82);
+  background:rgba(5,5,5,.34);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  transition:opacity .3s ease;
+}
+
+.admin-car-info {
+  z-index:0;
+  left:28px;
+  top:50%;
+  max-width:55%;
+  color:#fff;
+  opacity:0;
+  transform:translate3d(-22px,-50%,0);
+  transition:opacity .35s ease .08s,transform .6s cubic-bezier(.22,1,.36,1);
+}
+
+.admin-car-info span,
+.admin-car-info small {
+  display:block;
+  color:var(--yellow);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.admin-car-info strong {
+  display:block;
+  margin:9px 0 5px;
+  font-size:clamp(28px,5vw,46px);
+  line-height:.94;
+  letter-spacing:-.05em;
+}
+
+.admin-card.is-open .admin-person {
+  opacity:.94;
+  transform:translate3d(58%,2%,0);
+}
+
+.admin-card.is-open .admin-name {
+  opacity:0;
+  transform:translate3d(0,18px,0);
+}
+
+.admin-card.is-open .admin-hint {
+  opacity:0;
+}
+
+.admin-card.is-open .admin-car-info {
+  z-index:2;
+  opacity:1;
+  transform:translate3d(0,-50%,0);
+}
+
+.admin-card.is-open .admin-car {
+  filter:saturate(.95) contrast(1.08) brightness(.66);
+  transform:scale(1.07);
+}
+
+.admin-card.is-open .admin-shade {
+  background:linear-gradient(90deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.42) 48%,rgba(0,0,0,.08) 100%);
+}
+
+@media(max-width:600px) {
+  .administration > h2 {
+    margin-bottom:28px;
+  }
+
+  .admin-grid {
+    grid-template-columns:1fr;
+  }
+
+  .admin-card {
+    border-radius:25px;
+  }
+
+  .admin-name {
+    left:21px;
+    bottom:21px;
+  }
+
+  .admin-car-info {
+    left:22px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .admin-card *,
+  .admin-card {
+    transition-duration:.01ms!important;
+  }
+}
