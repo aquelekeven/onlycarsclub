@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-6`;
+  window.ONLY_PRODUCT_IMAGES?.[key] || `assets/images/${key}.${extension}?v=20260727-10`;
 
 function setupBottomNavigationStructure() {
   const navigation = qs(".bottom-nav");
@@ -360,6 +360,28 @@ function setupProductPage() {
         "Camiseta oversized preta Only Cars, vista traseira com modelo",
         "Camiseta oversized preta Only Cars, vista frontal",
         "Camiseta oversized preta Only Cars, vista traseira"
+      ]
+    },
+    cropped: {
+      name:"Cropped",
+      category:"Roupas · Feminino",
+      price:"R$ 120,00",
+      value:120,
+      description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
+      sizes:["P","M","G","GG","EG"],
+      variants:["Preto"],
+      colorOptions:true,
+      images:[
+        productImage("cropped-1"),
+        productImage("cropped-2"),
+        productImage("cropped-3"),
+        productImage("cropped-4")
+      ],
+      imageAlts:[
+        "Cropped preto Only Cars, vista frontal com modelo",
+        "Cropped preto Only Cars, vista traseira com modelo",
+        "Cropped preto Only Cars, vista frontal",
+        "Cropped preto Only Cars, vista traseira"
       ]
     },
     moletom: {
