@@ -730,6 +730,105 @@ function setupAdminCards() {
   });
 }
 
+function setupValuesStack() {
+  const stack = qs(".values-stack");
+  if (!stack) return;
+
+  let pointerId = null;
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let deltaY = 0;
+  let dragged = false;
+  let cycling = false;
+
+  const cards = () => qsa(".value-card", stack);
+  const update = () => {
+    cards().forEach((card, index) => {
+      card.classList.toggle("is-front", index === 0);
+      card.tabIndex = index === 0 ? 0 : -1;
+      if (index === 0) {
+        const title = qs("h3", card)?.textContent?.trim() || "Valor";
+        card.setAttribute("aria-label", `${title}. Arraste ou toque para ver o próximo valor`);
+      }
+    });
+  };
+
+  const cycle = (direction = 1) => {
+    if (cycling) return;
+    const front = cards()[0];
+    if (!front) return;
+    cycling = true;
+    const sign = direction < 0 ? -1 : 1;
+    front.style.setProperty("--throw-x", `${sign * 125}%`);
+    front.style.setProperty("--throw-y", `${Math.min(35,Math.abs(deltaY))}px`);
+    front.style.setProperty("--throw-rotation", `${sign * 13}deg`);
+    front.classList.remove("is-dragging");
+    front.classList.add("is-leaving");
+
+    window.setTimeout(() => {
+      front.classList.remove("is-leaving");
+      front.style.removeProperty("--throw-x");
+      front.style.removeProperty("--throw-y");
+      front.style.removeProperty("--throw-rotation");
+      front.style.removeProperty("transform");
+      stack.append(front);
+      update();
+      cycling = false;
+    }, 430);
+  };
+
+  stack.addEventListener("pointerdown", (event) => {
+    const front = cards()[0];
+    if (!front || !front.contains(event.target) || cycling) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    deltaX = 0;
+    deltaY = 0;
+    dragged = false;
+    front.setPointerCapture?.(pointerId);
+    front.classList.add("is-dragging");
+  });
+
+  stack.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId || cycling) return;
+    const front = cards()[0];
+    if (!front) return;
+    deltaX = event.clientX - startX;
+    deltaY = event.clientY - startY;
+    if (Math.abs(deltaX) > 7) dragged = true;
+    if (!dragged) return;
+    const rotation = Math.max(-14,Math.min(14,deltaX / 18));
+    front.style.transform = `translate3d(${deltaX}px,${deltaY * .16}px,40px) rotate(${rotation}deg) scale(1.015)`;
+  }, { passive:true });
+
+  const finish = (event, cancelled = false) => {
+    if (event.pointerId !== pointerId) return;
+    const front = cards()[0];
+    pointerId = null;
+    if (!front) return;
+    front.classList.remove("is-dragging");
+    front.style.removeProperty("transform");
+    if (!cancelled && (Math.abs(deltaX) > 72 || Math.abs(deltaX) > stack.clientWidth * .2)) {
+      cycle(deltaX < 0 ? -1 : 1);
+      return;
+    }
+    if (!cancelled && !dragged) cycle(1);
+  };
+
+  stack.addEventListener("pointerup", (event) => finish(event));
+  stack.addEventListener("pointercancel", (event) => finish(event, true));
+  stack.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " " && event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    cycle(event.key === "ArrowLeft" ? -1 : 1);
+  });
+
+  update();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupPageTransitions();
   setupBottomNavigationStructure();
@@ -743,6 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCheckoutSteps();
   setupCheckoutFlow();
   setupAdminCards();
+  setupValuesStack();
   setupLiquidGlass();
   updateCartCount();
 });
