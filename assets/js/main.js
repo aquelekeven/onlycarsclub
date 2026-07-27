@@ -682,7 +682,7 @@ function setupLiquidGlass() {
     ".button",
     ".category-strip button",
     ".product-card",
-    ".card",
+    ".card:not(.value-card)",
     ".event-item",
     ".product-visual button",
     ".option-list label",
@@ -734,30 +734,47 @@ function setupValuesStack() {
   const stack = qs(".values-stack");
   if (!stack) return;
 
+  const cards = qsa(".value-card", stack);
+  const total = cards.length;
+  if (!total) return;
+
+  let currentIndex = 0;
   let pointerId = null;
   let startX = 0;
   let startY = 0;
+  let lastX = 0;
+  let lastTime = 0;
+  let velocityX = 0;
   let deltaX = 0;
   let deltaY = 0;
   let dragged = false;
   let cycling = false;
 
-  const cards = () => qsa(".value-card", stack);
-  const update = () => {
-    const orderedCards = cards();
-    const total = orderedCards.length;
-    orderedCards.forEach((card, index) => {
-      const visibleDepth = Math.min(index, 3);
-      const rotation = visibleDepth === 0 ? 0 : (visibleDepth % 2 === 0 ? -1 : 1) * (.28 + visibleDepth * .13);
-      card.style.setProperty("--stack-index", visibleDepth);
-      card.style.setProperty("--stack-scale", `${1 - visibleDepth * .018}`);
-      card.style.setProperty("--stack-rotation", `${rotation}deg`);
-      card.style.setProperty("--stack-opacity", index > 3 ? "0" : `${1 - visibleDepth * .07}`);
-      card.style.zIndex = `${total - index}`;
-      card.classList.toggle("is-front", index === 0);
-      card.tabIndex = index === 0 ? 0 : -1;
-      card.setAttribute("aria-hidden", index === 0 ? "false" : "true");
-      if (index === 0) {
+  const getDepth = (index) => (index - currentIndex + total) % total;
+
+  const setStack = (dragProgress = 0) => {
+    cards.forEach((card, index) => {
+      const depth = getDepth(index);
+      const visibleDepth = Math.min(depth, 3);
+      const easedProgress = Math.min(1, Math.max(0, dragProgress));
+      const baseScale = 1 - visibleDepth * .045;
+      const promotedScale = visibleDepth > 0
+        ? baseScale + .045 * easedProgress
+        : 1;
+      const baseRotation = visibleDepth === 0
+        ? 0
+        : [0, -2.4, 2.1, -1.2][visibleDepth];
+      const promotedRotation = baseRotation * (1 - easedProgress);
+
+      card.style.setProperty("--stack-scale", `${promotedScale}`);
+      card.style.setProperty("--stack-rotation", `${promotedRotation}deg`);
+      card.style.setProperty("--stack-opacity", depth > 3 ? "0" : `${1 - visibleDepth * .12}`);
+      card.style.zIndex = `${total - depth}`;
+      card.classList.toggle("is-front", depth === 0);
+      card.tabIndex = depth === 0 ? 0 : -1;
+      card.setAttribute("aria-hidden", depth === 0 ? "false" : "true");
+
+      if (depth === 0) {
         const title = qs("h3", card)?.textContent?.trim() || "Valor";
         card.setAttribute("aria-label", `${title}. Arraste ou toque para ver o próximo valor`);
       }
@@ -766,35 +783,42 @@ function setupValuesStack() {
 
   const cycle = (direction = 1) => {
     if (cycling) return;
-    const front = cards()[0];
+    const front = cards[currentIndex];
     if (!front) return;
+
     cycling = true;
     const sign = direction < 0 ? -1 : 1;
-    front.style.setProperty("--throw-x", `${sign * 125}%`);
-    front.style.setProperty("--throw-y", `${Math.min(35,Math.abs(deltaY))}px`);
-    front.style.setProperty("--throw-rotation", `${sign * 13}deg`);
+    const throwDistance = Math.max(window.innerWidth, stack.clientWidth * 2);
+    front.style.setProperty("--throw-x", `${sign * throwDistance}px`);
+    front.style.setProperty("--throw-y", `${Math.max(-36, Math.min(36, deltaY * .18))}px`);
+    front.style.setProperty("--throw-rotation", `${sign * 16}deg`);
     front.classList.remove("is-dragging");
     front.classList.add("is-leaving");
+    setStack(1);
 
     window.setTimeout(() => {
+      currentIndex = (currentIndex + 1) % total;
       front.classList.remove("is-leaving");
       front.style.removeProperty("--throw-x");
       front.style.removeProperty("--throw-y");
       front.style.removeProperty("--throw-rotation");
       front.style.removeProperty("transform");
-      stack.append(front);
-      update();
+      setStack(0);
       cycling = false;
-    }, 430);
+    }, 460);
   };
 
   stack.addEventListener("pointerdown", (event) => {
-    const front = cards()[0];
+    const front = cards[currentIndex];
     if (!front || !front.contains(event.target) || cycling) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
+
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
+    lastX = event.clientX;
+    lastTime = performance.now();
+    velocityX = 0;
     deltaX = 0;
     deltaY = 0;
     dragged = false;
@@ -804,27 +828,41 @@ function setupValuesStack() {
 
   stack.addEventListener("pointermove", (event) => {
     if (event.pointerId !== pointerId || cycling) return;
-    const front = cards()[0];
+    const front = cards[currentIndex];
     if (!front) return;
+
+    const now = performance.now();
+    const elapsed = Math.max(1, now - lastTime);
+    velocityX = (event.clientX - lastX) / elapsed;
+    lastX = event.clientX;
+    lastTime = now;
     deltaX = event.clientX - startX;
     deltaY = event.clientY - startY;
     if (Math.abs(deltaX) > 7) dragged = true;
     if (!dragged) return;
-    const rotation = Math.max(-14,Math.min(14,deltaX / 18));
-    front.style.transform = `translate3d(${deltaX}px,${deltaY * .16}px,40px) rotate(${rotation}deg) scale(1.015)`;
+
+    const rotation = Math.max(-16, Math.min(16, deltaX / 16));
+    const progress = Math.min(1, Math.abs(deltaX) / (stack.clientWidth * .42));
+    front.style.transform = `translate3d(${deltaX}px,${deltaY * .16}px,40px) rotate(${rotation}deg) scale(${1 - progress * .018})`;
+    setStack(progress);
   }, { passive:true });
 
   const finish = (event, cancelled = false) => {
     if (event.pointerId !== pointerId) return;
-    const front = cards()[0];
+    const front = cards[currentIndex];
     pointerId = null;
     if (!front) return;
+
     front.classList.remove("is-dragging");
     front.style.removeProperty("transform");
-    if (!cancelled && (Math.abs(deltaX) > 72 || Math.abs(deltaX) > stack.clientWidth * .2)) {
+    const passedDistance = Math.abs(deltaX) > Math.max(64, stack.clientWidth * .2);
+    const passedVelocity = Math.abs(velocityX) > .55;
+    if (!cancelled && (passedDistance || passedVelocity)) {
       cycle(deltaX < 0 ? -1 : 1);
       return;
     }
+
+    setStack(0);
     if (!cancelled && !dragged) cycle(1);
   };
 
@@ -836,7 +874,7 @@ function setupValuesStack() {
     cycle(event.key === "ArrowLeft" ? -1 : 1);
   });
 
-  update();
+  setStack();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
