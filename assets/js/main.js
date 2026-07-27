@@ -1,6 +1,30 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
+function setupBottomNavigationStructure() {
+  const navigation = qs(".bottom-nav");
+  if (!navigation) return;
+
+  navigation.setAttribute("aria-label", "Navegação principal");
+  navigation.innerHTML = `
+    <a href="index.html" data-page="home" aria-label="Início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
+    </a>
+    <a href="loja.html" data-page="loja" aria-label="Loja">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v11h16V9M3 9l2-5h14l2 5M8 9a4 4 0 0 0 8 0M9 20v-6h6v6"/></svg>
+    </a>
+    <a href="proximo-evento.html" data-page="proximo-evento" class="next-event-nav" aria-label="Próximo evento">
+      <span class="next-event-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="m9 15 2 2 4-5"/></svg></span>
+    </a>
+    <a href="sobre.html" data-page="sobre" aria-label="O clube">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>
+    </a>
+    <a href="https://www.instagram.com/onlycars.club/" data-page="instagram" aria-label="Instagram do Only Cars Club">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" class="instagram-dot"/></svg>
+    </a>
+  `;
+}
+
 function setActiveNavigation() {
   const page = document.body.dataset.page || "home";
   const navigation = qs(".bottom-nav");
@@ -689,6 +713,7 @@ function setupLiquidGlass() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupPageTransitions();
+  setupBottomNavigationStructure();
   setActiveNavigation();
   setupTypingReplay();
   setupStats();
