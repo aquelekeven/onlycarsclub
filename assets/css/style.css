@@ -1639,7 +1639,7 @@ body.modal-open { overflow:hidden; }
   }
 }
 
-/* v2.9 — card stack real, seguindo a interação do Motion */
+/* v3.0 — card stack real e mais compacto */
 .values-section {
   display:grid;
   grid-template-columns:minmax(0,1.05fr) minmax(300px,.72fr);
@@ -1666,7 +1666,7 @@ body.modal-open { overflow:hidden; }
 .values-stack {
   position:relative;
   width:min(100%,430px);
-  aspect-ratio:1.18 / 1;
+  height:290px;
   touch-action:pan-y;
   perspective:1200px;
   isolation:isolate;
@@ -1796,13 +1796,14 @@ body.modal-open { overflow:hidden; }
 
   .values-stack {
     width:min(88vw,390px);
+    height:clamp(270px,68vw,290px);
   }
 }
 
 @media(max-width:480px) {
   .values-stack {
     width:min(86vw,350px);
-    aspect-ratio:1.05 / 1;
+    height:clamp(268px,73vw,285px);
   }
 
   .value-card {
