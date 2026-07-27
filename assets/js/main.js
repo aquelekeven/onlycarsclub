@@ -877,6 +877,33 @@ function setupValuesStack() {
   setStack();
 }
 
+function setupPageHeroParallax() {
+  const hero = qs('body[data-page="sobre"] .page-hero');
+  if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let ticking = false;
+  const render = () => {
+    const box = hero.getBoundingClientRect();
+    const visible = box.bottom > 0 && box.top < window.innerHeight;
+    if (visible) {
+      const strength = window.innerWidth <= 600 ? .065 : .1;
+      const distance = Math.max(-58, Math.min(58, -box.top * strength));
+      hero.style.setProperty("--page-hero-parallax", `${distance.toFixed(2)}px`);
+    }
+    ticking = false;
+  };
+
+  const requestRender = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(render);
+  };
+
+  render();
+  window.addEventListener("scroll", requestRender, { passive:true });
+  window.addEventListener("resize", requestRender, { passive:true });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupPageTransitions();
   setupBottomNavigationStructure();
@@ -891,6 +918,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCheckoutFlow();
   setupAdminCards();
   setupValuesStack();
+  setupPageHeroParallax();
   setupLiquidGlass();
   updateCartCount();
 });

@@ -79,6 +79,39 @@ h1 em,h2 em { color:var(--yellow); font-style:normal; }
 .page-hero { min-height:540px; padding:170px 7vw 80px; display:flex; flex-direction:column; justify-content:end; background:radial-gradient(circle at 80% 30%,#4d4100,#0a0a0a 55%); }
 .page-hero h1 { max-width:1000px; font-size:clamp(60px,8vw,120px); }
 .page-hero>p:last-child { max-width:620px; color:#aaa; font-size:18px; line-height:1.6; }
+body[data-page="sobre"] .page-hero {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:#050505;
+}
+body[data-page="sobre"] .page-hero::before {
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:-14% -2%;
+  background:url("../images/paixao-comunidade.webp") center 66% / cover no-repeat;
+  transform:translate3d(0,var(--page-hero-parallax,0px),0) scale(1.045);
+  will-change:transform;
+}
+body[data-page="sobre"] .page-hero::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(3,3,3,.88) 0%,rgba(3,3,3,.55) 58%,rgba(3,3,3,.34) 100%),
+    linear-gradient(0deg,rgba(3,3,3,.82) 0%,rgba(3,3,3,.08) 65%,rgba(3,3,3,.38) 100%);
+}
+body[data-page="sobre"] .page-hero h1,
+body[data-page="sobre"] .page-hero p {
+  position:relative;
+  z-index:1;
+  text-shadow:0 3px 28px rgba(0,0,0,.76);
+}
+body[data-page="sobre"] .page-hero>p:last-child {
+  color:rgba(255,255,255,.78);
+}
 body[data-page="loja"] .page-hero { min-height:440px; padding-top:125px; padding-bottom:60px; }
 .events-page { padding-bottom:92px; }
 .floating-back { position:fixed; z-index:90; left:50%; bottom:max(20px,env(safe-area-inset-bottom)); transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); box-shadow:0 14px 40px rgba(0,0,0,.42); }
@@ -1802,6 +1835,19 @@ body.modal-open { overflow:hidden; }
   }
 }
 
+@media(max-width:600px) {
+  body[data-page="sobre"] .page-hero::before {
+    inset:-10% -5%;
+    background-position:47% 64%;
+    transform:translate3d(0,var(--page-hero-parallax,0px),0) scale(1.03);
+  }
+
+  body[data-page="sobre"] .page-hero::after {
+    background:
+      linear-gradient(0deg,rgba(3,3,3,.92) 0%,rgba(3,3,3,.38) 62%,rgba(3,3,3,.5) 100%);
+  }
+}
+
 @media(max-width:480px) {
   .values-stack {
     width:min(86vw,350px);
@@ -1842,5 +1888,10 @@ body.modal-open { overflow:hidden; }
 @media(prefers-reduced-motion:reduce) {
   .value-card {
     transition-duration:.01ms!important;
+  }
+
+  body[data-page="sobre"] .page-hero::before {
+    transform:scale(1.045);
+    will-change:auto;
   }
 }
