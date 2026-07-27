@@ -1895,3 +1895,25 @@ body.modal-open { overflow:hidden; }
     will-change:auto;
   }
 }
+
+/* v3.3 — quatro administradores e título longo corrigido */
+.value-card h3 {
+  min-width:0;
+  width:100%;
+  overflow-wrap:normal;
+  text-wrap:balance;
+}
+
+.value-card--long h3 {
+  max-width:100%;
+  font-size:clamp(23px,3vw,34px);
+  letter-spacing:-.05em;
+}
+
+@media(max-width:480px) {
+  .value-card--long h3 {
+    max-width:100%;
+    font-size:clamp(21px,6.3vw,27px);
+    line-height:1.02;
+  }
+}

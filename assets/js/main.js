@@ -715,10 +715,10 @@ function setupAdminCards() {
   qsa(".admin-card").forEach((card) => {
     const toggle = () => {
       const open = card.classList.toggle("is-open");
+      const profileLabel = card.dataset.profileLabel || "Administrador. Toque para ver o carro";
+      const carLabel = card.dataset.carLabel || "Carro do administrador. Toque para voltar ao perfil";
       card.setAttribute("aria-pressed", String(open));
-      card.setAttribute("aria-label", open
-        ? "Ford Escort 1995. Toque para voltar ao perfil de Keven Alves"
-        : "Keven Alves, co-fundador. Toque para ver o carro");
+      card.setAttribute("aria-label", open ? carLabel : profileLabel);
     };
 
     card.addEventListener("click", toggle);
