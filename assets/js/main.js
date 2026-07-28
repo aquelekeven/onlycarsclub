@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260728-v50";
+const PRODUCT_IMAGE_VERSION = "20260728-v51";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -40,10 +40,10 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("cropped-1"),
-      productImage("cropped-2"),
-      productImage("cropped-3"),
-      productImage("cropped-4")
+      productImage("cropped-v51-frente-modelo"),
+      productImage("cropped-v51-costas-modelo"),
+      productImage("cropped-v51-frente"),
+      productImage("cropped-v51-costas")
     ]),
     imageAlts:Object.freeze([
       "Cropped preto Only Cars, vista frontal com modelo",
@@ -62,10 +62,10 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("moletom-frente-modelo"),
-      productImage("moletom-costas-modelo"),
-      productImage("moletom-frente"),
-      productImage("moletom-costas")
+      productImage("moletom-v51-frente-modelo"),
+      productImage("moletom-v51-costas-modelo"),
+      productImage("moletom-v51-frente"),
+      productImage("moletom-v51-costas")
     ]),
     imageAlts:Object.freeze([
       "Moletom preto Only Cars, vista frontal com modelo",
