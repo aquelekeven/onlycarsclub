@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260728-v53";
+const PRODUCT_IMAGE_VERSION = "20260728-v54";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -144,8 +144,14 @@ const PRODUCT_CATALOG = Object.freeze({
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Amarelo"]),
     colorOptions:true,
-    images:Object.freeze([productImage("camiseta-oversized-amarela", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória da camiseta oversized amarela Only Cars"])
+    images:Object.freeze([
+      productImage("oversized-amarela-frente-v54", "png"),
+      productImage("oversized-amarela-costas-v54", "png")
+    ]),
+    imageAlts:Object.freeze([
+      "Camiseta oversized amarela Only Cars, vista frontal",
+      "Camiseta oversized amarela Only Cars, vista traseira"
+    ])
   }),
   "camiseta-streetwear": Object.freeze({
     name:"Camiseta streetwear",
