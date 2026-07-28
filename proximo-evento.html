@@ -8,6 +8,36 @@
   <title>Próximo evento — Only Cars Club</title>
   <link rel="icon" href="assets/images/logotipo-only-branco-color.png">
   <link rel="stylesheet" href="assets/css/style.css?v=20260727-1">
+  <style>
+    html, body, main { animation: none !important; transition: none !important; }
+    .next-event-history {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: clamp(2rem, 5vw, 3.5rem);
+      text-align: center;
+    }
+    .next-event-history .eyebrow { margin-bottom: .8rem; }
+    .next-event-history .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-inline: auto;
+    }
+  </style>
+  <script>
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest("a[href]");
+      if (!link || link.target === "_blank" || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.location.href = url.href;
+    }, true);
+  </script>
   <script src="assets/js/main.js?v=20260727-1" defer></script>
 </head>
 <body data-page="proximo-evento" class="next-event-page">
@@ -28,6 +58,10 @@
       <h1 id="next-event-title">Algo está<br><em>sendo preparado.</em></h1>
       <p>Assim que a próxima data estiver confirmada, todos os detalhes aparecem aqui.</p>
       <span class="waiting-status"><i aria-hidden="true"></i>Aguardando nova data</span>
+      <div class="next-event-history">
+        <p class="eyebrow">Enquanto isso...</p>
+        <a class="button primary" href="eventos.html">Conheça nossos outros eventos <span>↗</span></a>
+      </div>
     </section>
   </main>
 </body>

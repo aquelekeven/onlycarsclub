@@ -8,6 +8,20 @@
   <title>Only Cars Club</title>
   <link rel="icon" href="assets/images/logotipo-only-branco-color.png">
   <link rel="stylesheet" href="assets/css/style.css?v=20260724-2">
+  <style>
+    html, body, main { animation: none !important; transition: none !important; }
+  </style>
+  <script>
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest("a[href]");
+      if (!link || link.target === "_blank" || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.location.href = url.href;
+    }, true);
+  </script>
   <script src="assets/js/main.js?v=20260724-2" defer></script>
 </head>
 <body data-page="home">
@@ -22,7 +36,7 @@
     <section class="hero">
       <div class="hero-content">
         <h1 class="typed-title" aria-label="Não é só sobre carros. Isso é Only."></h1>
-        <div class="actions"><a class="button primary" href="eventos.html">Ver nossos eventos <span>↗</span></a><a class="button ghost" href="sobre.html">Conheça o clube</a></div>
+        <div class="actions"><a class="button ghost" href="sobre.html">Conheça o clube</a></div>
       </div>
     </section>
     <section class="statement section">
