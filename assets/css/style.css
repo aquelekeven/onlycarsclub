@@ -2060,6 +2060,96 @@ body.modal-open { overflow:hidden; }
   margin-inline:auto;
 }
 
+/* v4.4 — contato direto, histórico completo e glow do próximo evento */
+.contact-direct {
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);
+  align-items:center;
+  gap:clamp(34px,7vw,100px);
+}
+
+.contact-direct > div { max-width:760px; }
+.contact-direct .button { margin-top:28px; }
+.contact-socials {
+  padding:32px;
+  border:1px solid #d8d8d4;
+  border-radius:var(--radius);
+  background:#fff;
+}
+.contact-socials .lead { margin-bottom:0; font-size:17px; }
+
+.event-accordion {
+  display:grid;
+  gap:14px;
+}
+
+.event-numbers {
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+  margin:32px 0 0;
+}
+
+.event-numbers div {
+  min-width:0;
+  padding:22px;
+  border:1px solid #2a2a2a;
+  border-top:3px solid var(--yellow);
+  border-radius:18px;
+  background:#101010;
+}
+
+.event-numbers dt {
+  color:#999;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+
+.event-numbers dd {
+  margin:12px 0 0;
+  color:#fff;
+  font-size:clamp(18px,2vw,26px);
+  font-weight:700;
+  line-height:1.18;
+}
+
+.bottom-nav .next-event-icon {
+  border-color:transparent!important;
+  outline:0!important;
+}
+
+.bottom-nav .next-event-nav:hover .next-event-icon,
+.bottom-nav .next-event-nav.active .next-event-icon,
+.bottom-nav.nav-dragging .next-event-nav.nav-drag-active .next-event-icon {
+  border-color:transparent!important;
+  outline:0!important;
+  box-shadow:
+    0 8px 21px rgba(0,0,0,.46),
+    0 0 9px rgba(246,213,0,.72),
+    0 0 24px rgba(246,213,0,.5),
+    0 0 42px rgba(246,213,0,.22)!important;
+}
+
+.bottom-nav .next-event-nav:focus-visible {
+  outline:0;
+}
+
+@media(max-width:850px) {
+  .event-numbers { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .event-numbers div:last-child:nth-child(odd) { grid-column:1/-1; }
+  .contact-direct { grid-template-columns:1fr; }
+}
+
+@media(max-width:520px) {
+  .event-item summary { padding:23px 20px; }
+  .event-details { padding:0 20px 24px; }
+  .event-numbers { grid-template-columns:1fr; }
+  .event-numbers div:last-child:nth-child(odd) { grid-column:auto; }
+  .contact-direct .button { width:100%; }
+}
+
 .form-helper {
   margin:.15rem 0 0;
   color:var(--muted);

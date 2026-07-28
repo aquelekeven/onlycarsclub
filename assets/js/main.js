@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  `assets/images/${key}.${extension}?v=20260728-security`;
+  `assets/images/${key}.${extension}?v=20260728-v44`;
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -958,36 +958,6 @@ function setupCheckoutFlow() {
   }
 }
 
-function setupContactForm() {
-  const form = qs("[data-contact-form]");
-  if (!form) return;
-  const error = qs("[data-contact-error]", form);
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    const data = new FormData(form);
-    const name = String(data.get("name") || "").trim().slice(0, 80);
-    const email = String(data.get("email") || "").trim().slice(0, 120);
-    const subject = String(data.get("subject") || "").trim().slice(0, 120);
-    const messageText = String(data.get("message") || "").trim().slice(0, 1500);
-    if (!name || !email || !subject || !messageText) {
-      if (error) error.textContent = "Preencha todos os campos para continuar.";
-      return;
-    }
-    if (error) error.textContent = "";
-    const message = [
-      "Olá! Vim pelo site do *Only Cars Club*.",
-      "",
-      `Nome: ${name}`,
-      `E-mail: ${email}`,
-      `Assunto: ${subject}`,
-      "",
-      messageText
-    ].join("\n");
-    window.open(`https://wa.me/5511976842147?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-  });
-}
-
 function setupLiquidGlass() {
   const selectors = [
     ".bottom-nav",
@@ -1232,7 +1202,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
-  setupContactForm();
   setupAdminCards();
   setupValuesStack();
   setupPageHeroParallax();
