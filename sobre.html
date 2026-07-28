@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>O Clube — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260727-7">
-  <script src="assets/js/main.js?v=20260727-7" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260728-security">
+  <script src="assets/js/main.js?v=20260728-security" defer></script>
 </head>
 <body data-page="sobre">
   <header class="header">
@@ -170,9 +172,10 @@
     <img class="brand-logo footer-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club">
     <p>Cultura automotiva, comunidade e respeito.</p>
     <div class="socials">
-      <a href="https://www.instagram.com/onlycars.club/" target="_blank">Instagram</a>
-      <a href="https://www.youtube.com/@onlycarsclub" target="_blank">YouTube</a>
-      <a href="https://www.tiktok.com/@onlycars.club" target="_blank">TikTok</a>
+      <a href="https://www.instagram.com/onlycars.club/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://www.youtube.com/@onlycarsclub" target="_blank" rel="noopener noreferrer">YouTube</a>
+      <a href="https://www.tiktok.com/@onlycars.club" target="_blank" rel="noopener noreferrer">TikTok</a>
+      <a href="privacidade.html">Privacidade</a>
     </div>
     <small>© 2026 Only Cars Club. Todos os direitos reservados.</small>
   </footer>

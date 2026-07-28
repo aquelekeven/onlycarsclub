@@ -3,26 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="theme-color" content="#090909">
   <title>Only Cars Club</title>
   <link rel="icon" href="assets/images/logotipo-only-branco-color.png">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260724-2">
-  <style>
-    html, body, main { animation: none !important; transition: none !important; }
-  </style>
-  <script>
-    document.addEventListener("click", function (event) {
-      const link = event.target.closest("a[href]");
-      if (!link || link.target === "_blank" || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      const url = new URL(link.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.location.href = url.href;
-    }, true);
-  </script>
-  <script src="assets/js/main.js?v=20260724-2" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260728-security">
+  <script src="assets/js/main.js?v=20260728-security" defer></script>
 </head>
 <body data-page="home">
   <header class="header"><a href="index.html" class="brand" aria-label="Only Cars Club — início"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -50,18 +38,18 @@
       </div>
     </section>
     <section class="section gallery-section">
-      <div class="section-heading"><div><p class="eyebrow">No feed e no asfalto</p><h2>@onlycars.club</h2></div><a href="https://instagram.com/onlycars.club" target="_blank" rel="noreferrer">Seguir no Instagram ↗</a></div>
+      <div class="section-heading"><div><p class="eyebrow">No feed e no asfalto</p><h2>@onlycars.club</h2></div><a href="https://instagram.com/onlycars.club" target="_blank" rel="noopener noreferrer">Seguir no Instagram ↗</a></div>
       <div class="insta-carousel" aria-label="Publicações do Instagram">
-        <a href="https://www.instagram.com/onlycars.club/p/DMsOAedRHNp/" target="_blank" rel="noreferrer"><img src="assets/images/insta-1.png" alt="Publicação do Only Cars Club 1" draggable="false"></a>
-        <a href="https://www.instagram.com/onlycars.club/p/DMXwjqCxTx8/" target="_blank" rel="noreferrer"><img src="assets/images/insta-2.png" alt="Publicação do Only Cars Club 2" draggable="false"></a>
-        <a href="https://www.instagram.com/onlycars.club/p/DNVkUF0RUnr/" target="_blank" rel="noreferrer"><img src="assets/images/insta-3.png" alt="Publicação do Only Cars Club 3" draggable="false"></a>
-        <a href="https://www.instagram.com/onlycars.club/p/DNx2bXa0jSC/" target="_blank" rel="noreferrer"><img src="assets/images/insta-4.png" alt="Publicação do Only Cars Club 4" draggable="false"></a>
-        <a href="https://www.instagram.com/onlycars.club/p/DOECqfzjesm/" target="_blank" rel="noreferrer"><img src="assets/images/insta-5.png" alt="Publicação do Only Cars Club 5" draggable="false"></a>
+        <a href="https://www.instagram.com/onlycars.club/p/DMsOAedRHNp/" target="_blank" rel="noopener noreferrer"><img src="assets/images/insta-1.jpg" alt="Publicação do Only Cars Club 1" draggable="false"></a>
+        <a href="https://www.instagram.com/onlycars.club/p/DMXwjqCxTx8/" target="_blank" rel="noopener noreferrer"><img src="assets/images/insta-2.jpg" alt="Publicação do Only Cars Club 2" draggable="false"></a>
+        <a href="https://www.instagram.com/onlycars.club/p/DNVkUF0RUnr/" target="_blank" rel="noopener noreferrer"><img src="assets/images/insta-3.jpg" alt="Publicação do Only Cars Club 3" draggable="false"></a>
+        <a href="https://www.instagram.com/onlycars.club/p/DNx2bXa0jSC/" target="_blank" rel="noopener noreferrer"><img src="assets/images/insta-4.jpg" alt="Publicação do Only Cars Club 4" draggable="false"></a>
+        <a href="https://www.instagram.com/onlycars.club/p/DOECqfzjesm/" target="_blank" rel="noopener noreferrer"><img src="assets/images/insta-5.jpg" alt="Publicação do Only Cars Club 5" draggable="false"></a>
       </div>
       <div class="carousel-footer"><p class="carousel-hint">Arraste para explorar <span>→</span></p><div class="carousel-controls"><button class="carousel-arrow" data-carousel="previous" aria-label="Anterior">←</button><button class="carousel-arrow" data-carousel="next" aria-label="Próxima">→</button><button class="carousel-reset" data-carousel="reset">Voltar ao início</button></div></div>
     </section>
-    <section class="join section"><p class="eyebrow">A próxima história pode ser a sua</p><h2>Chega junto.<br><em>O rolê é nosso.</em></h2><a class="button primary" href="https://chat.whatsapp.com/Da79r4k9ZhcBXBv0TxAGNg" target="_blank" rel="noreferrer">Entrar para o clube ↗</a></section>
+    <section class="join section"><p class="eyebrow">A próxima história pode ser a sua</p><h2>Chega junto.<br><em>O rolê é nosso.</em></h2><a class="button primary" href="https://chat.whatsapp.com/Da79r4k9ZhcBXBv0TxAGNg" target="_blank" rel="noopener noreferrer">Entrar para o clube ↗</a></section>
   </main>
-  <footer class="footer"><div class="brand"><img class="brand-logo footer-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></div><p>Cultura automotiva, comunidade e respeito.</p><div class="socials"><a href="https://www.instagram.com/onlycars.club/" target="_blank">Instagram</a><a href="https://www.youtube.com/@onlycarsclub" target="_blank">YouTube</a><a href="https://www.tiktok.com/@onlycars.club" target="_blank">TikTok</a></div><small>© 2026 Only Cars Club. Todos os direitos reservados.</small></footer>
+  <footer class="footer"><div class="brand"><img class="brand-logo footer-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></div><p>Cultura automotiva, comunidade e respeito.</p><div class="socials"><a href="https://www.instagram.com/onlycars.club/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.youtube.com/@onlycarsclub" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://www.tiktok.com/@onlycars.club" target="_blank" rel="noopener noreferrer">TikTok</a><a href="privacidade.html">Privacidade</a></div><small>© 2026 Only Cars Club. Todos os direitos reservados.</small></footer>
 </body>
 </html>

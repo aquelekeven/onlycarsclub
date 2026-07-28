@@ -1,7 +1,153 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  `assets/images/${key}.${extension}?v=20260727-11`;
+  `assets/images/${key}.${extension}?v=20260728-security`;
+
+const PRODUCT_CATALOG = Object.freeze({
+  "camiseta-oversized": Object.freeze({
+    name:"Camiseta oversized",
+    category:"Roupas · Unissex",
+    price:"R$ 120,00",
+    value:120,
+    description:"Camiseta oversized preta Only Cars, com modelagem ampla e confortável.",
+    sizes:Object.freeze(["P","M","G","GG","EG"]),
+    variants:Object.freeze(["Preto"]),
+    colorOptions:true,
+    images:Object.freeze([
+      productImage("camiseta-oversized-frente-modelo"),
+      productImage("camiseta-oversized-costas-modelo"),
+      productImage("camiseta-oversized-frente"),
+      productImage("camiseta-oversized-costas")
+    ]),
+    imageAlts:Object.freeze([
+      "Camiseta oversized preta Only Cars, vista frontal com modelo",
+      "Camiseta oversized preta Only Cars, vista traseira com modelo",
+      "Camiseta oversized preta Only Cars, vista frontal",
+      "Camiseta oversized preta Only Cars, vista traseira"
+    ])
+  }),
+  cropped: Object.freeze({
+    name:"Cropped",
+    category:"Roupas · Feminino",
+    price:"R$ 120,00",
+    value:120,
+    description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
+    sizes:Object.freeze(["P","M","G","GG","EG"]),
+    variants:Object.freeze(["Preto"]),
+    colorOptions:true,
+    images:Object.freeze([
+      productImage("cropped-1"),
+      productImage("cropped-2"),
+      productImage("cropped-3"),
+      productImage("cropped-4")
+    ]),
+    imageAlts:Object.freeze([
+      "Cropped preto Only Cars, vista frontal com modelo",
+      "Cropped preto Only Cars, vista traseira com modelo",
+      "Cropped preto Only Cars, vista frontal",
+      "Cropped preto Only Cars, vista traseira"
+    ])
+  }),
+  moletom: Object.freeze({
+    name:"Moletom",
+    category:"Roupas · Unissex",
+    price:"R$ 195,00",
+    value:195,
+    description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
+    sizes:Object.freeze(["P","M","G","XG"]),
+    variants:Object.freeze(["Preto"]),
+    colorOptions:true,
+    images:Object.freeze([
+      productImage("moletom-frente-modelo"),
+      productImage("moletom-costas-modelo"),
+      productImage("moletom-frente"),
+      productImage("moletom-costas")
+    ]),
+    imageAlts:Object.freeze([
+      "Moletom preto Only Cars, vista frontal com modelo",
+      "Moletom preto Only Cars, vista traseira com modelo",
+      "Moletom preto Only Cars, vista frontal",
+      "Moletom preto Only Cars, vista traseira"
+    ])
+  }),
+  "chaveiro-logotipo": Object.freeze({
+    name:"Chaveiro logotipo",
+    category:"Chaveiros · Logotipo",
+    price:"R$ 24,90",
+    value:24.9,
+    description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
+    sizes:Object.freeze(["Único"]),
+    variants:Object.freeze(["Branco","Preto"]),
+    colorOptions:true,
+    images:Object.freeze([
+      productImage("chaveiro-logo-branco"),
+      productImage("chaveiro-logo-preto")
+    ]),
+    imageAlts:Object.freeze([
+      "Chaveiro com logotipo branco do Only Cars Club",
+      "Chaveiro com logotipo preto do Only Cars Club"
+    ]),
+    variantImageIndices:Object.freeze({ Branco:0, Preto:1 })
+  }),
+  "chaveiro-onlynho-1": Object.freeze({
+    name:"Chaveiro Onlynho 1",
+    category:"Chaveiros · Mascote",
+    price:"R$ 29,90",
+    value:29.9,
+    description:"Primeiro modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+    sizes:Object.freeze(["Único"]),
+    variants:Object.freeze(["Modelo 1"]),
+    images:Object.freeze([
+      productImage("chaveiro-onlynho-1-frente"),
+      productImage("chaveiro-onlynho-1-costas")
+    ]),
+    imageAlts:Object.freeze([
+      "Chaveiro Onlynho modelo 1, vista frontal",
+      "Chaveiro Onlynho modelo 1, vista traseira"
+    ])
+  }),
+  "chaveiro-onlynho-2": Object.freeze({
+    name:"Chaveiro Onlynho 2",
+    category:"Chaveiros · Mascote",
+    price:"R$ 29,90",
+    value:29.9,
+    description:"Segundo modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+    sizes:Object.freeze(["Único"]),
+    variants:Object.freeze(["Modelo 2"]),
+    images:Object.freeze([
+      productImage("chaveiro-onlynho-2-frente"),
+      productImage("chaveiro-onlynho-2-costas")
+    ]),
+    imageAlts:Object.freeze([
+      "Chaveiro Onlynho modelo 2, vista frontal",
+      "Chaveiro Onlynho modelo 2, vista traseira"
+    ])
+  })
+});
+
+const getCatalogPrice = (product, size) => {
+  const candidate = product.sizePrices?.[size] ?? product.value;
+  return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
+};
+
+function normalizeCartItem(rawItem) {
+  if (!rawItem || typeof rawItem !== "object" || typeof rawItem.id !== "string") return null;
+  const product = PRODUCT_CATALOG[rawItem.id];
+  if (!product) return null;
+  const size = product.sizes.includes(rawItem.size) ? rawItem.size : product.sizes[0];
+  const variant = product.variants.includes(rawItem.variant) ? rawItem.variant : product.variants[0];
+  const quantity = Math.max(1, Math.min(99, Math.trunc(Number(rawItem.quantity) || 1)));
+  const imageIndex = product.variantImageIndices?.[variant] ?? 0;
+  return {
+    id:rawItem.id,
+    name:product.name,
+    price:getCatalogPrice(product, size),
+    size,
+    variant,
+    quantity,
+    image:product.images[imageIndex] || product.images[0] || "assets/images/placeholder.webp"
+  };
+}
 
 function setupBottomNavigationStructure() {
   const navigation = qs(".bottom-nav");
@@ -21,7 +167,7 @@ function setupBottomNavigationStructure() {
     <a href="sobre.html" data-page="sobre" aria-label="O clube">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>
     </a>
-    <a href="https://www.instagram.com/onlycars.club/" data-page="instagram" aria-label="Instagram do Only Cars Club">
+    <a href="https://www.instagram.com/onlycars.club/" data-page="instagram" aria-label="Instagram do Only Cars Club" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" class="instagram-dot"/></svg>
     </a>
   `;
@@ -118,34 +264,13 @@ function setupBottomNavigationDrag(navigation, links, activeIndex) {
 
 function navigateWithTransition(url, replace = false) {
   if (!url) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    if (replace) location.replace(url);
-    else location.href = url;
-    return;
-  }
-  document.body.classList.add("page-leaving");
-  window.setTimeout(() => {
-    if (replace) location.replace(url);
-    else location.href = url;
-  }, 260);
+  if (replace) location.replace(url);
+  else location.href = url;
 }
 
 function setupPageTransitions() {
-  document.documentElement.classList.add("motion-enabled");
-  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("page-ready")));
-  document.addEventListener("click", (event) => {
-    const link = event.target.closest("a[href]");
-    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (link.target === "_blank" || link.hasAttribute("download")) return;
-    const target = new URL(link.href, location.href);
-    if (target.origin !== location.origin || target.pathname === location.pathname && target.search === location.search && target.hash) return;
-    event.preventDefault();
-    navigateWithTransition(target.href);
-  });
-  window.addEventListener("pageshow", () => {
-    document.body.classList.remove("page-leaving");
-    requestAnimationFrame(() => document.body.classList.add("page-ready"));
-  });
+  document.documentElement.classList.remove("motion-enabled");
+  document.body.classList.remove("page-ready", "page-leaving");
 }
 
 function startTyping() {
@@ -339,129 +464,9 @@ function setupShop() {
 function setupProductPage() {
   const form = qs("[data-product-form]");
   if (!form) return;
-  const products = {
-    "camiseta-oversized": {
-      name:"Camiseta oversized",
-      category:"Roupas · Unissex",
-      price:"R$ 120,00",
-      value:120,
-      description:"Camiseta oversized preta Only Cars, com modelagem ampla e confortável.",
-      sizes:["P","M","G","GG","EG"],
-      variants:["Preto"],
-      colorOptions:true,
-      images:[
-        productImage("camiseta-oversized-frente-modelo"),
-        productImage("camiseta-oversized-costas-modelo"),
-        productImage("camiseta-oversized-frente"),
-        productImage("camiseta-oversized-costas")
-      ],
-      imageAlts:[
-        "Camiseta oversized preta Only Cars, vista frontal com modelo",
-        "Camiseta oversized preta Only Cars, vista traseira com modelo",
-        "Camiseta oversized preta Only Cars, vista frontal",
-        "Camiseta oversized preta Only Cars, vista traseira"
-      ]
-    },
-    cropped: {
-      name:"Cropped",
-      category:"Roupas · Feminino",
-      price:"R$ 120,00",
-      value:120,
-      description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
-      sizes:["P","M","G","GG","EG"],
-      variants:["Preto"],
-      colorOptions:true,
-      images:[
-        productImage("cropped-1"),
-        productImage("cropped-2"),
-        productImage("cropped-3"),
-        productImage("cropped-4")
-      ],
-      imageAlts:[
-        "Cropped preto Only Cars, vista frontal com modelo",
-        "Cropped preto Only Cars, vista traseira com modelo",
-        "Cropped preto Only Cars, vista frontal",
-        "Cropped preto Only Cars, vista traseira"
-      ]
-    },
-    moletom: {
-      name:"Moletom",
-      category:"Roupas · Unissex",
-      price:"R$ 195,00",
-      value:195,
-      description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
-      sizes:["P","M","G","XG"],
-      variants:["Preto"],
-      colorOptions:true,
-      images:[
-        productImage("moletom-frente-modelo"),
-        productImage("moletom-costas-modelo"),
-        productImage("moletom-frente"),
-        productImage("moletom-costas")
-      ],
-      imageAlts:[
-        "Moletom preto Only Cars, vista frontal com modelo",
-        "Moletom preto Only Cars, vista traseira com modelo",
-        "Moletom preto Only Cars, vista frontal",
-        "Moletom preto Only Cars, vista traseira"
-      ]
-    },
-    "chaveiro-logotipo": {
-      name:"Chaveiro logotipo",
-      category:"Chaveiros · Logotipo",
-      price:"R$ 24,90",
-      value:24.9,
-      description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
-      sizes:["Único"],
-      variants:["Branco","Preto"],
-      colorOptions:true,
-      images:[
-        productImage("chaveiro-logo-branco"),
-        productImage("chaveiro-logo-preto")
-      ],
-      imageAlts:[
-        "Chaveiro com logotipo branco do Only Cars Club",
-        "Chaveiro com logotipo preto do Only Cars Club"
-      ],
-      variantImageIndices:{ Branco:0, Preto:1 }
-    },
-    "chaveiro-onlynho-1": {
-      name:"Chaveiro Onlynho 1",
-      category:"Chaveiros · Mascote",
-      price:"R$ 29,90",
-      value:29.9,
-      description:"Primeiro modelo do chaveiro do mascote Onlynho para levar o clube com você.",
-      sizes:["Único"],
-      variants:["Modelo 1"],
-      images:[
-        productImage("chaveiro-onlynho-1-frente"),
-        productImage("chaveiro-onlynho-1-costas")
-      ],
-      imageAlts:[
-        "Chaveiro Onlynho modelo 1, vista frontal",
-        "Chaveiro Onlynho modelo 1, vista traseira"
-      ]
-    },
-    "chaveiro-onlynho-2": {
-      name:"Chaveiro Onlynho 2",
-      category:"Chaveiros · Mascote",
-      price:"R$ 29,90",
-      value:29.9,
-      description:"Segundo modelo do chaveiro do mascote Onlynho para levar o clube com você.",
-      sizes:["Único"],
-      variants:["Modelo 2"],
-      images:[
-        productImage("chaveiro-onlynho-2-frente"),
-        productImage("chaveiro-onlynho-2-costas")
-      ],
-      imageAlts:[
-        "Chaveiro Onlynho modelo 2, vista frontal",
-        "Chaveiro Onlynho modelo 2, vista traseira"
-      ]
-    }
-  };
-  const id = new URLSearchParams(location.search).get("id") || "camiseta-oversized";
-  const product = products[id] || products["camiseta-oversized"];
+  const requestedId = new URLSearchParams(location.search).get("id") || "camiseta-oversized";
+  const id = PRODUCT_CATALOG[requestedId] ? requestedId : "camiseta-oversized";
+  const product = PRODUCT_CATALOG[id];
   qs("[data-product-name]").textContent = product.name;
   qs("[data-product-category]").textContent = product.category;
   qs("[data-product-price]").textContent = product.price;
@@ -473,7 +478,7 @@ function setupProductPage() {
   const previousImage = qs("[data-product-previous]");
   const nextImage = qs("[data-product-next]");
   const galleryCount = qs("[data-product-gallery-count]");
-  const productImages = product.images?.length ? product.images : ["assets/images/teste.png"];
+  const productImages = product.images?.length ? product.images : ["assets/images/placeholder.webp"];
   const hasMultipleImages = productImages.length > 1;
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let activeImage = 0;
@@ -519,11 +524,17 @@ function setupProductPage() {
   };
 
   if (thumbnails) {
-    thumbnails.innerHTML = productImages.map((image, index) => `
-      <button type="button" aria-label="Ver foto ${index + 1} de ${productImages.length}">
-        <img src="${image}" alt="">
-      </button>
-    `).join("");
+    thumbnails.replaceChildren();
+    productImages.forEach((image, index) => {
+      const button = document.createElement("button");
+      const thumbnail = document.createElement("img");
+      button.type = "button";
+      button.setAttribute("aria-label", `Ver foto ${index + 1} de ${productImages.length}`);
+      thumbnail.src = image;
+      thumbnail.alt = "";
+      button.appendChild(thumbnail);
+      thumbnails.appendChild(button);
+    });
     qsa("button", thumbnails).forEach((button, index) => button.addEventListener("click", () => showImage(index)));
   }
   if (previousImage) previousImage.hidden = !hasMultipleImages;
@@ -548,14 +559,32 @@ function setupProductPage() {
   gallery?.addEventListener("pointercancel", () => swipeStartX = null);
   showImage(0, true);
   const renderOptions = (target, name, values, swatches = false) => {
+    if (!target) return;
     target.classList.toggle("color-options", swatches);
-    target.innerHTML = values.map((value, index) => {
+    target.replaceChildren();
+    values.forEach((value, index) => {
       const colorClass = value.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const content = swatches
-        ? `<span class="color-swatch color-${colorClass}" title="${value}"><span class="sr-only">${value}</span></span>`
-        : `<span>${value}</span>`;
-      return `<label><input type="radio" name="${name}" value="${value}" aria-label="${value}" ${index === 0 ? "checked" : ""}>${content}</label>`;
-    }).join("");
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      const content = document.createElement("span");
+      input.type = "radio";
+      input.name = name;
+      input.value = value;
+      input.checked = index === 0;
+      input.setAttribute("aria-label", value);
+      if (swatches) {
+        content.className = `color-swatch color-${colorClass}`;
+        content.title = value;
+        const accessibleLabel = document.createElement("span");
+        accessibleLabel.className = "sr-only";
+        accessibleLabel.textContent = value;
+        content.appendChild(accessibleLabel);
+      } else {
+        content.textContent = value;
+      }
+      label.append(input, content);
+      target.appendChild(label);
+    });
   };
   renderOptions(qs("[data-size-options]"), "size", product.sizes);
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
@@ -564,11 +593,11 @@ function setupProductPage() {
     const imageIndex = product.variantImageIndices?.[input.value];
     if (Number.isInteger(imageIndex)) showImage(imageIndex);
   }));
+  let selectedPrice = getCatalogPrice(product, product.sizes[0]);
   const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   qsa('input[name="size"]', form).forEach((input) => input.addEventListener("change", () => {
-    if (!product.sizePrices) return;
-    product.value = product.sizePrices[input.value];
-    qs("[data-product-price]").textContent = formatPrice(product.value);
+    selectedPrice = getCatalogPrice(product, input.value);
+    qs("[data-product-price]").textContent = formatPrice(selectedPrice);
   }));
   const quantity = qs("[data-quantity]");
   qs("[data-quantity-minus]").addEventListener("click", () => quantity.value = Math.max(1, Number(quantity.value) - 1));
@@ -578,7 +607,15 @@ function setupProductPage() {
     const data = new FormData(form);
     const variant = data.get("variant");
     const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;
-    const item = { id, name:product.name, price:product.value, size:data.get("size"), variant, quantity:Number(quantity.value) || 1, image:productImages[cartImageIndex] || productImages[0] };
+    const item = normalizeCartItem({
+      id,
+      size:data.get("size"),
+      variant,
+      quantity:Number(quantity.value) || 1,
+      price:selectedPrice,
+      image:productImages[cartImageIndex] || productImages[0]
+    });
+    if (!item) return;
     const cart = getCart();
     const existing = cart.find((entry) => entry.id === item.id && entry.size === item.size && entry.variant === item.variant && entry.price === item.price);
     if (existing) existing.quantity += item.quantity;
@@ -596,19 +633,21 @@ const formatCurrency = (value) => Number(value).toLocaleString("pt-BR", { style:
 function getCart() {
   try {
     const cart = JSON.parse(localStorage.getItem("onlyCarsCart") || "[]");
-    return Array.isArray(cart) ? cart : [];
+    if (!Array.isArray(cart)) return [];
+    return cart.map(normalizeCartItem).filter(Boolean);
   } catch {
     return [];
   }
 }
 
 function saveCart(cart) {
-  localStorage.setItem("onlyCarsCart", JSON.stringify(cart));
-  if (!cart.length) {
+  const normalizedCart = Array.isArray(cart) ? cart.map(normalizeCartItem).filter(Boolean) : [];
+  localStorage.setItem("onlyCarsCart", JSON.stringify(normalizedCart));
+  if (!normalizedCart.length) {
     sessionStorage.removeItem("onlyCarsDelivery");
     sessionStorage.removeItem("onlyCarsCheckoutMaxStep");
   }
-  updateCartCount(cart);
+  updateCartCount(normalizedCart);
 }
 
 function setupCheckoutSteps() {
@@ -724,30 +763,70 @@ function setupCartPage() {
     empty.hidden = !isEmpty;
     layout.hidden = isEmpty;
     if (isEmpty) {
-      items.innerHTML = "";
+      items.replaceChildren();
       return;
     }
-    items.innerHTML = cart.map((item, index) => `
-      <article class="cart-item" data-cart-index="${index}">
-        <div class="cart-item-image"><img src="${item.image || "assets/images/teste.png"}" alt="${item.name}"></div>
-        <div class="cart-item-info">
-          <p>${item.variant || "Padrão"}${item.size ? ` · ${item.size}` : ""}</p>
-          <h2>${item.name}</h2>
-          <strong>${formatCurrency(item.price)}</strong>
-          <button type="button" class="cart-remove" data-cart-remove aria-label="Excluir ${item.name}" title="Excluir item">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
-          </button>
-        </div>
-        <div class="cart-item-actions">
-          <span class="quantity-control">
-            <button type="button" data-cart-minus aria-label="Diminuir quantidade">−</button>
-            <input type="number" min="1" max="99" value="${item.quantity}" data-cart-quantity aria-label="Quantidade de ${item.name}">
-            <button type="button" data-cart-plus aria-label="Aumentar quantidade">+</button>
-          </span>
-          <strong class="cart-item-subtotal">${formatCurrency(item.price * item.quantity)}</strong>
-        </div>
-      </article>
-    `).join("");
+    const fragment = document.createDocumentFragment();
+    cart.forEach((item, index) => {
+      const article = document.createElement("article");
+      const imageBox = document.createElement("div");
+      const image = document.createElement("img");
+      const info = document.createElement("div");
+      const details = document.createElement("p");
+      const title = document.createElement("h2");
+      const unitPrice = document.createElement("strong");
+      const remove = document.createElement("button");
+      const actions = document.createElement("div");
+      const quantityControl = document.createElement("span");
+      const minus = document.createElement("button");
+      const quantityInput = document.createElement("input");
+      const plus = document.createElement("button");
+      const subtotal = document.createElement("strong");
+
+      article.className = "cart-item";
+      article.dataset.cartIndex = String(index);
+      imageBox.className = "cart-item-image";
+      image.src = item.image;
+      image.alt = item.name;
+      imageBox.appendChild(image);
+
+      info.className = "cart-item-info";
+      details.textContent = `${item.variant || "Padrão"}${item.size ? ` · ${item.size}` : ""}`;
+      title.textContent = item.name;
+      unitPrice.textContent = formatCurrency(item.price);
+      remove.type = "button";
+      remove.className = "cart-remove";
+      remove.dataset.cartRemove = "";
+      remove.setAttribute("aria-label", `Excluir ${item.name}`);
+      remove.title = "Excluir item";
+      remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';
+      info.append(details, title, unitPrice, remove);
+
+      actions.className = "cart-item-actions";
+      quantityControl.className = "quantity-control";
+      minus.type = "button";
+      minus.dataset.cartMinus = "";
+      minus.setAttribute("aria-label", "Diminuir quantidade");
+      minus.textContent = "−";
+      quantityInput.type = "number";
+      quantityInput.min = "1";
+      quantityInput.max = "99";
+      quantityInput.value = String(item.quantity);
+      quantityInput.dataset.cartQuantity = "";
+      quantityInput.setAttribute("aria-label", `Quantidade de ${item.name}`);
+      plus.type = "button";
+      plus.dataset.cartPlus = "";
+      plus.setAttribute("aria-label", "Aumentar quantidade");
+      plus.textContent = "+";
+      subtotal.className = "cart-item-subtotal";
+      subtotal.textContent = formatCurrency(item.price * item.quantity);
+      quantityControl.append(minus, quantityInput, plus);
+      actions.append(quantityControl, subtotal);
+
+      article.append(imageBox, info, actions);
+      fragment.appendChild(article);
+    });
+    items.replaceChildren(fragment);
     const totalQuantity = cart.reduce((sum, item) => sum + Number(item.quantity), 0);
     const totalValue = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
     itemCount.textContent = `${totalQuantity} ${totalQuantity === 1 ? "item" : "itens"}`;
@@ -804,6 +883,12 @@ function setupCartPage() {
 
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
+  const allowedDeliveries = [
+    "Retirar no próximo evento do Only",
+    "Pedir um motoboy para retirar",
+    "Vou retirar pessoalmente"
+  ];
+  const allowedPayments = ["Pix", "Cartão — sujeito a taxas"];
   const deliveryForm = qs("[data-delivery-form]");
   const paymentForm = qs("[data-payment-form]");
   if (!deliveryForm && !paymentForm) return;
@@ -814,12 +899,13 @@ function setupCheckoutFlow() {
 
   if (deliveryForm) {
     const savedDelivery = sessionStorage.getItem("onlyCarsDelivery");
-    const savedInput = savedDelivery && qs(`input[name="delivery"][value="${CSS.escape(savedDelivery)}"]`, deliveryForm);
+    const validSavedDelivery = allowedDeliveries.includes(savedDelivery) ? savedDelivery : "";
+    const savedInput = validSavedDelivery && qs(`input[name="delivery"][value="${CSS.escape(validSavedDelivery)}"]`, deliveryForm);
     if (savedInput) savedInput.checked = true;
     deliveryForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const selected = new FormData(deliveryForm).get("delivery");
-      if (!selected) {
+      if (!allowedDeliveries.includes(selected)) {
         qs("[data-checkout-error]", deliveryForm).textContent = "Escolha uma forma de entrega para continuar.";
         return;
       }
@@ -829,7 +915,8 @@ function setupCheckoutFlow() {
   }
 
   if (paymentForm) {
-    const delivery = sessionStorage.getItem("onlyCarsDelivery");
+    const savedDelivery = sessionStorage.getItem("onlyCarsDelivery");
+    const delivery = allowedDeliveries.includes(savedDelivery) ? savedDelivery : "";
     if (!delivery) {
       location.replace("entrega.html");
       return;
@@ -839,7 +926,7 @@ function setupCheckoutFlow() {
     paymentForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const payment = new FormData(paymentForm).get("payment");
-      if (!payment) {
+      if (!allowedPayments.includes(payment)) {
         qs("[data-checkout-error]", paymentForm).textContent = "Escolha uma forma de pagamento para continuar.";
         return;
       }
@@ -863,11 +950,42 @@ function setupCheckoutFlow() {
         `Pagamento: _${payment}_`,
         "",
         `*TOTAL DOS PRODUTOS: ${formatCurrency(total)}*`,
+        "_Produto, cor, tamanho, quantidade e valores serão conferidos pela equipe antes da confirmação._",
         payment.startsWith("Cartão") ? "_As taxas do cartão serão confirmadas no atendimento._" : null
       ].filter((line) => line !== null).join("\n");
       window.open(`https://wa.me/5511976842147?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     });
   }
+}
+
+function setupContactForm() {
+  const form = qs("[data-contact-form]");
+  if (!form) return;
+  const error = qs("[data-contact-error]", form);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const data = new FormData(form);
+    const name = String(data.get("name") || "").trim().slice(0, 80);
+    const email = String(data.get("email") || "").trim().slice(0, 120);
+    const subject = String(data.get("subject") || "").trim().slice(0, 120);
+    const messageText = String(data.get("message") || "").trim().slice(0, 1500);
+    if (!name || !email || !subject || !messageText) {
+      if (error) error.textContent = "Preencha todos os campos para continuar.";
+      return;
+    }
+    if (error) error.textContent = "";
+    const message = [
+      "Olá! Vim pelo site do *Only Cars Club*.",
+      "",
+      `Nome: ${name}`,
+      `E-mail: ${email}`,
+      `Assunto: ${subject}`,
+      "",
+      messageText
+    ].join("\n");
+    window.open(`https://wa.me/5511976842147?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  });
 }
 
 function setupLiquidGlass() {
@@ -1114,6 +1232,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
+  setupContactForm();
   setupAdminCards();
   setupValuesStack();
   setupPageHeroParallax();
