@@ -1994,38 +1994,28 @@ body.modal-open { overflow:hidden; }
   backdrop-filter:blur(12px);
 }
 
-.product-thumbnails {
-  margin-top:12px;
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:10px;
-}
-
-.product-thumbnails[hidden] { display:none; }
-
-.product-thumbnails button {
-  min-width:0;
-  aspect-ratio:1;
-  padding:0;
+.product-gallery-progress {
+  --gallery-progress:25%;
+  width:min(180px,42%);
+  height:4px;
+  margin:14px auto 0;
   overflow:hidden;
-  border:2px solid transparent;
-  border-radius:15px;
-  padding:5px;
-  background:#fff;
-  cursor:pointer;
-  transition:border-color .2s ease,transform .2s ease;
+  border-radius:999px;
+  background:#d4d2ca;
 }
 
-.product-thumbnails button:hover { transform:translateY(-2px); }
-.product-thumbnails button.active { border-color:#111; }
-
-.product-thumbnails img {
-  width:100%;
-  height:100%;
+.product-gallery-progress::after {
+  content:"";
   display:block;
-  object-fit:contain!important;
-  object-position:center!important;
+  width:var(--gallery-progress);
+  height:100%;
+  border-radius:inherit;
+  background:var(--yellow);
+  box-shadow:0 0 10px #f6d50066;
+  transition:width .28s ease;
 }
+
+.product-gallery-progress[hidden] { display:none; }
 
 /* O botão da página de eventos deve permanecer centralizado, inclusive no mobile,
    onde a regra global dos botões usa largura total. */
@@ -2181,8 +2171,10 @@ body.modal-open { overflow:hidden; }
   .product-gallery-control.previous { left:10px; }
   .product-gallery-control.next { right:10px; }
   .product-gallery-count { right:10px; bottom:10px; }
-  .product-thumbnails { gap:7px; }
-  .product-thumbnails button { border-radius:11px; }
+  .product-gallery-progress {
+    width:38%;
+    margin-top:11px;
+  }
 }
 
 @media(prefers-reduced-motion:reduce) {
@@ -2237,4 +2229,18 @@ body.modal-open { overflow:hidden; }
 
 @media(max-width:520px) {
   .event-numbers { grid-template-columns:1fr; }
+}
+
+/* v4.6 — mantém o botão central perfeitamente circular em qualquer largura */
+.bottom-nav .next-event-icon {
+  box-sizing:border-box;
+  flex:0 0 66px;
+  width:66px;
+  min-width:66px;
+  max-width:66px;
+  height:66px;
+  min-height:66px;
+  max-height:66px;
+  aspect-ratio:1 / 1;
+  border-radius:50%!important;
 }

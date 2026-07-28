@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  `assets/images/${key}.${extension}?v=20260728-v45`;
+  `assets/images/${key}.${extension}?v=20260728-v47`;
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -9,9 +9,9 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Unissex",
     price:"R$ 120,00",
     value:120,
-    description:"Camiseta oversized preta Only Cars, com modelagem ampla e confortável.",
+    description:"Camiseta oversized Only Cars, com modelagem ampla e confortável.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
-    variants:Object.freeze(["Preto"]),
+    variants:Object.freeze(["Preto","Amarelo"]),
     colorOptions:true,
     images:Object.freeze([
       productImage("camiseta-oversized-frente-modelo"),
@@ -32,7 +32,7 @@ const PRODUCT_CATALOG = Object.freeze({
     price:"R$ 120,00",
     value:120,
     description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
-    sizes:Object.freeze(["P","M","G","GG","EG"]),
+    sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
@@ -474,7 +474,7 @@ function setupProductPage() {
   document.title = `${product.name} — Only Cars Club`;
   const productImageElement = qs("[data-product-image]");
   const gallery = qs("[data-product-gallery]");
-  const thumbnails = qs("[data-product-thumbnails]");
+  const galleryProgress = qs("[data-product-gallery-progress]");
   const previousImage = qs("[data-product-previous]");
   const nextImage = qs("[data-product-next]");
   const galleryCount = qs("[data-product-gallery-count]");
@@ -489,10 +489,12 @@ function setupProductPage() {
     productImageElement.src = productImages[activeImage];
     productImageElement.alt = product.imageAlts?.[activeImage] || product.name;
     if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
-    qsa("button", thumbnails).forEach((button, buttonIndex) => {
-      button.classList.toggle("active", buttonIndex === activeImage);
-      button.setAttribute("aria-current", buttonIndex === activeImage ? "true" : "false");
-    });
+    if (galleryProgress) {
+      galleryProgress.style.setProperty("--gallery-progress", `${((activeImage + 1) / productImages.length) * 100}%`);
+      galleryProgress.setAttribute("aria-valuenow", String(activeImage + 1));
+      galleryProgress.setAttribute("aria-valuemax", String(productImages.length));
+      galleryProgress.setAttribute("aria-valuetext", `Foto ${activeImage + 1} de ${productImages.length}`);
+    }
   };
 
   const showImage = (index, immediate = false) => {
@@ -523,24 +525,10 @@ function setupProductPage() {
     }, 620);
   };
 
-  if (thumbnails) {
-    thumbnails.replaceChildren();
-    productImages.forEach((image, index) => {
-      const button = document.createElement("button");
-      const thumbnail = document.createElement("img");
-      button.type = "button";
-      button.setAttribute("aria-label", `Ver foto ${index + 1} de ${productImages.length}`);
-      thumbnail.src = image;
-      thumbnail.alt = "";
-      button.appendChild(thumbnail);
-      thumbnails.appendChild(button);
-    });
-    qsa("button", thumbnails).forEach((button, index) => button.addEventListener("click", () => showImage(index)));
-  }
   if (previousImage) previousImage.hidden = !hasMultipleImages;
   if (nextImage) nextImage.hidden = !hasMultipleImages;
   if (galleryCount) galleryCount.hidden = !hasMultipleImages;
-  if (thumbnails) thumbnails.hidden = !hasMultipleImages;
+  if (galleryProgress) galleryProgress.hidden = !hasMultipleImages;
   previousImage?.addEventListener("click", () => showImage(activeImage - 1));
   nextImage?.addEventListener("click", () => showImage(activeImage + 1));
   let swipeStartX = null;
