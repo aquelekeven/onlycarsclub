@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260728-v51";
+const PRODUCT_IMAGE_VERSION = "20260728-v53";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -40,16 +40,12 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("cropped-v51-frente-modelo"),
-      productImage("cropped-v51-costas-modelo"),
-      productImage("cropped-v51-frente"),
-      productImage("cropped-v51-costas")
+      productImage("cropped-v53-frente", "png"),
+      productImage("cropped-v53-costas", "png")
     ]),
     imageAlts:Object.freeze([
       "Cropped preto Only Cars, vista frontal com modelo",
-      "Cropped preto Only Cars, vista traseira com modelo",
-      "Cropped preto Only Cars, vista frontal",
-      "Cropped preto Only Cars, vista traseira"
+      "Cropped preto Only Cars, vista traseira com modelo"
     ])
   }),
   moletom: Object.freeze({
@@ -136,8 +132,8 @@ const PRODUCT_CATALOG = Object.freeze({
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
-    images:Object.freeze([productImage("copo-termico-only", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória do copo térmico Only"])
+    images:Object.freeze([productImage("copo-termico-v53", "png")]),
+    imageAlts:Object.freeze(["Copo térmico preto Only Cars com gravação a laser"])
   }),
   "camiseta-oversized-amarela": Object.freeze({
     name:"Camiseta oversized amarela",
@@ -160,8 +156,42 @@ const PRODUCT_CATALOG = Object.freeze({
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Preto","Amarelo","Branco"]),
     colorOptions:true,
-    images:Object.freeze([productImage("camiseta-streetwear", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória das camisetas streetwear Only Cars"])
+    images:Object.freeze([
+      productImage("streetwear-preta-frente-v52", "png"),
+      productImage("streetwear-preta-verso-v52", "png")
+    ]),
+    imageAlts:Object.freeze([
+      "Camiseta streetwear preta Only Cars, vista frontal",
+      "Camiseta streetwear preta Only Cars, vista traseira"
+    ]),
+    variantImages:Object.freeze({
+      Preto:Object.freeze([
+        productImage("streetwear-preta-frente-v52", "png"),
+        productImage("streetwear-preta-verso-v52", "png")
+      ]),
+      Amarelo:Object.freeze([
+        productImage("streetwear-amarela-frente-v52", "png"),
+        productImage("streetwear-amarela-verso-v52", "png")
+      ]),
+      Branco:Object.freeze([
+        productImage("streetwear-branca-frente-v52", "png"),
+        productImage("streetwear-branca-verso-v52", "png")
+      ])
+    }),
+    variantImageAlts:Object.freeze({
+      Preto:Object.freeze([
+        "Camiseta streetwear preta Only Cars, vista frontal",
+        "Camiseta streetwear preta Only Cars, vista traseira"
+      ]),
+      Amarelo:Object.freeze([
+        "Camiseta streetwear amarela Only Cars, vista frontal",
+        "Camiseta streetwear amarela Only Cars, vista traseira"
+      ]),
+      Branco:Object.freeze([
+        "Camiseta streetwear branca Only Cars, vista frontal",
+        "Camiseta streetwear branca Only Cars, vista traseira"
+      ])
+    })
   }),
   "adesivo-japones-p": Object.freeze({
     name:"Adesivo japonês P",
@@ -210,6 +240,11 @@ const PRODUCT_CATALOG = Object.freeze({
   })
 });
 
+const getProductGallery = (product, variant = product.variants?.[0]) => ({
+  images:product.variantImages?.[variant] || product.images || ["assets/images/placeholder.webp"],
+  alts:product.variantImageAlts?.[variant] || product.imageAlts || []
+});
+
 const getCatalogPrice = (product, size, variant) => {
   const candidate = product.variantPrices?.[variant] ?? product.sizePrices?.[size] ?? product.value;
   return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
@@ -222,6 +257,7 @@ function normalizeCartItem(rawItem) {
   const size = product.sizes.includes(rawItem.size) ? rawItem.size : product.sizes[0];
   const variant = product.variants.includes(rawItem.variant) ? rawItem.variant : product.variants[0];
   const quantity = Math.max(1, Math.min(99, Math.trunc(Number(rawItem.quantity) || 1)));
+  const gallery = getProductGallery(product, variant);
   const imageIndex = product.variantImageIndices?.[variant] ?? 0;
   return {
     id:rawItem.id,
@@ -230,7 +266,7 @@ function normalizeCartItem(rawItem) {
     size,
     variant,
     quantity,
-    image:product.images[imageIndex] || product.images[0] || "assets/images/placeholder.webp"
+    image:gallery.images[imageIndex] || gallery.images[0] || "assets/images/placeholder.webp"
   };
 }
 
@@ -565,8 +601,10 @@ function setupProductPage() {
   const previousImage = qs("[data-product-previous]");
   const nextImage = qs("[data-product-next]");
   const galleryCount = qs("[data-product-gallery-count]");
-  const productImages = product.images?.length ? product.images : ["assets/images/placeholder.webp"];
-  const hasMultipleImages = productImages.length > 1;
+  let currentGallery = getProductGallery(product, product.variants[0]);
+  let productImages = currentGallery.images;
+  let productImageAlts = currentGallery.alts;
+  let hasMultipleImages = productImages.length > 1;
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let activeImage = 0;
   let galleryTransitioning = false;
@@ -574,7 +612,7 @@ function setupProductPage() {
   const commitImage = (index) => {
     activeImage = index;
     productImageElement.src = productImages[activeImage];
-    productImageElement.alt = product.imageAlts?.[activeImage] || product.name;
+    productImageElement.alt = productImageAlts?.[activeImage] || product.name;
     if (galleryCount) galleryCount.textContent = `${activeImage + 1} / ${productImages.length}`;
     if (galleryProgress) {
       galleryProgress.style.setProperty("--gallery-progress", `${((activeImage + 1) / productImages.length) * 100}%`);
@@ -612,10 +650,22 @@ function setupProductPage() {
     }, 620);
   };
 
-  if (previousImage) previousImage.hidden = !hasMultipleImages;
-  if (nextImage) nextImage.hidden = !hasMultipleImages;
-  if (galleryCount) galleryCount.hidden = !hasMultipleImages;
-  if (galleryProgress) galleryProgress.hidden = !hasMultipleImages;
+  const updateGalleryControls = () => {
+    hasMultipleImages = productImages.length > 1;
+    if (previousImage) previousImage.hidden = !hasMultipleImages;
+    if (nextImage) nextImage.hidden = !hasMultipleImages;
+    if (galleryCount) galleryCount.hidden = !hasMultipleImages;
+    if (galleryProgress) galleryProgress.hidden = !hasMultipleImages;
+  };
+  const setVariantGallery = (variant) => {
+    currentGallery = getProductGallery(product, variant);
+    productImages = currentGallery.images;
+    productImageAlts = currentGallery.alts;
+    activeImage = 0;
+    updateGalleryControls();
+    showImage(0, true);
+  };
+  updateGalleryControls();
   previousImage?.addEventListener("click", () => showImage(activeImage - 1));
   nextImage?.addEventListener("click", () => showImage(activeImage + 1));
   let swipeStartX = null;
@@ -675,8 +725,12 @@ function setupProductPage() {
     priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
-    const imageIndex = product.variantImageIndices?.[input.value];
-    if (Number.isInteger(imageIndex)) showImage(imageIndex);
+    if (product.variantImages?.[input.value]) {
+      setVariantGallery(input.value);
+    } else {
+      const imageIndex = product.variantImageIndices?.[input.value];
+      if (Number.isInteger(imageIndex)) showImage(imageIndex);
+    }
     updateSelectedPrice();
   }));
   qsa('input[name="size"]', form).forEach((input) => input.addEventListener("change", () => {
@@ -700,6 +754,7 @@ function setupProductPage() {
     }
     const data = new FormData(form);
     const variant = data.get("variant");
+    const cartGallery = getProductGallery(product, variant);
     const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;
     const item = normalizeCartItem({
       id,
@@ -707,7 +762,7 @@ function setupProductPage() {
       variant,
       quantity:Number(quantity.value) || 1,
       price:selectedPrice,
-      image:productImages[cartImageIndex] || productImages[0]
+      image:cartGallery.images[cartImageIndex] || cartGallery.images[0]
     });
     if (!item) return;
     const cart = getCart();
