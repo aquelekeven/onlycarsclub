@@ -2192,3 +2192,49 @@ body.modal-open { overflow:hidden; }
     animation:none !important;
   }
 }
+
+/* v4.5 — métricas enxutas e botão central elevado */
+.event-numbers {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.bottom-nav .next-event-nav,
+.bottom-nav .next-event-nav:hover,
+.bottom-nav .next-event-nav.active,
+.bottom-nav.nav-dragging .next-event-nav.nav-drag-active {
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+.bottom-nav .next-event-icon {
+  width:66px;
+  height:66px;
+  border:0!important;
+  outline:0!important;
+  transform:translateY(-10px);
+  box-shadow:0 9px 22px rgba(0,0,0,.48);
+}
+
+.bottom-nav .next-event-nav:hover .next-event-icon,
+.bottom-nav .next-event-nav.active .next-event-icon,
+.bottom-nav.nav-dragging .next-event-nav.nav-drag-active .next-event-icon {
+  border:0!important;
+  outline:0!important;
+  transform:translateY(-10px) scale(1.04);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.5),
+    0 0 10px rgba(246,213,0,.78),
+    0 0 26px rgba(246,213,0,.5),
+    0 0 46px rgba(246,213,0,.24)!important;
+}
+
+.bottom-nav.nav-dragging .next-event-nav.active:not(.nav-drag-active) .next-event-icon {
+  transform:translateY(-10px);
+  box-shadow:0 9px 22px rgba(0,0,0,.48)!important;
+}
+
+@media(max-width:520px) {
+  .event-numbers { grid-template-columns:1fr; }
+}

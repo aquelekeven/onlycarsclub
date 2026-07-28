@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  `assets/images/${key}.${extension}?v=20260728-v44`;
+  `assets/images/${key}.${extension}?v=20260728-v45`;
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
