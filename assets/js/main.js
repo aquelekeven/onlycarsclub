@@ -1,7 +1,7 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const productImage = (key, extension = "webp") =>
-  `assets/images/${key}.${extension}?v=20260728-v47`;
+  `assets/images/${key}.${extension}?v=20260728-v48`;
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -11,26 +11,29 @@ const PRODUCT_CATALOG = Object.freeze({
     value:120,
     description:"Camiseta oversized Only Cars, com modelagem ampla e confortável.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
-    variants:Object.freeze(["Preto","Amarelo"]),
+    variants:Object.freeze(["Preto","Branco"]),
     colorOptions:true,
     images:Object.freeze([
       productImage("camiseta-oversized-frente-modelo"),
       productImage("camiseta-oversized-costas-modelo"),
       productImage("camiseta-oversized-frente"),
-      productImage("camiseta-oversized-costas")
+      productImage("camiseta-oversized-costas"),
+      productImage("camiseta-oversized-branca", "png")
     ]),
     imageAlts:Object.freeze([
       "Camiseta oversized preta Only Cars, vista frontal com modelo",
       "Camiseta oversized preta Only Cars, vista traseira com modelo",
       "Camiseta oversized preta Only Cars, vista frontal",
-      "Camiseta oversized preta Only Cars, vista traseira"
-    ])
+      "Camiseta oversized preta Only Cars, vista traseira",
+      "Imagem provisória da camiseta oversized branca Only Cars"
+    ]),
+    variantImageIndices:Object.freeze({ Preto:0, Branco:4 })
   }),
   cropped: Object.freeze({
     name:"Cropped",
     category:"Roupas · Feminino",
-    price:"R$ 120,00",
-    value:120,
+    price:"R$ 80,00",
+    value:80,
     description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
@@ -73,8 +76,8 @@ const PRODUCT_CATALOG = Object.freeze({
   "chaveiro-logotipo": Object.freeze({
     name:"Chaveiro logotipo",
     category:"Chaveiros · Logotipo",
-    price:"R$ 24,90",
-    value:24.9,
+    price:"R$ 15,00",
+    value:15,
     description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Branco","Preto"]),
@@ -90,50 +93,131 @@ const PRODUCT_CATALOG = Object.freeze({
     variantImageIndices:Object.freeze({ Branco:0, Preto:1 })
   }),
   "chaveiro-onlynho-1": Object.freeze({
-    name:"Chaveiro Onlynho 1",
+    name:"Chaveiro mascote resina",
     category:"Chaveiros · Mascote",
-    price:"R$ 29,90",
-    value:29.9,
-    description:"Primeiro modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+    price:"R$ 20,00",
+    value:20,
+    description:"Chaveiro de resina com o mascote Onlynho para levar o clube com você.",
     sizes:Object.freeze(["Único"]),
-    variants:Object.freeze(["Modelo 1"]),
+    variants:Object.freeze(["Resina"]),
     images:Object.freeze([
       productImage("chaveiro-onlynho-1-frente"),
       productImage("chaveiro-onlynho-1-costas")
     ]),
     imageAlts:Object.freeze([
-      "Chaveiro Onlynho modelo 1, vista frontal",
-      "Chaveiro Onlynho modelo 1, vista traseira"
+      "Chaveiro mascote em resina, vista frontal",
+      "Chaveiro mascote em resina, vista traseira"
     ])
   }),
   "chaveiro-onlynho-2": Object.freeze({
-    name:"Chaveiro Onlynho 2",
+    name:"Chaveiro mascote 3D",
     category:"Chaveiros · Mascote",
-    price:"R$ 29,90",
-    value:29.9,
-    description:"Segundo modelo do chaveiro do mascote Onlynho para levar o clube com você.",
+    price:"R$ 15,00",
+    value:15,
+    description:"Chaveiro 3D com o mascote Onlynho para levar o clube com você.",
     sizes:Object.freeze(["Único"]),
-    variants:Object.freeze(["Modelo 2"]),
+    variants:Object.freeze(["3D"]),
     images:Object.freeze([
       productImage("chaveiro-onlynho-2-frente"),
       productImage("chaveiro-onlynho-2-costas")
     ]),
     imageAlts:Object.freeze([
-      "Chaveiro Onlynho modelo 2, vista frontal",
-      "Chaveiro Onlynho modelo 2, vista traseira"
+      "Chaveiro mascote 3D, vista frontal",
+      "Chaveiro mascote 3D, vista traseira"
     ])
+  }),
+  "copo-termico": Object.freeze({
+    name:"Copo térmico Only",
+    category:"Acessórios · Copos",
+    price:"R$ 45,00",
+    value:45,
+    description:"Copo térmico do Only Cars Club para acompanhar encontros, viagens e o dia a dia.",
+    sizes:Object.freeze(["Único"]),
+    variants:Object.freeze(["Preto"]),
+    colorOptions:true,
+    images:Object.freeze([productImage("copo-termico-only", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória do copo térmico Only"])
+  }),
+  "camiseta-oversized-amarela": Object.freeze({
+    name:"Camiseta oversized amarela",
+    category:"Roupas · Unissex",
+    price:"R$ 120,00",
+    value:120,
+    description:"Camiseta oversized amarela com estampa exclusiva Only Cars.",
+    sizes:Object.freeze(["P","M","G","GG","EG"]),
+    variants:Object.freeze(["Amarelo"]),
+    colorOptions:true,
+    images:Object.freeze([productImage("camiseta-oversized-amarela", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória da camiseta oversized amarela Only Cars"])
+  }),
+  "camiseta-streetwear": Object.freeze({
+    name:"Camiseta streetwear",
+    category:"Roupas · Unissex",
+    price:"R$ 80,00",
+    value:80,
+    description:"Camiseta streetwear Only Cars, disponível nas cores preta, amarela e branca.",
+    sizes:Object.freeze(["P","M","G","GG","EG"]),
+    variants:Object.freeze(["Preto","Amarelo","Branco"]),
+    colorOptions:true,
+    images:Object.freeze([productImage("camiseta-streetwear", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória das camisetas streetwear Only Cars"])
+  }),
+  "adesivo-japones-p": Object.freeze({
+    name:"Adesivo japonês P",
+    category:"Adesivos · Japonês",
+    price:"R$ 15,00",
+    value:15,
+    description:"Adesivo japonês Only Cars no tamanho P, com 15 × 3,5 cm.",
+    sizes:Object.freeze(["P"]),
+    variants:Object.freeze(["Padrão"]),
+    images:Object.freeze([productImage("adesivo-japones", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho P"])
+  }),
+  "adesivo-japones-m": Object.freeze({
+    name:"Adesivo japonês M",
+    category:"Adesivos · Japonês",
+    price:"R$ 20,00",
+    value:20,
+    description:"Adesivo japonês Only Cars no tamanho M, com 31 × 7 cm.",
+    sizes:Object.freeze(["M"]),
+    variants:Object.freeze(["Padrão"]),
+    images:Object.freeze([productImage("adesivo-japones", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho M"])
+  }),
+  "adesivo-japones-g": Object.freeze({
+    name:"Adesivo japonês G",
+    category:"Adesivos · Japonês",
+    price:"R$ 25,00",
+    value:25,
+    description:"Adesivo japonês Only Cars no tamanho G, com 53 × 11 cm.",
+    sizes:Object.freeze(["G"]),
+    variants:Object.freeze(["Padrão"]),
+    images:Object.freeze([productImage("adesivo-japones", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho G"])
+  }),
+  "adesivo-mascote": Object.freeze({
+    name:"Adesivo mascote",
+    category:"Adesivos · Mascote",
+    price:"A partir de R$ 15,00",
+    value:15,
+    description:"Adesivo do mascote Onlynho, disponível em acabamento colorido, branco ou holográfico.",
+    sizes:Object.freeze(["Único"]),
+    variants:Object.freeze(["Colorido","Branco","Holográfico"]),
+    variantPrices:Object.freeze({ Colorido:15, Branco:15, Holográfico:25 }),
+    images:Object.freeze([productImage("adesivo-mascote", "png")]),
+    imageAlts:Object.freeze(["Imagem provisória do adesivo mascote Onlynho"])
   })
 });
 
-const getCatalogPrice = (product, size) => {
-  const candidate = product.sizePrices?.[size] ?? product.value;
+const getCatalogPrice = (product, size, variant) => {
+  const candidate = product.variantPrices?.[variant] ?? product.sizePrices?.[size] ?? product.value;
   return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
 };
 
 function normalizeCartItem(rawItem) {
   if (!rawItem || typeof rawItem !== "object" || typeof rawItem.id !== "string") return null;
   const product = PRODUCT_CATALOG[rawItem.id];
-  if (!product) return null;
+  if (!product || product.unavailable) return null;
   const size = product.sizes.includes(rawItem.size) ? rawItem.size : product.sizes[0];
   const variant = product.variants.includes(rawItem.variant) ? rawItem.variant : product.variants[0];
   const quantity = Math.max(1, Math.min(99, Math.trunc(Number(rawItem.quantity) || 1)));
@@ -141,7 +225,7 @@ function normalizeCartItem(rawItem) {
   return {
     id:rawItem.id,
     name:product.name,
-    price:getCatalogPrice(product, size),
+    price:getCatalogPrice(product, size, variant),
     size,
     variant,
     quantity,
@@ -433,14 +517,16 @@ function setupShop() {
   const cards = qsa(".product-grid .product-card");
   if (!buttons.length || !cards.length) return;
   qsa("[data-product-image-key]").forEach((image) => {
-    image.src = productImage(image.dataset.productImageKey);
+    image.src = productImage(image.dataset.productImageKey, image.dataset.productImageExtension || "webp");
   });
   const title = qs("[data-products-title]");
   const count = qs("[data-products-count]");
   const labels = {
     Todos: "Todos os produtos",
     Roupas: "Roupas",
-    Chaveiros: "Chaveiros"
+    Chaveiros: "Chaveiros",
+    Acessórios: "Acessórios",
+    Adesivos: "Adesivos"
   };
   let category = "Todos";
   const apply = () => {
@@ -577,21 +663,40 @@ function setupProductPage() {
   renderOptions(qs("[data-size-options]"), "size", product.sizes);
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
+  const priceElement = qs("[data-product-price]");
+  const addCartButton = qs(".add-cart-button", form);
+  const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+  let selectedPrice = getCatalogPrice(product, product.sizes[0], product.variants[0]);
+  const updateSelectedPrice = () => {
+    const selectedSize = qs('input[name="size"]:checked', form)?.value || product.sizes[0];
+    const selectedVariant = qs('input[name="variant"]:checked', form)?.value || product.variants[0];
+    selectedPrice = getCatalogPrice(product, selectedSize, selectedVariant);
+    priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
+  };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
     const imageIndex = product.variantImageIndices?.[input.value];
     if (Number.isInteger(imageIndex)) showImage(imageIndex);
+    updateSelectedPrice();
   }));
-  let selectedPrice = getCatalogPrice(product, product.sizes[0]);
-  const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   qsa('input[name="size"]', form).forEach((input) => input.addEventListener("change", () => {
-    selectedPrice = getCatalogPrice(product, input.value);
-    qs("[data-product-price]").textContent = formatPrice(selectedPrice);
+    updateSelectedPrice();
   }));
+  updateSelectedPrice();
+  if (product.unavailable && addCartButton) {
+    addCartButton.disabled = true;
+    addCartButton.textContent = "Preço em definição";
+  }
   const quantity = qs("[data-quantity]");
   qs("[data-quantity-minus]").addEventListener("click", () => quantity.value = Math.max(1, Number(quantity.value) - 1));
   qs("[data-quantity-plus]").addEventListener("click", () => quantity.value = Math.min(99, Number(quantity.value) + 1));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (product.unavailable) {
+      const feedback = qs("[data-cart-feedback]");
+      feedback.textContent = "Este produto estará disponível assim que o preço for definido.";
+      feedback.classList.add("visible");
+      return;
+    }
     const data = new FormData(form);
     const variant = data.get("variant");
     const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;

@@ -226,6 +226,7 @@ body[data-page="loja"] .page-hero { min-height:440px; padding-top:125px; padding
 .quantity-control button:active { transform:scale(.93); }
 .quantity-control input { width:54px; appearance:textfield; }
 .add-cart-button { width:100%; min-height:58px; margin-top:24px; border:0; border-radius:999px; background:var(--yellow); color:#090909; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; }
+.add-cart-button:disabled { background:#777; color:#fff; cursor:not-allowed; opacity:.72; }
 .cart-feedback { min-height:20px; margin:14px 0 0; color:#537600; text-align:center; font-size:12px; font-weight:700; opacity:0; transition:.2s ease; }
 .cart-feedback.visible { opacity:1; }
 .cart-toast { position:fixed; z-index:1000; top:calc(env(safe-area-inset-top, 0px) + 16px); left:50%; right:auto; width:min(420px,calc(100vw - 28px)); max-width:calc(100vw - 28px); box-sizing:border-box; padding:14px; display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:12px; border:1px solid #ffffff1f; border-radius:19px; background:#111111f2; color:#fff; box-shadow:0 18px 54px #0009; backdrop-filter:blur(22px); opacity:0; visibility:hidden; pointer-events:none; transform:translate(-50%,-18px) scale(.98); transition:opacity .24s ease,transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s; }
