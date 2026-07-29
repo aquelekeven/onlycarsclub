@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260728-v55";
+const PRODUCT_IMAGE_VERSION = "20260729-v56";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -255,6 +255,18 @@ const getCatalogPrice = (product, size, variant) => {
   const candidate = product.variantPrices?.[variant] ?? product.sizePrices?.[size] ?? product.value;
   return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
 };
+
+const READY_TO_DELIVER_PRODUCTS = new Set([
+  "moletom",
+  "adesivo-japones-p",
+  "adesivo-japones-m",
+  "adesivo-japones-g",
+  "adesivo-mascote"
+]);
+
+const isReadyToDeliver = (productId, variant) =>
+  READY_TO_DELIVER_PRODUCTS.has(productId) ||
+  (productId === "camiseta-oversized" && variant === "Preto");
 
 function normalizeCartItem(rawItem) {
   if (!rawItem || typeof rawItem !== "object" || typeof rawItem.id !== "string") return null;
@@ -721,14 +733,29 @@ function setupProductPage() {
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
   const priceElement = qs("[data-product-price]");
+  const availability = qs("[data-product-availability]");
+  const availabilityTitle = qs("[data-product-availability-title]");
+  const availabilityText = qs("[data-product-availability-text]");
   const addCartButton = qs(".add-cart-button", form);
   const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   let selectedPrice = getCatalogPrice(product, product.sizes[0], product.variants[0]);
+  const updateAvailability = (variant) => {
+    const ready = isReadyToDeliver(id, variant);
+    availability?.classList.toggle("ready", ready);
+    availability?.classList.toggle("production", !ready);
+    if (availabilityTitle) availabilityTitle.textContent = ready ? "Pronta entrega" : "Produção sob encomenda";
+    if (availabilityText) {
+      availabilityText.textContent = ready
+        ? "Produto disponível à pronta entrega. Após o pedido, combinaremos a entrega ou retirada."
+        : "Este produto vai para produção após o pedido. O prazo é de até 10 dias úteis para combinarmos a entrega ou retirada.";
+    }
+  };
   const updateSelectedPrice = () => {
     const selectedSize = qs('input[name="size"]:checked', form)?.value || product.sizes[0];
     const selectedVariant = qs('input[name="variant"]:checked', form)?.value || product.variants[0];
     selectedPrice = getCatalogPrice(product, selectedSize, selectedVariant);
     priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
+    updateAvailability(selectedVariant);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
     if (product.variantImages?.[input.value]) {
