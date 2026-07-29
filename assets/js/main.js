@@ -269,7 +269,9 @@ const getCatalogPrice = (product, size, variant) =>
   Math.round(getOriginalCatalogPrice(product, size, variant) * (1 - PROMOTION_DISCOUNT_RATE) * 100) / 100;
 
 const READY_TO_DELIVER_PRODUCTS = new Set([
+  "cropped",
   "moletom",
+  "chaveiro-onlynho-2",
   "adesivo-japones-p",
   "adesivo-japones-m",
   "adesivo-japones-g",
