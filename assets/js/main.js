@@ -237,10 +237,10 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Adesivos · Mascote",
     price:"A partir de R$ 15,00",
     value:15,
-    description:"Adesivo do mascote Onlynho, disponível em acabamento colorido, branco ou holográfico.",
+    description:"Adesivo do mascote Onlynho, disponível em acabamento colorido ou branco.",
     sizes:Object.freeze(["Único"]),
-    variants:Object.freeze(["Colorido","Branco","Holográfico"]),
-    variantPrices:Object.freeze({ Colorido:15, Branco:15, Holográfico:25 }),
+    variants:Object.freeze(["Colorido","Branco"]),
+    variantPrices:Object.freeze({ Colorido:15, Branco:15 }),
     images:Object.freeze([productImage("adesivo-mascote", "png")]),
     imageAlts:Object.freeze(["Imagem provisória do adesivo mascote Onlynho"])
   })
