@@ -1,0 +1,91 @@
+.install-app-button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.install-app-button:disabled {
+  cursor: default;
+  opacity: .7;
+}
+
+.app-install-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: end center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.app-install-dialog[hidden] {
+  display: none;
+}
+
+.app-install-card {
+  width: min(100%, 460px);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 24px;
+  color: #fff;
+  background: #111;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .5);
+}
+
+.app-install-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.15rem;
+}
+
+.app-install-card p {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, .76);
+  line-height: 1.55;
+}
+
+.app-install-card p:last-of-type {
+  margin-bottom: 20px;
+}
+
+.app-install-share-icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  margin: 0 3px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 7px;
+  color: #ffd41f;
+  font-size: .92rem;
+  vertical-align: -2px;
+}
+
+.app-install-close {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+@media (min-width: 700px) {
+  .app-install-dialog {
+    place-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-install-card {
+    animation: app-install-enter .22s ease-out both;
+  }
+}
+
+@keyframes app-install-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.98);
+  }
+}

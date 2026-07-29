@@ -1425,7 +1425,34 @@ function setupPageHeroParallax() {
   window.addEventListener("resize", requestRender, { passive:true });
 }
 
+function setupOnlyCarsAppMetadata() {
+  const head = document.head;
+  if (!head) return;
+
+  const upsertLink = (rel, href, attributes = {}) => {
+    let link = head.querySelector(`link[rel="${rel}"]`);
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = rel;
+      head.appendChild(link);
+    }
+    link.href = href;
+    Object.entries(attributes).forEach(([name, value]) => link.setAttribute(name, value));
+  };
+
+  upsertLink("icon", "assets/icons/favicon-32.png?v=20260729-v63", {
+    type:"image/png",
+    sizes:"32x32"
+  });
+  upsertLink("shortcut icon", "favicon.ico?v=20260729-v63");
+  upsertLink("apple-touch-icon", "assets/icons/apple-touch-icon.png?v=20260729-v63", {
+    sizes:"180x180"
+  });
+  upsertLink("manifest", "manifest.webmanifest?v=20260729-v63");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  setupOnlyCarsAppMetadata();
   setupPageTransitions();
   setupBottomNavigationStructure();
   setActiveNavigation();
