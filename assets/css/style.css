@@ -2257,3 +2257,139 @@ body.modal-open { overflow:hidden; }
   aspect-ratio:1 / 1;
   border-radius:50%!important;
 }
+
+/* v6.0 — promoção de lançamento da loja */
+.launch-sale-banner {
+  margin:38px 0 0;
+  padding:18px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  border:1px solid #126c3630;
+  border-radius:20px;
+  background:linear-gradient(135deg,#e9f8ee,#f6fff8);
+  color:#0d5a2b;
+}
+
+.launch-sale-banner strong {
+  font-size:clamp(17px,2vw,23px);
+  font-weight:950;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+}
+
+.launch-sale-banner span {
+  flex:0 0 auto;
+  padding:8px 12px;
+  border-radius:999px;
+  background:#168447;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+.products-heading {
+  margin-top:34px;
+}
+
+.product-copy {
+  padding:17px 20px 19px;
+}
+
+.product-copy h3 {
+  min-height:0;
+}
+
+.product-price {
+  margin-top:10px;
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:5px 8px;
+}
+
+.product-price strong {
+  margin:0;
+  color:#168447;
+  font-size:22px;
+  line-height:1;
+}
+
+.product-price del,
+.product-detail-pricing del,
+.cart-item-price del {
+  color:#aaa;
+  font-size:12px;
+  font-weight:650;
+}
+
+.product-price span,
+.product-detail-pricing span,
+.cart-item-price span {
+  flex-basis:100%;
+  width:max-content;
+  max-width:max-content;
+  padding:5px 8px;
+  border-radius:7px;
+  background:#dff4e6;
+  color:#0d5a2b;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.06em;
+  line-height:1;
+}
+
+.product-detail-pricing {
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:7px 10px;
+}
+
+.product-detail-pricing .product-detail-price {
+  color:#168447;
+}
+
+.product-detail-pricing span {
+  margin-top:2px;
+}
+
+.cart-item-price {
+  margin-top:7px;
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:5px 8px;
+}
+
+.cart-item-price strong {
+  color:#168447;
+}
+
+.cart-item-price span {
+  flex-basis:auto;
+}
+
+@media(max-width:600px) {
+  .launch-sale-banner {
+    padding:16px;
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .product-copy {
+    padding:14px 13px 16px;
+  }
+
+  .product-price {
+    gap:5px 6px;
+  }
+
+  .product-price strong {
+    font-size:18px;
+  }
+}

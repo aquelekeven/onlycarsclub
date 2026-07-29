@@ -3,6 +3,7 @@ const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)
 const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
+const PROMOTION_DISCOUNT_RATE = 0.1;
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -259,10 +260,13 @@ const getProductGallery = (product, variant = product.variants?.[0]) => ({
   alts:product.variantImageAlts?.[variant] || product.imageAlts || []
 });
 
-const getCatalogPrice = (product, size, variant) => {
+const getOriginalCatalogPrice = (product, size, variant) => {
   const candidate = product.variantPrices?.[variant] ?? product.sizePrices?.[size] ?? product.value;
   return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
 };
+
+const getCatalogPrice = (product, size, variant) =>
+  Math.round(getOriginalCatalogPrice(product, size, variant) * (1 - PROMOTION_DISCOUNT_RATE) * 100) / 100;
 
 const READY_TO_DELIVER_PRODUCTS = new Set([
   "moletom",
@@ -618,7 +622,6 @@ function setupProductPage() {
   const product = PRODUCT_CATALOG[id];
   qs("[data-product-name]").textContent = product.name;
   qs("[data-product-category]").textContent = product.category;
-  qs("[data-product-price]").textContent = product.price;
   qs("[data-product-description]").textContent = product.description;
   document.title = `${product.name} — Only Cars Club`;
   const productImageElement = qs("[data-product-image]");
@@ -741,6 +744,7 @@ function setupProductPage() {
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
   const priceElement = qs("[data-product-price]");
+  const originalPriceElement = qs("[data-product-original-price]");
   const availability = qs("[data-product-availability]");
   const availabilityTitle = qs("[data-product-availability-title]");
   const availabilityText = qs("[data-product-availability-text]");
@@ -761,8 +765,10 @@ function setupProductPage() {
   const updateSelectedPrice = () => {
     const selectedSize = qs('input[name="size"]:checked', form)?.value || product.sizes[0];
     const selectedVariant = qs('input[name="variant"]:checked', form)?.value || product.variants[0];
+    const originalPrice = getOriginalCatalogPrice(product, selectedSize, selectedVariant);
     selectedPrice = getCatalogPrice(product, selectedSize, selectedVariant);
     priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
+    if (originalPriceElement) originalPriceElement.textContent = formatPrice(originalPrice);
     updateAvailability(selectedVariant);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
@@ -964,7 +970,10 @@ function setupCartPage() {
       const info = document.createElement("div");
       const details = document.createElement("p");
       const title = document.createElement("h2");
+      const priceLine = document.createElement("div");
       const unitPrice = document.createElement("strong");
+      const originalUnitPrice = document.createElement("del");
+      const discountTag = document.createElement("span");
       const remove = document.createElement("button");
       const actions = document.createElement("div");
       const quantityControl = document.createElement("span");
@@ -983,14 +992,19 @@ function setupCartPage() {
       info.className = "cart-item-info";
       details.textContent = `${item.variant || "Padrão"}${item.size ? ` · ${item.size}` : ""}`;
       title.textContent = item.name;
+      const originalItemPrice = getOriginalCatalogPrice(PRODUCT_CATALOG[item.id], item.size, item.variant);
+      priceLine.className = "cart-item-price";
       unitPrice.textContent = formatCurrency(item.price);
+      originalUnitPrice.textContent = formatCurrency(originalItemPrice);
+      discountTag.textContent = "10% OFF";
+      priceLine.append(unitPrice, originalUnitPrice, discountTag);
       remove.type = "button";
       remove.className = "cart-remove";
       remove.dataset.cartRemove = "";
       remove.setAttribute("aria-label", `Excluir ${item.name}`);
       remove.title = "Excluir item";
       remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';
-      info.append(details, title, unitPrice, remove);
+      info.append(details, title, priceLine, remove);
 
       actions.className = "cart-item-actions";
       quantityControl.className = "quantity-control";
