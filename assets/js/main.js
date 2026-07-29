@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260728-v54";
+const PRODUCT_IMAGE_VERSION = "20260728-v55";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -207,8 +207,8 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho P, com 15 × 3,5 cm.",
     sizes:Object.freeze(["P"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho P"])
+    images:Object.freeze([productImage("adesivo-japones-p-v55", "png")]),
+    imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho P, 15 × 3,5 cm"])
   }),
   "adesivo-japones-m": Object.freeze({
     name:"Adesivo japonês M",
@@ -218,8 +218,8 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho M, com 31 × 7 cm.",
     sizes:Object.freeze(["M"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho M"])
+    images:Object.freeze([productImage("adesivo-japones-m-v55", "png")]),
+    imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho M, 31 × 7 cm"])
   }),
   "adesivo-japones-g": Object.freeze({
     name:"Adesivo japonês G",
@@ -229,8 +229,8 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho G, com 53 × 11 cm.",
     sizes:Object.freeze(["G"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória do adesivo japonês tamanho G"])
+    images:Object.freeze([productImage("adesivo-japones-g-v55", "png")]),
+    imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho G, 53 × 11 cm"])
   }),
   "adesivo-mascote": Object.freeze({
     name:"Adesivo mascote",
