@@ -1,4 +1,4 @@
-const CACHE_NAME = "onlycars-app-v63";
+const CACHE_NAME = "onlycars-app-v65";
 const OFFLINE_FILES = [
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const OFFLINE_FILES = [
   "./assets/css/pwa.css",
   "./assets/js/pwa.js",
   "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png"
+  "./assets/icons/icon-512.png",
+  "./assets/icons/icon-maskable-512.png"
 ];
 
 self.addEventListener("install", (event) => {

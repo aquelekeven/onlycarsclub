@@ -1,5 +1,6 @@
 (() => {
   let installPrompt = null;
+  let installButton = null;
 
   const isStandalone = () =>
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -61,43 +62,57 @@
     dialog.querySelector(".app-install-close").focus();
   };
 
+  const updateInstallButton = () => {
+    if (!installButton) return;
+    installButton.hidden = isStandalone() || (!isIos() && !installPrompt);
+  };
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt = event;
+    updateInstallButton();
   });
 
   window.addEventListener("appinstalled", () => {
     installPrompt = null;
-    const button = document.querySelector("#install-app-button");
-    if (button) button.hidden = true;
+    updateInstallButton();
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    const button = document.querySelector("#install-app-button");
-    if (!button) return;
+    installButton = document.querySelector("#install-app-button");
+    if (!installButton) return;
 
     if (isStandalone()) {
-      button.hidden = true;
+      installButton.hidden = true;
       return;
     }
 
     const dialog = createDialog();
-    button.addEventListener("click", async () => {
-      if (installPrompt) {
-        const prompt = installPrompt;
-        installPrompt = null;
-        await prompt.prompt();
-        await prompt.userChoice;
+    updateInstallButton();
+
+    installButton.addEventListener("click", async () => {
+      if (isIos()) {
+        showInstructions(dialog, true);
         return;
       }
 
-      showInstructions(dialog, isIos());
+      if (installPrompt) {
+        const prompt = installPrompt;
+        installPrompt = null;
+        updateInstallButton();
+        await prompt.prompt();
+        const choice = await prompt.userChoice;
+        if (choice.outcome === "dismissed" && !isStandalone()) {
+          installButton.hidden = false;
+        }
+        return;
+      }
+
+      updateInstallButton();
     });
   });
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js", { scope:"./" }).catch(() => {});
-    });
+    navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(() => {});
   }
 })();
