@@ -1,7 +1,14 @@
+.hero-actions {
+  flex-direction: column;
+  align-items: center;
+}
+
 .install-app-button {
-  border: 0;
   cursor: pointer;
-  font: inherit;
+  color: #fff;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, .9),
+    0 0 16px rgba(255, 255, 255, .55);
 }
 
 .install-app-button:disabled {
