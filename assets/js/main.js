@@ -1,6 +1,6 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const PRODUCT_IMAGE_VERSION = "20260729-v56";
+const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 
@@ -241,8 +241,16 @@ const PRODUCT_CATALOG = Object.freeze({
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Colorido","Branco"]),
     variantPrices:Object.freeze({ Colorido:15, Branco:15 }),
-    images:Object.freeze([productImage("adesivo-mascote", "png")]),
-    imageAlts:Object.freeze(["Imagem provisória do adesivo mascote Onlynho"])
+    images:Object.freeze([productImage("adesivo-mascote-colorido-v59", "png")]),
+    imageAlts:Object.freeze(["Adesivos coloridos do mascote Onlynho"]),
+    variantImages:Object.freeze({
+      Colorido:Object.freeze([productImage("adesivo-mascote-colorido-v59", "png")]),
+      Branco:Object.freeze([productImage("adesivo-mascote-branco-v59", "png")])
+    }),
+    variantImageAlts:Object.freeze({
+      Colorido:Object.freeze(["Adesivos coloridos do mascote Onlynho"]),
+      Branco:Object.freeze(["Adesivos brancos de recorte do mascote Onlynho com máscara de aplicação"])
+    })
   })
 });
 
