@@ -4,6 +4,14 @@ const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 const PROMOTION_DISCOUNT_RATE = 0.1;
+const MOLETOM_GIFT_OPTIONS = Object.freeze([
+  "Japonês P",
+  "Japonês M",
+  "Japonês G",
+  "Mascote colorido",
+  "Mascote branco",
+  "Mascote holográfico"
+]);
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -291,6 +299,9 @@ function normalizeCartItem(rawItem) {
   const quantity = Math.max(1, Math.min(99, Math.trunc(Number(rawItem.quantity) || 1)));
   const gallery = getProductGallery(product, variant);
   const imageIndex = product.variantImageIndices?.[variant] ?? 0;
+  const gift = rawItem.id === "moletom" && MOLETOM_GIFT_OPTIONS.includes(rawItem.gift)
+    ? rawItem.gift
+    : null;
   return {
     id:rawItem.id,
     name:product.name,
@@ -298,6 +309,7 @@ function normalizeCartItem(rawItem) {
     size,
     variant,
     quantity,
+    gift,
     image:gallery.images[imageIndex] || gallery.images[0] || "assets/images/placeholder.webp"
   };
 }
@@ -745,6 +757,13 @@ function setupProductPage() {
   renderOptions(qs("[data-size-options]"), "size", product.sizes);
   renderOptions(qs("[data-variant-options]"), "variant", product.variants, product.colorOptions);
   if (product.colorOptions) qs("[data-variant-legend]").textContent = "Cor";
+  const giftField = qs("[data-gift-field]");
+  if (id === "moletom" && giftField) {
+    giftField.hidden = false;
+    renderOptions(qs("[data-gift-options]", giftField), "gift", MOLETOM_GIFT_OPTIONS);
+    const firstGift = qs('input[name="gift"]', giftField);
+    if (firstGift) firstGift.checked = false;
+  }
   const priceElement = qs("[data-product-price]");
   const originalPriceElement = qs("[data-product-original-price]");
   const availability = qs("[data-product-availability]");
@@ -803,19 +822,28 @@ function setupProductPage() {
     }
     const data = new FormData(form);
     const variant = data.get("variant");
+    const gift = data.get("gift");
+    if (id === "moletom" && !MOLETOM_GIFT_OPTIONS.includes(gift)) {
+      const feedback = qs("[data-cart-feedback]");
+      feedback.textContent = "Escolha 1 adesivo de brinde para adicionar o moletom ao carrinho.";
+      feedback.classList.add("visible");
+      qs('input[name="gift"]', form)?.focus();
+      return;
+    }
     const cartGallery = getProductGallery(product, variant);
     const cartImageIndex = product.variantImageIndices?.[variant] ?? 0;
     const item = normalizeCartItem({
       id,
       size:data.get("size"),
       variant,
+      gift,
       quantity:Number(quantity.value) || 1,
       price:selectedPrice,
       image:cartGallery.images[cartImageIndex] || cartGallery.images[0]
     });
     if (!item) return;
     const cart = getCart();
-    const existing = cart.find((entry) => entry.id === item.id && entry.size === item.size && entry.variant === item.variant && entry.price === item.price);
+    const existing = cart.find((entry) => entry.id === item.id && entry.size === item.size && entry.variant === item.variant && entry.gift === item.gift && entry.price === item.price);
     if (existing) existing.quantity += item.quantity;
     else cart.push(item);
     saveCart(cart);
@@ -992,7 +1020,7 @@ function setupCartPage() {
       imageBox.appendChild(image);
 
       info.className = "cart-item-info";
-      details.textContent = `${item.variant || "Padrão"}${item.size ? ` · ${item.size}` : ""}`;
+      details.textContent = `${item.variant || "Padrão"}${item.size ? ` · ${item.size}` : ""}${item.gift ? ` · Brinde: ${item.gift}` : ""}`;
       title.textContent = item.name;
       const originalItemPrice = getOriginalCatalogPrice(PRODUCT_CATALOG[item.id], item.size, item.variant);
       priceLine.className = "cart-item-price";
@@ -1139,6 +1167,7 @@ function setupCheckoutFlow() {
       const lines = cart.map((item, index) => {
         const details = [
           `*${index + 1}. ${item.name}*${item.variant ? ` - ${item.variant}` : ""}${item.size ? ` - Tamanho: ${item.size}` : ""}`,
+          item.gift ? `Adesivo de brinde: *${item.gift}* (grátis)` : "",
           Number(item.quantity) > 1 ? `Quantidade: ${item.quantity}` : "",
           `Valor unitário: ${formatCurrency(item.price)}`,
           Number(item.quantity) > 1 ? `Subtotal: ${formatCurrency(item.price * item.quantity)}` : ""
