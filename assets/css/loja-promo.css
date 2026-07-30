@@ -1,0 +1,71 @@
+/* v7.0 — comunicação da promoção de lançamento na vitrine */
+.shop-promo .promo-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.product-visual > span {
+  background: #ffd41f;
+  color: #111;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+}
+
+.product-card-pricing {
+  min-height: 30px;
+  margin-top: 15px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.product-copy .product-card-pricing strong {
+  display: inline;
+  margin: 0;
+  color: #111;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.product-card-pricing del {
+  color: #999;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+@media (max-width: 600px) {
+  .shop-promo .promo-pill {
+    margin-bottom: 14px;
+    padding: 7px 10px;
+    font-size: 8px;
+  }
+
+  .shop-promo .promo-mark {
+    margin-right: -18px;
+    font-size: clamp(82px, 28vw, 130px);
+  }
+
+  .product-card-pricing {
+    min-height: 27px;
+    margin-top: 11px;
+    gap: 5px;
+  }
+
+  .product-copy .product-card-pricing strong {
+    font-size: 18px;
+  }
+
+  .product-card-pricing del {
+    font-size: 10px;
+  }
+}
