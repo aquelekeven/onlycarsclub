@@ -1,12 +1,36 @@
-/* v7.0 — comunicação da promoção de lançamento na vitrine */
-.shop-promo .promo-pill {
+/* v7.1 — promoção separada, sem alterar o banner amarelo nem as tags dos cards */
+.launch-promo {
+  position: relative;
+  min-height: 190px;
+  margin-top: 24px;
+  padding: 30px 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 88% 30%, rgba(255, 212, 31, .2), transparent 34%),
+    #111;
+  color: #fff;
+}
+
+.launch-promo-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 650px;
+}
+
+.launch-promo-kicker {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 18px;
-  padding: 8px 13px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
   border-radius: 999px;
-  background: #111;
-  color: #fff;
+  background: #ffd41f;
+  color: #111;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .1em;
@@ -14,10 +38,32 @@
   text-transform: uppercase;
 }
 
-.product-visual > span {
-  background: #ffd41f;
-  color: #111;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+.launch-promo h2 {
+  color: #fff;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: .98;
+}
+
+.launch-promo h2 strong {
+  color: #ffd41f;
+}
+
+.launch-promo p {
+  max-width: 570px;
+  margin: 15px 0 0;
+  color: rgba(255, 255, 255, .7);
+  line-height: 1.55;
+}
+
+.launch-promo-mark {
+  flex: 0 0 auto;
+  color: #ffd41f;
+  font-size: clamp(86px, 12vw, 160px);
+  font-weight: 950;
+  letter-spacing: -.1em;
+  line-height: .7;
+  opacity: .18;
+  transform: rotate(-5deg);
 }
 
 .product-card-pricing {
@@ -32,27 +78,46 @@
 .product-copy .product-card-pricing strong {
   display: inline;
   margin: 0;
-  color: #111;
+  color: #18864b;
   font-size: 22px;
   line-height: 1;
 }
 
 .product-card-pricing del {
-  color: #999;
+  color: #8f8f8f;
   font-size: 12px;
   font-weight: 650;
 }
 
 @media (max-width: 600px) {
-  .shop-promo .promo-pill {
-    margin-bottom: 14px;
+  .launch-promo {
+    min-height: 175px;
+    margin-top: 16px;
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .launch-promo-kicker {
+    margin-bottom: 12px;
     padding: 7px 10px;
     font-size: 8px;
   }
 
-  .shop-promo .promo-mark {
+  .launch-promo h2 {
+    max-width: 260px;
+    font-size: 31px;
+  }
+
+  .launch-promo p {
+    max-width: 250px;
+    font-size: 11px;
+  }
+
+  .launch-promo-mark {
+    position: absolute;
+    right: 0;
     margin-right: -18px;
-    font-size: clamp(82px, 28vw, 130px);
+    font-size: clamp(82px, 27vw, 128px);
   }
 
   .product-card-pricing {
