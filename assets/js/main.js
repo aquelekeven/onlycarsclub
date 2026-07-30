@@ -383,7 +383,10 @@ function setupBottomNavigationDrag(navigation, links, activeIndex) {
   };
 
   navigation.addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
+    // O arraste entre abas é uma interação exclusiva de toque.
+    // Capturar o ponteiro do mouse no desktop pode transformar um clique
+    // normal em gesto e impedir a navegação do link.
+    if (event.pointerType !== "touch") return;
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
