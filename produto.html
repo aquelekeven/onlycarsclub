@@ -12,7 +12,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=20260729-v63">
   <link rel="manifest" href="manifest.webmanifest?v=20260729-v63">
   <link rel="stylesheet" href="assets/css/style.css?v=20260729-v60">
-  <script src="assets/js/main.js?v=20260730-v68" defer></script>
+  <link rel="stylesheet" href="assets/css/loja-promo.css?v=20260802-v72">
+  <script src="assets/js/main.js?v=20260802-v72" defer></script>
 </head>
 <body data-page="loja">
 <header class="header">
@@ -35,10 +36,10 @@
     <form class="product-info" data-product-form>
       <p class="eyebrow" data-product-category>Only Cars Supply</p>
       <h1 data-product-name>Produto Only Cars</h1>
-      <div class="product-detail-pricing">
-        <strong class="product-detail-price" data-product-price>R$ 0,00</strong>
-        <del data-product-original-price>R$ 0,00</del>
-        <span>10% OFF</span>
+      <div class="product-detail-pricing" aria-label="Preço promocional e preço original">
+        <span class="product-detail-price-group"><small>Preço de lançamento</small><strong class="product-detail-price" data-product-price>R$ 0,00</strong></span>
+        <span class="product-detail-original-group"><small>Preço original</small><del data-product-original-price>R$ 0,00</del></span>
+        <span class="product-detail-discount">10% OFF</span>
       </div>
       <p class="product-description" data-product-description>Produto oficial Only Cars Club.</p>
       <div class="product-availability" data-product-availability aria-live="polite">

@@ -249,6 +249,7 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo do mascote Onlynho, disponível em acabamento colorido ou branco.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Colorido","Branco"]),
+    colorOptions:true,
     variantPrices:Object.freeze({ Colorido:15, Branco:15 }),
     images:Object.freeze([productImage("adesivo-mascote-colorido-v59", "png")]),
     imageAlts:Object.freeze(["Adesivos coloridos do mascote Onlynho"]),
@@ -542,23 +543,30 @@ function setupCarousel() {
   let dragged = false;
   let startX = 0;
   let startScroll = 0;
+  let dragPointerId = null;
 
+  const setActive = (index) => {
+    active = Math.max(0, Math.min(index, cards.length - 1));
+    cards.forEach((card, cardIndex) => card.dataset.active = String(cardIndex === active));
+    if (previous) previous.hidden = active === 0;
+    if (next) next.hidden = active === cards.length - 1;
+    if (reset) reset.hidden = active !== cards.length - 1;
+  };
   const update = () => {
     const center = carousel.getBoundingClientRect().left + carousel.clientWidth / 2;
-    active = cards.reduce((best, card, index) => {
+    const centeredIndex = cards.reduce((best, card, index) => {
       const box = card.getBoundingClientRect();
       return Math.abs(box.left + box.width / 2 - center) < best.distance
         ? { index, distance: Math.abs(box.left + box.width / 2 - center) }
         : best;
     }, { index: 0, distance: Infinity }).index;
-    cards.forEach((card, index) => card.dataset.active = String(index === active));
-    if (previous) previous.hidden = active === 0;
-    if (next) next.hidden = active === cards.length - 1;
-    if (reset) reset.hidden = active !== cards.length - 1;
+    setActive(centeredIndex);
   };
   const goTo = (index) => {
-    const card = cards[Math.max(0, Math.min(index, cards.length - 1))];
+    const targetIndex = Math.max(0, Math.min(index, cards.length - 1));
+    const card = cards[targetIndex];
     if (!card) return;
+    setActive(targetIndex);
     const outer = carousel.getBoundingClientRect();
     const inner = card.getBoundingClientRect();
     carousel.scrollTo({ left: carousel.scrollLeft + inner.left + inner.width / 2 - outer.left - outer.width / 2, behavior: "smooth" });
@@ -571,25 +579,36 @@ function setupCarousel() {
     dragged = false;
     startX = event.clientX;
     startScroll = carousel.scrollLeft;
-    carousel.setPointerCapture(event.pointerId);
+    dragPointerId = event.pointerId;
   });
   carousel.addEventListener("pointermove", (event) => {
     if (!dragging) return;
     const distance = event.clientX - startX;
-    if (Math.abs(distance) > 5) dragged = true;
+    if (Math.abs(distance) > 5 && !dragged) {
+      dragged = true;
+      carousel.setPointerCapture?.(event.pointerId);
+    }
     carousel.scrollLeft = startScroll - distance;
   });
   carousel.addEventListener("pointerup", () => {
     dragging = false;
+    if (dragPointerId !== null && carousel.hasPointerCapture?.(dragPointerId)) carousel.releasePointerCapture(dragPointerId);
+    dragPointerId = null;
     window.setTimeout(() => goTo(active), 30);
   });
+  carousel.addEventListener("pointercancel", () => {
+    dragging = false;
+    dragPointerId = null;
+  });
   cards.forEach((card, index) => card.addEventListener("click", (event) => {
-    if (dragged || active !== index) {
+    const isHighlighted = card.dataset.active === "true";
+    if (dragged || !isHighlighted) {
       event.preventDefault();
+      event.stopPropagation();
       dragged = false;
       goTo(index);
     }
-  }));
+  }, true));
   previous?.addEventListener("click", () => goTo(active - 1));
   next?.addEventListener("click", () => goTo(active + 1));
   reset?.addEventListener("click", () => goTo(0));
@@ -602,6 +621,130 @@ function setupShop() {
   if (!buttons.length || !cards.length) return;
   qsa("[data-product-image-key]").forEach((image) => {
     image.src = productImage(image.dataset.productImageKey, image.dataset.productImageExtension || "webp");
+  });
+
+  const colorNames = {
+    Preto:"#111111",
+    Branco:"#f5f5f1",
+    Amarelo:"#ffd41f",
+    Colorido:"linear-gradient(135deg,#ffd41f 0 33%,#eb3838 33% 66%,#2684ff 66%)"
+  };
+
+  const uniqueEntries = (entries) => entries.filter((entry, index, list) =>
+    list.findIndex((candidate) => candidate.src === entry.src) === index
+  );
+
+  const getCardGallery = (product) => {
+    if (product.variantImages) {
+      return uniqueEntries(product.variants.flatMap((variant) => {
+        const images = product.variantImages[variant] || [];
+        const alts = product.variantImageAlts?.[variant] || [];
+        return images.map((src, index) => ({ src, alt:alts[index] || product.name, variant }));
+      }));
+    }
+    return uniqueEntries((product.images || []).map((src, index) => ({
+      src,
+      alt:product.imageAlts?.[index] || product.name,
+      variant:product.variants.find((variant) => product.variantImageIndices?.[variant] === index) || product.variants[0]
+    })));
+  };
+
+  cards.forEach((card) => {
+    const href = card.getAttribute("href") || "";
+    const id = new URL(href, location.href).searchParams.get("id");
+    const product = PRODUCT_CATALOG[id];
+    const visual = qs(".product-visual", card);
+    const image = qs(".product-photo", visual);
+    const copy = qs(".product-copy", card);
+    if (!product || !visual || !image || !copy) return;
+
+    const entries = getCardGallery(product);
+    if (!entries.length) return;
+    let currentIndex = 0;
+    let pointerStartX = null;
+    let pointerId = null;
+    let suppressNextClick = false;
+
+    const status = document.createElement("span");
+    status.className = "product-gallery-status";
+    status.setAttribute("aria-live", "polite");
+
+    const dots = document.createElement("div");
+    dots.className = "product-gallery-dots";
+    dots.setAttribute("aria-hidden", "true");
+    entries.forEach(() => dots.appendChild(document.createElement("i")));
+
+    const renderImage = (index) => {
+      currentIndex = (index + entries.length) % entries.length;
+      const entry = entries[currentIndex];
+      image.src = entry.src;
+      image.alt = entry.alt;
+      status.textContent = entries.length > 1 ? `${currentIndex + 1} / ${entries.length}` : "";
+      qsa("i", dots).forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === currentIndex));
+      qsa("[data-card-variant]", card).forEach((swatch) => {
+        const selected = swatch.dataset.cardVariant === entry.variant;
+        swatch.classList.toggle("active", selected);
+        swatch.setAttribute("aria-pressed", String(selected));
+      });
+    };
+
+    if (entries.length > 1) {
+      visual.classList.add("has-card-gallery");
+      visual.append(status, dots);
+      image.draggable = false;
+      image.addEventListener("dragstart", (event) => event.preventDefault());
+      visual.addEventListener("pointerdown", (event) => {
+        if (event.target.closest("button")) return;
+        pointerStartX = event.clientX;
+        pointerId = event.pointerId;
+        visual.setPointerCapture?.(pointerId);
+      });
+      visual.addEventListener("pointerup", (event) => {
+        if (pointerStartX === null) return;
+        const distance = event.clientX - pointerStartX;
+        pointerStartX = null;
+        if (pointerId !== null && visual.hasPointerCapture?.(pointerId)) visual.releasePointerCapture(pointerId);
+        pointerId = null;
+        if (Math.abs(distance) < 32) return;
+        event.preventDefault();
+        suppressNextClick = true;
+        renderImage(currentIndex + (distance < 0 ? 1 : -1));
+      });
+      visual.addEventListener("pointercancel", () => {
+        pointerStartX = null;
+        pointerId = null;
+      });
+    }
+
+    card.addEventListener("click", (event) => {
+      if (!suppressNextClick) return;
+      event.preventDefault();
+      suppressNextClick = false;
+    }, true);
+
+    if (product.colorOptions && product.variants.length > 1) {
+      const options = document.createElement("div");
+      options.className = "product-card-colors";
+      options.setAttribute("aria-label", "Cores disponíveis");
+      product.variants.forEach((variant) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.dataset.cardVariant = variant;
+        swatch.title = variant;
+        swatch.setAttribute("aria-label", `Ver cor ${variant}`);
+        swatch.style.setProperty("--swatch-color", colorNames[variant] || "#c9c9c9");
+        swatch.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const targetIndex = entries.findIndex((entry) => entry.variant === variant);
+          if (targetIndex >= 0) renderImage(targetIndex);
+        });
+        options.appendChild(swatch);
+      });
+      copy.appendChild(options);
+    }
+
+    renderImage(0);
   });
   const title = qs("[data-products-title]");
   const count = qs("[data-products-count]");
@@ -792,7 +935,13 @@ function setupProductPage() {
     const originalPrice = getOriginalCatalogPrice(product, selectedSize, selectedVariant);
     selectedPrice = getCatalogPrice(product, selectedSize, selectedVariant);
     priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
-    if (originalPriceElement) originalPriceElement.textContent = formatPrice(originalPrice);
+    priceElement.hidden = false;
+    priceElement.setAttribute("aria-label", `Preço promocional: ${priceElement.textContent}`);
+    if (originalPriceElement) {
+      originalPriceElement.textContent = formatPrice(originalPrice);
+      originalPriceElement.hidden = false;
+      originalPriceElement.setAttribute("aria-label", `Preço original: ${originalPriceElement.textContent}`);
+    }
     updateAvailability(selectedVariant);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {

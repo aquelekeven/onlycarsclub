@@ -89,6 +89,130 @@
   font-weight: 650;
 }
 
+/* Galeria rápida dos cards: o gesto horizontal troca a foto sem abrir o produto. */
+.product-visual.has-card-gallery {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.product-visual.has-card-gallery:active {
+  cursor: grabbing;
+}
+
+.product-gallery-status {
+  position: absolute;
+  z-index: 3;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, .76);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.product-gallery-dots {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 14px;
+  display: flex;
+  max-width: 48%;
+  gap: 4px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.product-gallery-dots i {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(17, 17, 17, .24);
+}
+
+.product-gallery-dots i.active {
+  background: #111;
+  transform: scale(1.25);
+}
+
+.product-card-colors {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.product-card-colors button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  box-shadow: 0 0 0 1px #c9c9c9;
+  cursor: pointer;
+}
+
+.product-card-colors button.active {
+  box-shadow: 0 0 0 2px #111;
+}
+
+/* Preço promocional e original sempre visíveis dentro do produto. */
+.product-detail-pricing {
+  margin: 18px 0 22px;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.product-detail-price-group,
+.product-detail-original-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-detail-pricing small {
+  color: #777;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.product-detail-pricing .product-detail-price {
+  display: block;
+  margin: 0;
+  color: #18864b;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.product-detail-original-group del {
+  color: #8f8f8f;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.product-detail-discount {
+  margin-bottom: 1px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #e7f6ee;
+  color: #18864b;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 @media (max-width: 600px) {
   .launch-promo {
     min-height: 175px;
@@ -132,5 +256,29 @@
 
   .product-card-pricing del {
     font-size: 10px;
+  }
+
+  .product-gallery-status {
+    right: 9px;
+    bottom: 9px;
+  }
+
+  .product-gallery-dots {
+    bottom: 11px;
+    gap: 3px;
+  }
+
+  .product-card-colors {
+    gap: 6px;
+    margin-top: 9px;
+  }
+
+  .product-card-colors button {
+    width: 18px;
+    height: 18px;
+  }
+
+  .product-detail-pricing .product-detail-price {
+    font-size: 28px;
   }
 }
