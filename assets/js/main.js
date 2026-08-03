@@ -21,23 +21,21 @@ const PRODUCT_CATALOG = Object.freeze({
     value:120,
     description:"Camiseta oversized Only Cars, com modelagem ampla e confortável.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
-    variants:Object.freeze(["Preto","Branco"]),
+    variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
       productImage("camiseta-oversized-frente-modelo"),
       productImage("camiseta-oversized-costas-modelo"),
       productImage("camiseta-oversized-frente"),
-      productImage("camiseta-oversized-costas"),
-      productImage("camiseta-oversized-branca", "png")
+      productImage("camiseta-oversized-costas")
     ]),
     imageAlts:Object.freeze([
       "Camiseta oversized preta Only Cars, vista frontal com modelo",
       "Camiseta oversized preta Only Cars, vista traseira com modelo",
       "Camiseta oversized preta Only Cars, vista frontal",
-      "Camiseta oversized preta Only Cars, vista traseira",
-      "Imagem provisória da camiseta oversized branca Only Cars"
+      "Camiseta oversized preta Only Cars, vista traseira"
     ]),
-    variantImageIndices:Object.freeze({ Preto:0, Branco:4 })
+    variantImageIndices:Object.freeze({ Preto:0 })
   }),
   cropped: Object.freeze({
     name:"Cropped",
@@ -101,8 +99,8 @@ const PRODUCT_CATALOG = Object.freeze({
   "chaveiro-onlynho-1": Object.freeze({
     name:"Chaveiro mascote resina",
     category:"Chaveiros · Mascote",
-    price:"R$ 20,00",
-    value:20,
+    price:"R$ 25,00",
+    value:25,
     description:"Chaveiro de resina com o mascote Onlynho para levar o clube com você.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Resina"]),
@@ -135,8 +133,8 @@ const PRODUCT_CATALOG = Object.freeze({
   "copo-termico": Object.freeze({
     name:"Copo térmico Only",
     category:"Acessórios · Copos",
-    price:"R$ 45,00",
-    value:45,
+    price:"R$ 75,00",
+    value:75,
     description:"Copo térmico do Only Cars Club para acompanhar encontros, viagens e o dia a dia.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
@@ -665,10 +663,6 @@ function setupShop() {
     let pointerId = null;
     let suppressNextClick = false;
 
-    const status = document.createElement("span");
-    status.className = "product-gallery-status";
-    status.setAttribute("aria-live", "polite");
-
     const dots = document.createElement("div");
     dots.className = "product-gallery-dots";
     dots.setAttribute("aria-hidden", "true");
@@ -679,7 +673,6 @@ function setupShop() {
       const entry = entries[currentIndex];
       image.src = entry.src;
       image.alt = entry.alt;
-      status.textContent = entries.length > 1 ? `${currentIndex + 1} / ${entries.length}` : "";
       qsa("i", dots).forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === currentIndex));
       qsa("[data-card-variant]", card).forEach((swatch) => {
         const selected = swatch.dataset.cardVariant === entry.variant;
@@ -690,7 +683,7 @@ function setupShop() {
 
     if (entries.length > 1) {
       visual.classList.add("has-card-gallery");
-      visual.append(status, dots);
+      visual.append(dots);
       image.draggable = false;
       image.addEventListener("dragstart", (event) => event.preventDefault());
       visual.addEventListener("pointerdown", (event) => {
@@ -1354,7 +1347,6 @@ function setupLiquidGlass() {
     ".carousel-reset",
     ".button",
     ".category-strip button",
-    ".product-card",
     ".card:not(.value-card)",
     ".event-item",
     ".product-visual button",
