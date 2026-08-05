@@ -88,6 +88,8 @@ body[data-page="sobre"] .page-hero {
 }
 
 /* Painel administrativo */
+body.admin-access-pending { visibility:hidden; }
+.admin-page [hidden] { display:none!important; }
 .admin-page { min-height:100vh; padding:110px 24px 120px; background:#080808; color:#fff; }
 .admin-shell { width:min(1180px,100%); margin:0 auto; }
 .admin-account-link,.account-admin-link { color:#0a0a0a; background:#efd311; border-radius:999px; padding:10px 16px; text-decoration:none; font-weight:800; font-size:.82rem; }

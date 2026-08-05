@@ -160,24 +160,32 @@
   async function initialize() {
     if (!qs("[data-admin-page]")) return;
     const loading = qs("[data-admin-loading]");
-    const denied = qs("[data-admin-denied]");
     const content = qs("[data-admin-content]");
+    let user;
+    let profile;
+
     try {
-      const user = await client.getUser();
-      if (!user) throw new Error("Faça login com uma conta administradora para continuar.");
+      user = await client.getUser();
+      if (!user) return location.replace("index.html");
       const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=role,display_name`);
-      const profile = profiles?.[0];
-      if (profile?.role !== "admin") throw new Error("Sua conta não possui permissão de administrador.");
-      qs("[data-admin-name]").textContent = profile.display_name || "Administrador";
-      qs("[data-admin-email]").textContent = user.email;
+      profile = profiles?.[0];
+      if (profile?.role !== "admin") return location.replace("index.html");
+    } catch (_) {
+      return location.replace("index.html");
+    }
+
+    qs("[data-admin-name]").textContent = profile.display_name || "Administrador";
+    qs("[data-admin-email]").textContent = user.email;
+    loading.hidden = true;
+    content.hidden = false;
+    document.body.classList.remove("admin-access-pending");
+    bindInteractions();
+
+    try {
       await loadData();
-      bindInteractions();
-      loading.hidden = true;
-      content.hidden = false;
     } catch (error) {
-      loading.hidden = true;
-      denied.hidden = false;
-      qs("[data-admin-denied-message]").textContent = error.message || "Não foi possível validar seu acesso.";
+      feedback("[data-orders-feedback]", error.message || "Não foi possível carregar os pedidos.", "error");
+      feedback("[data-inventory-feedback]", error.message || "Não foi possível carregar o estoque.", "error");
     }
   }
 

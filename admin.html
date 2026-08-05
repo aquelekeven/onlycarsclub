@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260805-admin1">
-  <script src="assets/js/main.js?v=20260805-admin1" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260805-admin1" defer></script>
-  <script src="assets/js/admin.js?v=20260805-admin1" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260805-admin2">
+  <script src="assets/js/main.js?v=20260805-admin2" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260805-admin2" defer></script>
+  <script src="assets/js/admin.js?v=20260805-admin2" defer></script>
 </head>
-<body data-page="admin" data-admin-page>
+<body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
     <a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a>
     <a class="admin-account-link" href="minha-conta.html">Minha conta</a>
@@ -22,12 +23,6 @@
     <div class="admin-shell">
       <section class="account-state" data-admin-loading>
         <strong>Carregando o painel...</strong><span>Validando seu acesso de administrador.</span>
-      </section>
-
-      <section class="account-state" data-admin-denied hidden>
-        <strong>Acesso restrito.</strong>
-        <span data-admin-denied-message>Este painel está disponível apenas para administradores.</span>
-        <div class="actions"><a class="button primary" href="login.html">Entrar</a><a class="button ghost" href="index.html">Ir ao início</a></div>
       </section>
 
       <div data-admin-content hidden>
