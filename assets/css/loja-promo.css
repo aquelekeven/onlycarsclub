@@ -215,7 +215,7 @@
   overflow: visible;
 }
 
-/* A regra promocional antiga estiliza spans; a linha de preço não pode herdar o selo. */
+/* Mantém a linha de valores neutra, independentemente do elemento usado no HTML. */
 .product-detail-pricing > .product-detail-price-row {
   margin: 0;
 }

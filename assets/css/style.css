@@ -2492,7 +2492,7 @@ body.modal-open { overflow:hidden; }
 }
 
 .product-price span,
-.product-detail-pricing span,
+.product-detail-pricing > .product-detail-discount,
 .cart-item-price span {
   flex-basis:100%;
   width:max-content;
@@ -2518,7 +2518,7 @@ body.modal-open { overflow:hidden; }
   color:#168447;
 }
 
-.product-detail-pricing span {
+.product-detail-pricing > .product-detail-discount {
   margin-top:2px;
 }
 
