@@ -1,4 +1,4 @@
-/* v7.4 — preços internos, galeria desktop e seletores estabilizados */
+/* v7.5 — preços responsivos e galeria da vitrine sem setas */
 .launch-promo {
   position: relative;
   min-height: 190px;
@@ -67,7 +67,9 @@
 }
 
 .product-card-pricing {
+  box-sizing: border-box;
   min-width: 0;
+  width: 100%;
   max-width: 100%;
   min-height: 30px;
   margin-top: 15px;
@@ -78,20 +80,24 @@
 }
 
 .product-copy .product-card-pricing strong {
+  flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  display: inline;
+  display: block;
   margin: 0;
   color: #18864b;
   font-size: 22px;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .product-card-pricing del {
+  flex: 0 1 auto;
   max-width: 100%;
   color: #8f8f8f;
   font-size: 12px;
   font-weight: 650;
+  white-space: nowrap;
 }
 
 /* Galeria rápida dos cards: o gesto horizontal troca a foto sem abrir o produto. */
@@ -130,49 +136,9 @@
   transform: scale(1.25);
 }
 
+/* Compatibilidade com JavaScript antigo em cache: nunca exibir setas na vitrine. */
 .product-visual .product-card-gallery-control {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  padding: 0 0 2px;
-  border: 1px solid rgba(255, 255, 255, .72);
-  border-radius: 50%;
-  background: rgba(17, 17, 17, .76);
-  color: #fff;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, .2);
-  font: 500 27px/1 system-ui, sans-serif;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) scale(.94);
-  transition: opacity .18s ease, transform .18s ease, background .18s ease, color .18s ease;
-}
-
-.product-visual .product-card-gallery-control.previous {
-  right: auto;
-  left: 12px;
-}
-
-.product-visual .product-card-gallery-control.next {
-  right: 12px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .product-visual.has-card-gallery .product-card-gallery-control,
-  .product-card-gallery-control:focus-visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(-50%) scale(1);
-  }
-
-  .product-visual .product-card-gallery-control:hover {
-    background: #ffd41f;
-    color: #111;
-  }
+  display: none !important;
 }
 
 .product-card-colors {
@@ -217,10 +183,12 @@
 /* Preço promocional e normal sempre visíveis dentro do produto. */
 .product-info {
   min-width: 0;
+  width: 100%;
   max-width: 100%;
 }
 
 .product-detail-pricing {
+  box-sizing: border-box;
   min-width: 0;
   width: 100%;
   max-width: 100%;
@@ -244,6 +212,7 @@
   gap: 10px;
   border-radius: 0;
   background: transparent;
+  overflow: visible;
 }
 
 /* A regra promocional antiga estiliza spans; a linha de preço não pode herdar o selo. */
@@ -252,6 +221,7 @@
 }
 
 .product-detail-pricing .product-detail-price {
+  flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
   display: block;
@@ -260,15 +230,18 @@
   border-radius: 0;
   background: transparent;
   color: #18864b;
-  font-size: 32px;
+  font-size: clamp(25px, 3.2vw, 32px);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .product-detail-price-row del {
+  flex: 0 1 auto;
   color: #8f8f8f;
   font-size: 15px;
   font-weight: 650;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .product-detail-pricing > .product-detail-discount {
@@ -381,11 +354,7 @@
     height: 18px;
   }
 
-  .product-visual .product-card-gallery-control {
-    display: none;
-  }
-
   .product-detail-pricing .product-detail-price {
-    font-size: 28px;
+    font-size: clamp(25px, 8vw, 28px);
   }
 }
