@@ -1595,8 +1595,20 @@ function setupOnlyCarsAppMetadata() {
   upsertLink("manifest", "manifest.webmanifest?v=20260729-v63");
 }
 
+function setupAccountShortcut() {
+  const header = qs(".header");
+  if (!header || qs(".account-shortcut", header)) return;
+  const link = document.createElement("a");
+  link.className = "account-shortcut";
+  link.href = "minha-conta.html";
+  link.setAttribute("aria-label", "Minha conta");
+  link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
+  header.appendChild(link);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupOnlyCarsAppMetadata();
+  setupAccountShortcut();
   setupPageTransitions();
   setupBottomNavigationStructure();
   setActiveNavigation();
