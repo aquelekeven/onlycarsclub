@@ -66,6 +66,25 @@
     return data;
   }
 
+  function wait(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  }
+
+  async function authenticatedRequest(path, options = {}) {
+    const delays = [700, 1200, 2100];
+    let attempt = 0;
+    while (true) {
+      try {
+        return await request(path, options);
+      } catch (error) {
+        const isClockSkew = error?.message?.toLowerCase().includes("jwt issued at future");
+        if (!isClockSkew || attempt >= delays.length) throw error;
+        await wait(delays[attempt]);
+        attempt += 1;
+      }
+    }
+  }
+
   async function refreshSession(session) {
     if (!session?.refresh_token) return null;
     try {
@@ -90,7 +109,7 @@
   }
 
   async function signUp({ name, email, password }) {
-    const redirectTo = `${location.origin}/minha-conta.html`;
+    const redirectTo = `${location.origin}/confirmacao-email.html`;
     const result = await request(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
       method: "POST",
       body: { email, password, data: { name } }
@@ -140,6 +159,11 @@
 
   function consumeAuthRedirect() {
     const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const redirectError = hash.get("error_description") || hash.get("error");
+    if (redirectError) {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+      return { error: redirectError };
+    }
     const accessToken = hash.get("access_token");
     if (!accessToken) return null;
     const session = storeSession({
@@ -156,7 +180,7 @@
   async function getUser() {
     const session = await getSession();
     if (!session) return null;
-    const user = await request("/auth/v1/user", { token: session.access_token });
+    const user = await authenticatedRequest("/auth/v1/user", { token: session.access_token });
     storeSession({ ...session, user });
     return user;
   }
@@ -164,7 +188,7 @@
   async function rest(path, options = {}) {
     const session = await getSession();
     if (!session) throw new SupabaseRequestError("Faça login para continuar.", 401);
-    return request(`/rest/v1/${path}`, {
+    return authenticatedRequest(`/rest/v1/${path}`, {
       ...options,
       token: session.access_token,
       headers: { Accept: "application/json", ...options.headers }

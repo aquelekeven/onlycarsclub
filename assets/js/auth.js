@@ -156,6 +156,26 @@
     });
   }
 
+  function setupEmailConfirmation(redirect) {
+    const page = qs("[data-confirmation-page]");
+    if (!page) return;
+    const loading = qs("[data-confirmation-loading]", page);
+    const success = qs("[data-confirmation-success]", page);
+    const failure = qs("[data-confirmation-error]", page);
+    const failureMessage = qs("[data-confirmation-error-message]", page);
+
+    loading.hidden = true;
+    if (redirect?.session && ["signup", "email"].includes(redirect.type)) {
+      success.hidden = false;
+      return;
+    }
+
+    failure.hidden = false;
+    if (redirect?.error && failureMessage) {
+      failureMessage.textContent = "O link de confirmação é inválido, expirou ou já foi utilizado.";
+    }
+  }
+
   function formatCpf(value) {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     return digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
@@ -328,6 +348,7 @@
     setupLogin();
     setupSignup();
     setupRecovery();
+    setupEmailConfirmation(redirect);
     await setupPasswordUpdate(redirect);
     await setupAccount();
   });

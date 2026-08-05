@@ -363,6 +363,12 @@ body.modal-open { overflow:hidden; }
 .form-feedback { min-height:1.4em; margin:0; color:#ff786f; font-size:12px; line-height:1.45; }
 .form-feedback[data-type="success"] { color:#62d894; }
 .auth-page [hidden],.account-page [hidden] { display:none!important; }
+.confirmation-state { display:grid; justify-items:center; gap:17px; text-align:center; }
+.confirmation-mark { width:68px; height:68px; display:grid; place-items:center; border-radius:50%; background:var(--yellow); color:#090909; font-size:34px; font-weight:900; }
+.confirmation-mark.error { border:1px solid #ffffff2a; background:#ffffff0d; color:#fff; }
+.confirmation-state h2 { margin:2px 0 0; font-size:clamp(27px,5vw,38px); }
+.confirmation-state>p { max-width:400px; margin:0; color:#aaa; line-height:1.6; }
+.confirmation-actions { width:100%; display:grid; gap:10px; margin-top:7px; }
 .account-page { min-height:100vh; padding:132px 7vw 115px; background:linear-gradient(180deg,#0b0b0b,#15130b); }
 .account-wrap { width:min(1050px,100%); margin:auto; }
 .account-top { display:flex; align-items:flex-end; justify-content:space-between; gap:22px; margin-bottom:30px; }

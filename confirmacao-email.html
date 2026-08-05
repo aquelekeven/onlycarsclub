@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Confirmação de e-mail — Only Cars Club</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260805-v75">
+  <script src="assets/js/main.js?v=20260805-v75" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260805-v75" defer></script>
+  <script src="assets/js/auth.js?v=20260805-v75" defer></script>
+</head>
+<body data-page="conta">
+  <header class="header"><a href="index.html" class="brand" aria-label="Only Cars Club — início"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
+  <nav class="bottom-nav" aria-label="Navegação principal"></nav>
+  <main class="auth-page">
+    <div class="auth-shell" data-confirmation-page>
+      <section class="auth-card">
+        <div class="confirmation-state" data-confirmation-loading>
+          <p>Confirmando seu e-mail...</p>
+        </div>
+        <div class="confirmation-state" data-confirmation-success hidden>
+          <span class="confirmation-mark" aria-hidden="true">✓</span>
+          <p class="eyebrow">Conta Only</p>
+          <h2>E-mail confirmado com sucesso.</h2>
+          <p>Sua conta está pronta. Agora você já pode acompanhar seus dados e pedidos.</p>
+          <div class="confirmation-actions">
+            <a class="button primary" href="index.html">Ir para o início</a>
+            <a class="button ghost" href="minha-conta.html">Entrar na minha conta</a>
+          </div>
+        </div>
+        <div class="confirmation-state" data-confirmation-error hidden>
+          <span class="confirmation-mark error" aria-hidden="true">!</span>
+          <p class="eyebrow">Não foi dessa vez</p>
+          <h2>Não conseguimos confirmar o e-mail.</h2>
+          <p data-confirmation-error-message>Este link não contém uma confirmação válida. Tente entrar; se necessário, faça um novo cadastro.</p>
+          <div class="confirmation-actions">
+            <a class="button primary" href="login.html">Ir para o login</a>
+            <a class="button ghost" href="index.html">Voltar ao início</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
