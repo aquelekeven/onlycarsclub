@@ -225,6 +225,8 @@
       const role = qs("[data-account-role]");
       role.textContent = profile.role === "admin" ? "Administrador" : "Cliente";
       role.dataset.role = profile.role || "customer";
+      const adminLink = qs("[data-admin-link]");
+      if (adminLink) adminLink.hidden = profile.role !== "admin";
       profileForm.display_name.value = profile.display_name || "";
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";

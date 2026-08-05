@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Painel administrativo — Only Cars Club</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260805-admin1">
+  <script src="assets/js/main.js?v=20260805-admin1" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260805-admin1" defer></script>
+  <script src="assets/js/admin.js?v=20260805-admin1" defer></script>
+</head>
+<body data-page="admin" data-admin-page>
+  <header class="header">
+    <a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a>
+    <a class="admin-account-link" href="minha-conta.html">Minha conta</a>
+  </header>
+  <nav class="bottom-nav" aria-label="Navegação principal"></nav>
+
+  <main class="admin-page">
+    <div class="admin-shell">
+      <section class="account-state" data-admin-loading>
+        <strong>Carregando o painel...</strong><span>Validando seu acesso de administrador.</span>
+      </section>
+
+      <section class="account-state" data-admin-denied hidden>
+        <strong>Acesso restrito.</strong>
+        <span data-admin-denied-message>Este painel está disponível apenas para administradores.</span>
+        <div class="actions"><a class="button primary" href="login.html">Entrar</a><a class="button ghost" href="index.html">Ir ao início</a></div>
+      </section>
+
+      <div data-admin-content hidden>
+        <header class="admin-hero">
+          <div><p class="eyebrow">Administração</p><h1>Painel da <em>Only.</em></h1><p>Pedidos, produtos e estoque em um só lugar.</p></div>
+          <div class="admin-user"><span>Conectado como</span><strong data-admin-name>Administrador</strong><small data-admin-email></small></div>
+        </header>
+
+        <nav class="admin-tabs" aria-label="Seções do painel">
+          <button class="active" type="button" data-admin-tab="dashboard">Visão geral</button>
+          <button type="button" data-admin-tab="orders">Pedidos</button>
+          <button type="button" data-admin-tab="inventory">Estoque</button>
+        </nav>
+
+        <section class="admin-panel active" data-admin-panel="dashboard">
+          <div class="admin-stat-grid">
+            <article class="admin-stat"><span>Pedidos recentes</span><strong data-stat-orders>0</strong><small>últimos 50</small></article>
+            <article class="admin-stat"><span>Aguardando pagamento</span><strong data-stat-pending>0</strong><small>pedidos pendentes</small></article>
+            <article class="admin-stat"><span>Unidades disponíveis</span><strong data-stat-stock>0</strong><small>descontadas as reservas</small></article>
+            <article class="admin-stat"><span>Estoque zerado</span><strong data-stat-zero>0</strong><small>variações ativas</small></article>
+          </div>
+          <section class="admin-card-panel">
+            <div class="admin-section-heading"><div><p class="eyebrow">Atividade</p><h2>Pedidos mais recentes</h2></div><button type="button" data-open-tab="orders">Ver todos</button></div>
+            <div class="admin-orders" data-dashboard-orders></div>
+          </section>
+        </section>
+
+        <section class="admin-panel" data-admin-panel="orders" hidden>
+          <div class="admin-section-heading"><div><p class="eyebrow">Operação</p><h2>Pedidos recentes</h2></div><button type="button" data-admin-refresh>Atualizar</button></div>
+          <div class="admin-toolbar"><label class="admin-search"><span>Buscar pedido ou cliente</span><input type="search" data-order-search placeholder="Ex.: ONLY-001000 ou nome"></label></div>
+          <p class="admin-feedback" data-orders-feedback role="status"></p>
+          <div class="admin-orders" data-admin-orders></div>
+        </section>
+
+        <section class="admin-panel" data-admin-panel="inventory" hidden>
+          <div class="admin-section-heading"><div><p class="eyebrow">Catálogo</p><h2>Estoque por variação</h2></div><button type="button" data-admin-refresh>Atualizar</button></div>
+          <p class="admin-intro">Preencha a quantidade física de cada combinação. O disponível considera o que já estiver reservado em pedidos.</p>
+          <div class="admin-toolbar"><label class="admin-search"><span>Buscar produto, SKU, tamanho ou cor</span><input type="search" data-stock-search placeholder="Ex.: streetwear preta M"></label></div>
+          <p class="admin-feedback" data-inventory-feedback role="status"></p>
+          <div class="admin-inventory" data-admin-inventory></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
