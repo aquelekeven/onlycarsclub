@@ -195,6 +195,13 @@
     });
   }
 
+  async function publicRest(path, options = {}) {
+    return request(`/rest/v1/${path}`, {
+      ...options,
+      headers: { Accept: "application/json", ...options.headers }
+    });
+  }
+
   window.OnlySupabase = {
     getSession,
     getUser,
@@ -204,6 +211,7 @@
     sendPasswordReset,
     updatePassword,
     consumeAuthRedirect,
+    publicRest,
     rest,
     projectUrl: PROJECT_URL
   };
