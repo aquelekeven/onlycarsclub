@@ -275,19 +275,42 @@ const getOriginalCatalogPrice = (product, size, variant) => {
 const getCatalogPrice = (product, size, variant) =>
   Math.round(getOriginalCatalogPrice(product, size, variant) * (1 - PROMOTION_DISCOUNT_RATE) * 100) / 100;
 
-const READY_TO_DELIVER_PRODUCTS = new Set([
-  "cropped",
-  "moletom",
-  "chaveiro-onlynho-2",
-  "adesivo-japones-p",
-  "adesivo-japones-m",
-  "adesivo-japones-g",
-  "adesivo-mascote"
-]);
+const publicInventory = { promise:null };
+const inventoryKey = (productId, size, variant) => [productId, size || "", variant || ""].join("\u0000");
 
-const isReadyToDeliver = (productId, variant) =>
-  READY_TO_DELIVER_PRODUCTS.has(productId) ||
-  (productId === "camiseta-oversized" && variant === "Preto");
+async function loadPublicInventory(force = false) {
+  if (force) publicInventory.promise = null;
+  if (publicInventory.promise) return publicInventory.promise;
+  publicInventory.promise = (async () => {
+    if (!window.OnlySupabase?.publicRest) throw new Error("Catálogo indisponível.");
+    const products = await window.OnlySupabase.publicRest(
+      "products?select=slug,product_variants(size,color,stock_quantity,reserved_quantity,active)&active=eq.true"
+    );
+    const variants = new Map();
+    (products || []).forEach((product) => {
+      (product.product_variants || []).filter((variant) => variant.active).forEach((variant) => {
+        const available = Math.max(0, Number(variant.stock_quantity || 0) - Number(variant.reserved_quantity || 0));
+        variants.set(inventoryKey(product.slug, variant.size, variant.color), available);
+      });
+    });
+    return variants;
+  })().catch((error) => {
+    publicInventory.promise = null;
+    throw error;
+  });
+  return publicInventory.promise;
+}
+
+function watchPublicInventory(render) {
+  const refresh = () => loadPublicInventory(true).then(render).catch(() => render(null));
+  const timer = window.setInterval(() => {
+    if (!document.hidden) refresh();
+  }, 60000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refresh();
+  });
+  window.addEventListener("pagehide", () => window.clearInterval(timer), { once:true });
+}
 
 function normalizeCartItem(rawItem) {
   if (!rawItem || typeof rawItem !== "object" || typeof rawItem.id !== "string") return null;
@@ -655,6 +678,13 @@ function setupShop() {
     const image = qs(".product-photo", visual);
     const copy = qs(".product-copy", card);
     if (!product || !visual || !image || !copy) return;
+    card.dataset.productId = id;
+
+    const availability = document.createElement("span");
+    availability.className = "product-card-availability loading";
+    availability.textContent = "Consultando disponibilidade";
+    availability.setAttribute("aria-live", "polite");
+    copy.appendChild(availability);
 
     const entries = getCardGallery(product);
     if (!entries.length) return;
@@ -765,6 +795,26 @@ function setupShop() {
     apply();
   }));
   apply();
+
+  const renderAvailability = (inventory) => {
+    cards.forEach((card) => {
+      const product = PRODUCT_CATALOG[card.dataset.productId];
+      const status = qs(".product-card-availability", card);
+      if (!product || !status) return;
+      if (!inventory) {
+        status.className = "product-card-availability unknown";
+        status.textContent = "Disponibilidade sob consulta";
+        return;
+      }
+      const ready = product.sizes.some((size) => product.variants.some((variant) =>
+        Number(inventory.get(inventoryKey(card.dataset.productId, size, variant)) || 0) > 0
+      ));
+      status.className = `product-card-availability ${ready ? "ready" : "production"}`;
+      status.textContent = ready ? "Pronta entrega" : "Sob encomenda";
+    });
+  };
+  loadPublicInventory().then(renderAvailability).catch(() => renderAvailability(null));
+  watchPublicInventory(renderAvailability);
 }
 
 function setupProductPage() {
@@ -911,15 +961,25 @@ function setupProductPage() {
   const addCartButton = qs(".add-cart-button", form);
   const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   let selectedPrice = getCatalogPrice(product, product.sizes[0], product.variants[0]);
-  const updateAvailability = (variant) => {
-    const ready = isReadyToDeliver(id, variant);
+  let inventory = null;
+  let inventoryFailed = false;
+  const updateAvailability = (size, variant) => {
+    if (!inventory) {
+      availability?.classList.remove("ready", "production");
+      if (availabilityTitle) availabilityTitle.textContent = inventoryFailed ? "Disponibilidade sob consulta" : "Consultando disponibilidade";
+      if (availabilityText) availabilityText.textContent = inventoryFailed
+        ? "Você pode comprar normalmente. Nossa equipe confirmará o prazo desta opção."
+        : "Estamos verificando o estoque desta opção.";
+      return;
+    }
+    const ready = Number(inventory.get(inventoryKey(id, size, variant)) || 0) > 0;
     availability?.classList.toggle("ready", ready);
     availability?.classList.toggle("production", !ready);
-    if (availabilityTitle) availabilityTitle.textContent = ready ? "Pronta entrega" : "Produção sob encomenda";
+    if (availabilityTitle) availabilityTitle.textContent = ready ? "Pronta entrega" : "Produto sob encomenda";
     if (availabilityText) {
       availabilityText.textContent = ready
-        ? "Produto disponível à pronta entrega. Após o pedido, combinaremos a entrega ou retirada."
-        : "Este produto vai para produção após o pedido. O prazo é de até 10 dias úteis para combinarmos a entrega ou retirada.";
+        ? "Esta opção está disponível à pronta entrega. Após o pedido, combinaremos a entrega ou retirada."
+        : "Você pode comprar normalmente. Esta opção será produzida sob encomenda, com prazo de até 10 dias úteis para combinarmos a entrega ou retirada.";
     }
   };
   const updateSelectedPrice = () => {
@@ -935,7 +995,7 @@ function setupProductPage() {
       originalPriceElement.hidden = false;
       originalPriceElement.setAttribute("aria-label", `Preço original: ${originalPriceElement.textContent}`);
     }
-    updateAvailability(selectedVariant);
+    updateAvailability(selectedSize, selectedVariant);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
     if (product.variantImages?.[input.value]) {
@@ -950,6 +1010,13 @@ function setupProductPage() {
     updateSelectedPrice();
   }));
   updateSelectedPrice();
+  const renderInventory = (nextInventory) => {
+    inventory = nextInventory;
+    inventoryFailed = !nextInventory;
+    updateSelectedPrice();
+  };
+  loadPublicInventory().then(renderInventory).catch(() => renderInventory(null));
+  watchPublicInventory(renderInventory);
   if (product.unavailable && addCartButton) {
     addCartButton.disabled = true;
     addCartButton.textContent = "Preço em definição";
