@@ -1,4 +1,4 @@
-/* v7.3 — promoção preservada e apresentação dos produtos estabilizada */
+/* v7.4 — preços internos, galeria desktop e seletores estabilizados */
 .launch-promo {
   position: relative;
   min-height: 190px;
@@ -162,7 +162,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .product-visual.has-card-gallery:hover .product-card-gallery-control,
+  .product-visual.has-card-gallery .product-card-gallery-control,
   .product-card-gallery-control:focus-visible {
     opacity: 1;
     pointer-events: auto;
@@ -232,6 +232,7 @@
 }
 
 .product-detail-pricing .product-detail-price-row {
+  box-sizing: border-box;
   flex-basis: auto;
   min-width: 0;
   width: 100%;
@@ -243,6 +244,11 @@
   gap: 10px;
   border-radius: 0;
   background: transparent;
+}
+
+/* A regra promocional antiga estiliza spans; a linha de preço não pode herdar o selo. */
+.product-detail-pricing > .product-detail-price-row {
+  margin: 0;
 }
 
 .product-detail-pricing .product-detail-price {
