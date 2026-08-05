@@ -698,6 +698,15 @@ function setupShop() {
     dots.setAttribute("aria-hidden", "true");
     entries.forEach(() => dots.appendChild(document.createElement("i")));
 
+    const createGalleryControl = (direction, label, symbol) => {
+      const control = document.createElement("button");
+      control.type = "button";
+      control.className = `product-card-gallery-control ${direction}`;
+      control.setAttribute("aria-label", label);
+      control.textContent = symbol;
+      return control;
+    };
+
     const renderImage = (index) => {
       currentIndex = (index + entries.length) % entries.length;
       const entry = entries[currentIndex];
@@ -713,7 +722,19 @@ function setupShop() {
 
     if (entries.length > 1) {
       visual.classList.add("has-card-gallery");
-      visual.append(dots);
+      const previousControl = createGalleryControl("previous", "Foto anterior", "‹");
+      const nextControl = createGalleryControl("next", "Próxima foto", "›");
+      previousControl.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        renderImage(currentIndex - 1);
+      });
+      nextControl.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        renderImage(currentIndex + 1);
+      });
+      visual.append(previousControl, nextControl, dots);
       image.draggable = false;
       image.addEventListener("dragstart", (event) => event.preventDefault());
       visual.addEventListener("pointerdown", (event) => {
