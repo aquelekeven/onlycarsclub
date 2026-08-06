@@ -1095,6 +1095,7 @@ function saveCart(cart) {
   if (!normalizedCart.length) {
     sessionStorage.removeItem("onlyCarsDelivery");
     sessionStorage.removeItem("onlyCarsShippingQuote");
+    sessionStorage.removeItem("onlyCarsCheckoutCustomer");
     sessionStorage.removeItem("onlyCarsCheckoutMaxStep");
   }
   updateCartCount(normalizedCart);
@@ -1353,6 +1354,137 @@ function buildShippingPackage(cart) {
   return Object.freeze({ ...dimensions, weightGrams, weightKg:weightGrams / 1000 });
 }
 
+async function setupCheckoutCustomer(deliveryForm) {
+  const section = qs("[data-checkout-customer]", deliveryForm);
+  if (!section) return null;
+  const status = qs("[data-checkout-customer-status]", section);
+  const email = qs("[data-checkout-customer-email]", section);
+  const client = window.OnlySupabase;
+  const setStatus = (message, state = "") => {
+    if (!status) return;
+    status.textContent = message;
+    status.dataset.state = state;
+  };
+  if (!client?.getUser || !client?.rest) {
+    setStatus("Não foi possível carregar o acesso à sua conta.", "error");
+    return null;
+  }
+  const user = await client.getUser().catch(() => null);
+  if (!user) {
+    location.replace("login.html?next=entrega.html");
+    return null;
+  }
+  if (email) email.textContent = user.email || "";
+  let addressId = null;
+  try {
+    const [profiles, addresses] = await Promise.all([
+      client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,display_name,phone,tax_id`),
+      client.rest("addresses?select=id,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1")
+    ]);
+    const profile = profiles?.[0] || {};
+    const address = addresses?.[0] || {};
+    addressId = address.id || null;
+    const values = {
+      recipient_name:address.recipient_name || profile.display_name || "",
+      phone:profile.phone || "",
+      tax_id:profile.tax_id || "",
+      postal_code:address.postal_code || "",
+      street:address.street || "",
+      number:address.number || "",
+      complement:address.complement || "",
+      neighborhood:address.neighborhood || "",
+      city:address.city || "",
+      state:address.state || ""
+    };
+    Object.entries(values).forEach(([name, value]) => {
+      const input = deliveryForm.elements[name];
+      if (input) input.value = String(value);
+    });
+    const postalCode = deliveryForm.elements.postal_code;
+    if (postalCode?.value) {
+      const digits = postalCode.value.replace(/\D/g, "").slice(0, 8);
+      postalCode.value = digits.replace(/(\d{5})(\d)/, "$1-$2");
+    }
+    setStatus(addressId ? "Endereço principal carregado. Você pode atualizar os dados abaixo." : "Complete os dados para salvar seu endereço principal.", "success");
+  } catch (error) {
+    setStatus(error?.message || "Não foi possível carregar seus dados. Preencha-os para continuar.", "error");
+  }
+
+  const phoneInput = deliveryForm.elements.phone;
+  const taxIdInput = deliveryForm.elements.tax_id;
+  phoneInput?.addEventListener("input", () => {
+    const digits = phoneInput.value.replace(/\D/g, "").slice(0, 11);
+    phoneInput.value = digits.length > 10
+      ? digits.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3")
+      : digits.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
+  });
+  taxIdInput?.addEventListener("input", () => {
+    const digits = taxIdInput.value.replace(/\D/g, "").slice(0, 11);
+    taxIdInput.value = digits
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  });
+
+  return {
+    user,
+    async save() {
+      const formData = new FormData(deliveryForm);
+      const phone = String(formData.get("phone") || "").replace(/\D/g, "");
+      const taxId = String(formData.get("tax_id") || "").replace(/\D/g, "");
+      const postalCode = String(formData.get("postal_code") || "").replace(/\D/g, "");
+      const state = String(formData.get("state") || "").trim().toUpperCase();
+      if (![10, 11].includes(phone.length)) throw new Error("Digite um telefone com DDD válido.");
+      if (taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
+      if (postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
+      if (!/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
+      const recipientName = String(formData.get("recipient_name") || "").trim();
+      const address = {
+        user_id:user.id,
+        label:"Principal",
+        recipient_name:recipientName,
+        postal_code:postalCode,
+        street:String(formData.get("street") || "").trim(),
+        number:String(formData.get("number") || "").trim(),
+        complement:String(formData.get("complement") || "").trim() || null,
+        neighborhood:String(formData.get("neighborhood") || "").trim(),
+        city:String(formData.get("city") || "").trim(),
+        state,
+        is_default:true
+      };
+      setStatus("Salvando seus dados...", "loading");
+      await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
+        method:"PATCH",
+        headers:{ Prefer:"return=minimal" },
+        body:{ display_name:recipientName, phone, tax_id:taxId }
+      });
+      if (addressId) {
+        await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
+          method:"PATCH",
+          headers:{ Prefer:"return=minimal" },
+          body:address
+        });
+      } else {
+        const created = await client.rest("addresses", {
+          method:"POST",
+          headers:{ Prefer:"return=representation" },
+          body:address
+        });
+        addressId = created?.[0]?.id || null;
+      }
+      const checkoutCustomer = {
+        email:user.email || "",
+        phone,
+        taxId,
+        ...address
+      };
+      sessionStorage.setItem("onlyCarsCheckoutCustomer", JSON.stringify(checkoutCustomer));
+      setStatus("Dados de entrega salvos.", "success");
+      return checkoutCustomer;
+    }
+  };
+}
+
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
   const hasCompanionProduct = cart.some((item) => !item.pickupOnly);
@@ -1389,6 +1521,7 @@ function setupCheckoutFlow() {
   }
 
   if (deliveryForm) {
+    const customerPromise = setupCheckoutCustomer(deliveryForm);
     const error = qs("[data-checkout-error]", deliveryForm);
     const calculator = qs("[data-shipping-calculator]", deliveryForm);
     const postalCodeInput = qs("[data-shipping-postal-code]", deliveryForm);
@@ -1485,6 +1618,8 @@ function setupCheckoutFlow() {
 
     const calculateShipping = async () => {
       if (!shippingPackage || !postalCodeInput || !calculateButton) return;
+      const customer = await customerPromise;
+      if (!customer) return;
       const postalCode = postalCodeInput.value.replace(/\D/g, "");
       if (postalCode.length !== 8) {
         setShippingStatus("Digite um CEP válido com 8 números.", "error");
@@ -1528,13 +1663,22 @@ function setupCheckoutFlow() {
       calculateShipping();
     });
 
-    deliveryForm.addEventListener("submit", (event) => {
+    deliveryForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      const customer = await customerPromise;
+      if (!customer) return;
+      if (!deliveryForm.reportValidity()) return;
       const selectedInput = qs('input[name="delivery"]:checked', deliveryForm);
       const selected = selectedInput?.value || "";
       if (!isDeliveryAllowed(selected)
         || (!hasCompanionProduct && selected === "Pedir um motoboy para retirar")) {
         if (error) error.textContent = "Escolha uma forma de entrega disponível para este pedido.";
+        return;
+      }
+      try {
+        await customer.save();
+      } catch (customerError) {
+        if (error) error.textContent = customerError?.message || "Revise os dados de entrega.";
         return;
       }
       if (selected.startsWith("Envio — ")) {
