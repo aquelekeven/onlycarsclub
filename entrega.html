@@ -43,7 +43,10 @@
         <div class="field"><label for="checkout-neighborhood">Bairro</label><input id="checkout-neighborhood" name="neighborhood" required></div>
         <div class="field"><label for="checkout-city">Cidade</label><input id="checkout-city" name="city" autocomplete="address-level2" required></div>
       </div>
-      <p class="checkout-customer-status" data-checkout-customer-status aria-live="polite">Carregando os dados da sua conta...</p>
+      <div class="checkout-customer-footer">
+        <p class="checkout-customer-status" data-checkout-customer-status aria-live="polite">Carregando os dados da sua conta...</p>
+        <button class="checkout-save-customer" type="button" data-checkout-save-customer>Salvar dados</button>
+      </div>
     </section>
 
     <section class="shipping-calculator" data-shipping-calculator aria-labelledby="shipping-title">
