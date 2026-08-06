@@ -202,6 +202,14 @@
     });
   }
 
+  async function invokeFunction(name, body) {
+    if (!/^[a-z0-9-]+$/.test(name)) throw new SupabaseRequestError("Função inválida.", 400);
+    return request(`/functions/v1/${name}`, {
+      method: "POST",
+      body
+    });
+  }
+
   window.OnlySupabase = {
     getSession,
     getUser,
@@ -211,6 +219,7 @@
     sendPasswordReset,
     updatePassword,
     consumeAuthRedirect,
+    invokeFunction,
     publicRest,
     rest,
     projectUrl: PROJECT_URL
