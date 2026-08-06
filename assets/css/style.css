@@ -2558,3 +2558,166 @@ body.modal-open { overflow:hidden; }
     font-size:18px;
   }
 }
+
+
+/* v8.4 — cálculo de frete pelo Melhor Envio */
+.shipping-calculator {
+  padding:22px;
+  display:grid;
+  gap:18px;
+  border:1px solid #d7d6cf;
+  border-radius:22px;
+  background:linear-gradient(145deg,#fff,#f7f6f0);
+  box-shadow:0 8px 28px #0000000a;
+}
+.shipping-calculator.is-unavailable {
+  opacity:.76;
+}
+.shipping-calculator-heading {
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.shipping-calculator-heading > span:last-child {
+  display:grid;
+  gap:4px;
+}
+.shipping-calculator-heading strong {
+  font-size:17px;
+  letter-spacing:-.02em;
+}
+.shipping-calculator-heading small {
+  color:#73726d;
+  font-size:11px;
+}
+.shipping-calculator-icon {
+  width:46px;
+  height:46px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:#111;
+  color:var(--yellow);
+}
+.shipping-calculator-icon svg {
+  width:25px;
+  height:25px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.shipping-postal-code {
+  display:grid;
+  gap:7px;
+}
+.shipping-postal-code > label {
+  color:#595853;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.shipping-postal-code > div {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+}
+.shipping-postal-code input {
+  min-width:0;
+  min-height:52px;
+  padding:0 15px;
+  border:1px solid #d2d1cb;
+  border-radius:14px;
+  background:#fff;
+  color:#111;
+  font:inherit;
+  font-size:16px;
+  outline:none;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.shipping-postal-code input:focus {
+  border-color:#99978e;
+  box-shadow:0 0 0 3px #f6d50040;
+}
+.shipping-postal-code button {
+  min-height:52px;
+  padding:0 20px;
+  border:0;
+  border-radius:14px;
+  background:#111;
+  color:#fff;
+  font:inherit;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.shipping-postal-code button:hover {
+  background:#292929;
+}
+.shipping-postal-code button:disabled {
+  opacity:.55;
+  cursor:wait;
+}
+.shipping-status {
+  min-height:18px;
+  margin:-3px 0 0;
+  color:#65645f;
+  font-size:11px;
+  line-height:1.45;
+}
+.shipping-status[data-state="error"] { color:#bd271f; font-weight:700; }
+.shipping-status[data-state="success"] { color:#27713b; font-weight:700; }
+.shipping-status[data-state="loading"] { color:#655900; }
+.shipping-results {
+  display:grid;
+  gap:9px;
+}
+.shipping-results:empty {
+  display:none;
+}
+.shipping-option {
+  min-height:72px;
+  box-shadow:none;
+}
+.shipping-option-icon {
+  border-radius:50%;
+  background:#f1f0ea;
+  font-size:20px;
+  font-weight:900;
+}
+.delivery-divider {
+  display:flex;
+  align-items:center;
+  gap:13px;
+  margin:7px 0;
+  color:#898883;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.delivery-divider::before,
+.delivery-divider::after {
+  content:"";
+  height:1px;
+  flex:1;
+  background:#d8d7d1;
+}
+
+@media(max-width:520px) {
+  .shipping-calculator {
+    padding:18px;
+    border-radius:19px;
+  }
+  .shipping-postal-code > div {
+    grid-template-columns:1fr;
+  }
+  .shipping-postal-code button {
+    width:100%;
+  }
+}
