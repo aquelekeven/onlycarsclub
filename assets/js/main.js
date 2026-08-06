@@ -20,6 +20,7 @@ const PRODUCT_CATALOG = Object.freeze({
     price:"R$ 120,00",
     value:120,
     weightGrams:320,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Camiseta oversized Only Cars, com modelagem ampla e confortável.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Preto"]),
@@ -62,6 +63,7 @@ const PRODUCT_CATALOG = Object.freeze({
     price:"R$ 195,00",
     value:195,
     weightGrams:600,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
     sizes:Object.freeze(["P","M","G","XG"]),
     variants:Object.freeze(["Preto"]),
@@ -150,6 +152,7 @@ const PRODUCT_CATALOG = Object.freeze({
     price:"R$ 120,00",
     value:120,
     weightGrams:320,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Camiseta oversized amarela com estampa exclusiva Only Cars.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Amarelo"]),
@@ -169,6 +172,7 @@ const PRODUCT_CATALOG = Object.freeze({
     price:"R$ 80,00",
     value:80,
     weightGrams:250,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Camiseta streetwear Only Cars, disponível nas cores preta, amarela e branca.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Preto","Amarelo","Branco"]),
@@ -337,6 +341,7 @@ function normalizeCartItem(rawItem) {
     quantity,
     gift,
     weightGrams:Number(product.weightGrams) || 0,
+    shippingEligible:Boolean(product.shippingPackage && product.weightGrams),
     pickupOnly:/^(Chaveiros|Adesivos)/.test(product.category),
     image:gallery.images[imageIndex] || gallery.images[0] || "assets/images/placeholder.webp"
   };
@@ -1333,9 +1338,24 @@ function setupCartPage() {
   render();
 }
 
+function buildShippingPackage(cart) {
+  const items = cart.filter((item) => Number(item.quantity) > 0);
+  if (!items.length || items.some((item) => !item.shippingEligible)) return null;
+  const quantity = items.reduce((total, item) => total + Number(item.quantity), 0);
+  const weightGrams = items.reduce(
+    (total, item) => total + Number(item.weightGrams) * Number(item.quantity),
+    0
+  );
+  const dimensions = quantity === 1
+    ? { length:30, width:20, height:8 }
+    : { length:70, width:50, height:8 };
+  return Object.freeze({ ...dimensions, weightGrams, weightKg:weightGrams / 1000 });
+}
+
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
   const hasCompanionProduct = cart.some((item) => !item.pickupOnly);
+  const shippingPackage = buildShippingPackage(cart);
   const registeredWeightGrams = cart.reduce(
     (total, item) => total + (Number(item.weightGrams) || 0) * Number(item.quantity),
     0
@@ -1420,6 +1440,7 @@ function setupCheckoutFlow() {
         `Entrega: _${delivery}_`,
         `Pagamento: _${payment}_`,
         registeredWeightGrams > 0 ? `Peso cadastrado dos produtos: _${registeredWeightGrams} g_` : null,
+        shippingPackage ? `Pacote: _${shippingPackage.length} × ${shippingPackage.width} × ${shippingPackage.height} cm_` : null,
         "",
         `*TOTAL DOS PRODUTOS: ${formatCurrency(total)}*`,
         "_Produto, cor, tamanho, quantidade e valores serão conferidos pela equipe antes da confirmação._",
