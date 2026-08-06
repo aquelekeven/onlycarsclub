@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Entrega — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260805-v81">
-  <script src="assets/js/main.js?v=20260806-v83" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260806-v84">
+  <script src="assets/js/supabase-client.js?v=20260806-v84" defer></script>
+  <script src="assets/js/main.js?v=20260806-v84" defer></script>
 </head>
 <body data-page="loja">
 <header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
@@ -16,7 +17,7 @@
   <section class="checkout-heading">
     <p class="eyebrow">Etapa 3 de 4</p>
     <h1>Como você quer receber?</h1>
-    <p>A entrega será combinada diretamente com o Only pelo WhatsApp.</p>
+    <p>Calcule o envio para seu CEP ou escolha uma das opções de retirada.</p>
     <ol class="checkout-steps" data-checkout-steps data-current-step="3" aria-label="Etapas da compra">
       <li data-step="1"><a href="loja.html" aria-label="Ir para produtos"><span>1</span><b>Produtos</b></a></li>
       <li data-step="2"><a href="carrinho.html" aria-label="Ir para o carrinho"><span>2</span><b>Carrinho</b></a></li>
@@ -25,6 +26,26 @@
     </ol>
   </section>
   <form class="checkout-options" data-delivery-form>
+    <section class="shipping-calculator" data-shipping-calculator aria-labelledby="shipping-title">
+      <div class="shipping-calculator-heading">
+        <span class="shipping-calculator-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 7h11v10H3Z"/><path d="M14 10h4l3 3v4h-7Z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        </span>
+        <span><strong id="shipping-title">Receber no seu endereço</strong><small>Consulte preço e prazo com o Melhor Envio.</small></span>
+      </div>
+      <div class="shipping-postal-code">
+        <label for="shipping-postal-code">CEP de destino</label>
+        <div>
+          <input id="shipping-postal-code" data-shipping-postal-code type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" aria-describedby="shipping-status">
+          <button type="button" data-shipping-calculate>Calcular frete</button>
+        </div>
+      </div>
+      <p class="shipping-status" id="shipping-status" data-shipping-status aria-live="polite"></p>
+      <div class="shipping-results" data-shipping-results></div>
+    </section>
+
+    <div class="delivery-divider"><span>ou escolha uma retirada</span></div>
+
     <label class="checkout-option">
       <input type="radio" name="delivery" value="Retirar no próximo evento do Only" required>
       <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v3M19 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m9 14 2 2 4-5"/></svg></span>
