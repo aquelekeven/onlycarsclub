@@ -2939,3 +2939,58 @@ body.modal-open { overflow:hidden; }
     width:100%;
   }
 }
+
+
+/* v9.0 — estabilização do layout desktop da loja */
+.product-detail-price-row {
+  width:max-content;
+  max-width:100%;
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
+.product-detail-price,
+.product-detail-price-row del,
+.cart-item-price strong,
+.cart-item-price del,
+.cart-item-subtotal,
+.cart-summary strong,
+.shipping-option small {
+  white-space:nowrap;
+}
+.product-detail-price {
+  width:auto!important;
+  max-width:max-content;
+  text-align:left;
+}
+.cart-item-price strong,
+.cart-item-price del {
+  width:auto;
+  max-width:max-content;
+  display:inline-block;
+  text-align:left;
+}
+.shipping-option > span:nth-of-type(2) {
+  min-width:0;
+}
+.shipping-option small {
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(min-width:901px) {
+  .product-detail {
+    align-items:start;
+  }
+  .product-info {
+    width:100%;
+    padding-top:12px;
+  }
+  .cart-item-info {
+    overflow:hidden;
+  }
+  .cart-item-actions {
+    width:auto;
+    min-width:132px;
+  }
+}
