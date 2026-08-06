@@ -1585,6 +1585,7 @@ function setupCheckoutFlow() {
     const calculateButton = qs("[data-shipping-calculate]", deliveryForm);
     const shippingStatus = qs("[data-shipping-status]", deliveryForm);
     const shippingResults = qs("[data-shipping-results]", deliveryForm);
+    const saveCustomerButton = qs("[data-checkout-save-customer]", deliveryForm);
     const motoboyInput = qs('input[name="delivery"][value="Pedir um motoboy para retirar"]', deliveryForm);
     const motoboyOption = motoboyInput?.closest(".checkout-option");
     const savedDelivery = sessionStorage.getItem("onlyCarsDelivery") || "";
@@ -1712,6 +1713,35 @@ function setupCheckoutFlow() {
     postalCodeInput?.addEventListener("input", () => {
       const digits = postalCodeInput.value.replace(/\D/g, "").slice(0, 8);
       postalCodeInput.value = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    });
+    saveCustomerButton?.addEventListener("click", async () => {
+      const customer = await customerPromise;
+      if (!customer) return;
+      const customerSection = qs("[data-checkout-customer]", deliveryForm);
+      const invalidField = customerSection
+        ? [...customerSection.querySelectorAll("input[required]")].find((input) => !input.checkValidity())
+        : null;
+      if (invalidField) {
+        invalidField.reportValidity();
+        invalidField.focus();
+        return;
+      }
+      saveCustomerButton.disabled = true;
+      const originalLabel = saveCustomerButton.textContent;
+      saveCustomerButton.textContent = "Salvando...";
+      if (error) error.textContent = "";
+      try {
+        await customer.save();
+        saveCustomerButton.textContent = "Dados salvos ✓";
+        window.setTimeout(() => {
+          saveCustomerButton.textContent = originalLabel;
+          saveCustomerButton.disabled = false;
+        }, 1800);
+      } catch (saveError) {
+        if (error) error.textContent = saveError?.message || "Não foi possível salvar os dados.";
+        saveCustomerButton.textContent = originalLabel;
+        saveCustomerButton.disabled = false;
+      }
     });
     calculateButton?.addEventListener("click", calculateShipping);
     postalCodeInput?.addEventListener("keydown", (event) => {
