@@ -26,6 +26,26 @@
     </ol>
   </section>
   <form class="checkout-options" data-delivery-form>
+    <section class="checkout-customer" data-checkout-customer aria-labelledby="customer-title">
+      <div class="checkout-customer-heading">
+        <div><p class="eyebrow">Destinatário</p><h2 id="customer-title">Seus dados de entrega</h2></div>
+        <span data-checkout-customer-email></span>
+      </div>
+      <div class="checkout-customer-fields">
+        <div class="field full"><label for="checkout-recipient-name">Nome completo</label><input id="checkout-recipient-name" name="recipient_name" autocomplete="name" required></div>
+        <div class="field"><label for="checkout-phone">Telefone</label><input id="checkout-phone" name="phone" inputmode="tel" autocomplete="tel" required></div>
+        <div class="field"><label for="checkout-tax-id">CPF</label><input id="checkout-tax-id" name="tax_id" inputmode="numeric" required></div>
+        <div class="field"><label for="shipping-postal-code">CEP</label><input id="shipping-postal-code" name="postal_code" data-shipping-postal-code inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></div>
+        <div class="field"><label for="checkout-state">Estado</label><input id="checkout-state" name="state" maxlength="2" autocomplete="address-level1" required></div>
+        <div class="field full"><label for="checkout-street">Rua</label><input id="checkout-street" name="street" autocomplete="address-line1" required></div>
+        <div class="field"><label for="checkout-number">Número</label><input id="checkout-number" name="number" required></div>
+        <div class="field"><label for="checkout-complement">Complemento</label><input id="checkout-complement" name="complement" autocomplete="address-line2"></div>
+        <div class="field"><label for="checkout-neighborhood">Bairro</label><input id="checkout-neighborhood" name="neighborhood" required></div>
+        <div class="field"><label for="checkout-city">Cidade</label><input id="checkout-city" name="city" autocomplete="address-level2" required></div>
+      </div>
+      <p class="checkout-customer-status" data-checkout-customer-status aria-live="polite">Carregando os dados da sua conta...</p>
+    </section>
+
     <section class="shipping-calculator" data-shipping-calculator aria-labelledby="shipping-title">
       <div class="shipping-calculator-heading">
         <span class="shipping-calculator-icon" aria-hidden="true">
@@ -34,11 +54,8 @@
         <span><strong id="shipping-title">Receber no seu endereço</strong><small>Consulte preço e prazo com o Melhor Envio.</small></span>
       </div>
       <div class="shipping-postal-code">
-        <label for="shipping-postal-code">CEP de destino</label>
-        <div>
-          <input id="shipping-postal-code" data-shipping-postal-code type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" aria-describedby="shipping-status">
-          <button type="button" data-shipping-calculate>Calcular frete</button>
-        </div>
+        <p>Usaremos o CEP informado nos seus dados de entrega.</p>
+        <button type="button" data-shipping-calculate>Calcular frete</button>
       </div>
       <p class="shipping-status" id="shipping-status" data-shipping-status aria-live="polite"></p>
       <div class="shipping-results" data-shipping-results></div>
