@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co https://viacep.com.br; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Entrega — Only Cars Club</title>
@@ -38,7 +38,7 @@
         <div class="field"><label for="shipping-postal-code">CEP</label><input id="shipping-postal-code" name="postal_code" data-shipping-postal-code inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></div>
         <div class="field"><label for="checkout-state">Estado</label><input id="checkout-state" name="state" maxlength="2" autocomplete="address-level1" required></div>
         <div class="field full"><label for="checkout-street">Rua</label><input id="checkout-street" name="street" autocomplete="address-line1" required></div>
-        <div class="field"><label for="checkout-number">Número</label><input id="checkout-number" name="number" required></div>
+        <div class="field checkout-number-field"><label for="checkout-number">Número</label><input id="checkout-number" name="number" inputmode="numeric" required><label class="no-number-option"><input type="checkbox" name="no_number" value="true"><span>Sem número</span></label></div>
         <div class="field"><label for="checkout-complement">Complemento</label><input id="checkout-complement" name="complement" autocomplete="address-line2"></div>
         <div class="field"><label for="checkout-neighborhood">Bairro</label><input id="checkout-neighborhood" name="neighborhood" required></div>
         <div class="field"><label for="checkout-city">Cidade</label><input id="checkout-city" name="city" autocomplete="address-level2" required></div>
