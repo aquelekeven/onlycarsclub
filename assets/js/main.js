@@ -1094,6 +1094,7 @@ function saveCart(cart) {
   localStorage.setItem("onlyCarsCart", JSON.stringify(normalizedCart));
   if (!normalizedCart.length) {
     sessionStorage.removeItem("onlyCarsDelivery");
+    sessionStorage.removeItem("onlyCarsShippingQuote");
     sessionStorage.removeItem("onlyCarsCheckoutMaxStep");
   }
   updateCartCount(normalizedCart);
@@ -1360,7 +1361,8 @@ function setupCheckoutFlow() {
     (total, item) => total + (Number(item.weightGrams) || 0) * Number(item.quantity),
     0
   );
-  const allowedDeliveries = [
+  const productTotal = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+  const pickupDeliveries = [
     "Retirar no próximo evento do Only",
     "Pedir um motoboy para retirar",
     "Vou retirar pessoalmente"
@@ -1368,6 +1370,18 @@ function setupCheckoutFlow() {
   const allowedPayments = ["Pix", "Cartão — sujeito a taxas"];
   const deliveryForm = qs("[data-delivery-form]");
   const paymentForm = qs("[data-payment-form]");
+  const readShippingQuote = () => {
+    try {
+      const quote = JSON.parse(sessionStorage.getItem("onlyCarsShippingQuote"));
+      return quote && Number.isFinite(Number(quote.price)) ? quote : null;
+    } catch (_) {
+      sessionStorage.removeItem("onlyCarsShippingQuote");
+      return null;
+    }
+  };
+  const isDeliveryAllowed = (delivery) =>
+    pickupDeliveries.includes(delivery)
+    || (typeof delivery === "string" && delivery.startsWith("Envio — "));
   if (!deliveryForm && !paymentForm) return;
   if (!cart.length) {
     location.replace("carrinho.html");
@@ -1375,29 +1389,162 @@ function setupCheckoutFlow() {
   }
 
   if (deliveryForm) {
+    const error = qs("[data-checkout-error]", deliveryForm);
+    const calculator = qs("[data-shipping-calculator]", deliveryForm);
+    const postalCodeInput = qs("[data-shipping-postal-code]", deliveryForm);
+    const calculateButton = qs("[data-shipping-calculate]", deliveryForm);
+    const shippingStatus = qs("[data-shipping-status]", deliveryForm);
+    const shippingResults = qs("[data-shipping-results]", deliveryForm);
     const motoboyInput = qs('input[name="delivery"][value="Pedir um motoboy para retirar"]', deliveryForm);
     const motoboyOption = motoboyInput?.closest(".checkout-option");
+    const savedDelivery = sessionStorage.getItem("onlyCarsDelivery") || "";
+    const savedQuote = readShippingQuote();
+
     if (!hasCompanionProduct && motoboyInput) {
       motoboyInput.checked = false;
       motoboyInput.disabled = true;
       if (motoboyOption) motoboyOption.hidden = true;
-      const restriction = qs("[data-checkout-error]", deliveryForm);
-      if (restriction) restriction.textContent = "Chaveiros e adesivos comprados sem outro produto ficam disponíveis somente para retirada no evento ou retirada pessoal.";
+      if (error) error.textContent = "Chaveiros e adesivos comprados sem outro produto ficam disponíveis somente para retirada no evento ou retirada pessoal.";
     }
-    const savedDelivery = sessionStorage.getItem("onlyCarsDelivery");
-    const validSavedDelivery = allowedDeliveries.includes(savedDelivery)
+
+    if (!shippingPackage && calculator) {
+      calculator.classList.add("is-unavailable");
+      if (postalCodeInput) postalCodeInput.disabled = true;
+      if (calculateButton) calculateButton.disabled = true;
+      if (shippingStatus) {
+        shippingStatus.textContent = "A cotação automática está disponível, por enquanto, somente para moletom e camisetas oversized ou streetwear.";
+      }
+    }
+
+    const savedPickup = pickupDeliveries.includes(savedDelivery)
       && (hasCompanionProduct || savedDelivery !== "Pedir um motoboy para retirar")
-      ? savedDelivery
-      : "";
-    const savedInput = validSavedDelivery && qs(`input[name="delivery"][value="${CSS.escape(validSavedDelivery)}"]`, deliveryForm);
-    if (savedInput) savedInput.checked = true;
+      ? qs(`input[name="delivery"][value="${CSS.escape(savedDelivery)}"]`, deliveryForm)
+      : null;
+    if (savedPickup) savedPickup.checked = true;
+    if (postalCodeInput && savedQuote?.postalCode) postalCodeInput.value = savedQuote.postalCode.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+
+    const setShippingStatus = (message, state = "") => {
+      if (!shippingStatus) return;
+      shippingStatus.textContent = message;
+      shippingStatus.dataset.state = state;
+    };
+
+    const renderQuotes = (quotes, postalCode) => {
+      if (!shippingResults) return;
+      shippingResults.replaceChildren();
+      const available = quotes
+        .filter((quote) => !quote?.error && Number.isFinite(Number(quote?.custom_price ?? quote?.price)))
+        .sort((a, b) => Number(a.custom_price ?? a.price) - Number(b.custom_price ?? b.price));
+      if (!available.length) {
+        const firstError = quotes.find((quote) => quote?.error)?.error;
+        setShippingStatus(firstError || "Nenhuma transportadora atende este CEP para o pacote informado.", "error");
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      available.forEach((quote) => {
+        const serviceName = String(quote.name || quote.company?.name || "Transportadora");
+        const companyName = String(quote.company?.name || "");
+        const price = Number(quote.custom_price ?? quote.price);
+        const deliveryTime = Number(quote.custom_delivery_time ?? quote.delivery_time);
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+        const icon = document.createElement("span");
+        const copy = document.createElement("span");
+        const title = document.createElement("strong");
+        const details = document.createElement("small");
+        const marker = document.createElement("i");
+        label.className = "checkout-option shipping-option";
+        input.type = "radio";
+        input.name = "delivery";
+        input.value = `Envio — ${serviceName}`;
+        input.dataset.shippingQuote = JSON.stringify({
+          serviceId:quote.id ?? null,
+          serviceName,
+          companyName,
+          price,
+          deliveryTime:Number.isFinite(deliveryTime) ? deliveryTime : null,
+          postalCode
+        });
+        icon.className = "checkout-option-icon shipping-option-icon";
+        icon.textContent = "↗";
+        title.textContent = companyName && companyName !== serviceName
+          ? `${companyName} · ${serviceName}`
+          : serviceName;
+        const deadline = Number.isFinite(deliveryTime)
+          ? ` · até ${deliveryTime} ${deliveryTime === 1 ? "dia útil" : "dias úteis"}`
+          : "";
+        details.textContent = `${formatCurrency(price)}${deadline}`;
+        copy.append(title, details);
+        label.append(input, icon, copy, marker);
+        if (savedDelivery === input.value && savedQuote?.postalCode === postalCode) input.checked = true;
+        fragment.appendChild(label);
+      });
+      shippingResults.appendChild(fragment);
+      setShippingStatus(`${available.length} ${available.length === 1 ? "opção encontrada" : "opções encontradas"}. Escolha uma para continuar.`, "success");
+    };
+
+    const calculateShipping = async () => {
+      if (!shippingPackage || !postalCodeInput || !calculateButton) return;
+      const postalCode = postalCodeInput.value.replace(/\D/g, "");
+      if (postalCode.length !== 8) {
+        setShippingStatus("Digite um CEP válido com 8 números.", "error");
+        postalCodeInput.focus();
+        return;
+      }
+      calculateButton.disabled = true;
+      calculateButton.textContent = "Calculando...";
+      if (shippingResults) shippingResults.replaceChildren();
+      setShippingStatus("Consultando transportadoras e prazos...", "loading");
+      try {
+        if (!window.OnlySupabase?.invokeFunction) throw new Error("Serviço de frete indisponível.");
+        const response = await window.OnlySupabase.invokeFunction("melhor-envio-cotacao", {
+          to_postal_code:postalCode,
+          package:{
+            height:shippingPackage.height,
+            width:shippingPackage.width,
+            length:shippingPackage.length,
+            weight:shippingPackage.weightKg,
+            insurance_value:Number(productTotal.toFixed(2))
+          }
+        });
+        const quotes = Array.isArray(response?.quotes) ? response.quotes : [];
+        renderQuotes(quotes, postalCode);
+      } catch (requestError) {
+        setShippingStatus(requestError?.message || "Não foi possível calcular o frete. Tente novamente.", "error");
+      } finally {
+        calculateButton.disabled = false;
+        calculateButton.textContent = "Calcular frete";
+      }
+    };
+
+    postalCodeInput?.addEventListener("input", () => {
+      const digits = postalCodeInput.value.replace(/\D/g, "").slice(0, 8);
+      postalCodeInput.value = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    });
+    calculateButton?.addEventListener("click", calculateShipping);
+    postalCodeInput?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      calculateShipping();
+    });
+
     deliveryForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const selected = new FormData(deliveryForm).get("delivery");
-      if (!allowedDeliveries.includes(selected)
+      const selectedInput = qs('input[name="delivery"]:checked', deliveryForm);
+      const selected = selectedInput?.value || "";
+      if (!isDeliveryAllowed(selected)
         || (!hasCompanionProduct && selected === "Pedir um motoboy para retirar")) {
-        qs("[data-checkout-error]", deliveryForm).textContent = "Escolha uma forma de entrega disponível para este pedido.";
+        if (error) error.textContent = "Escolha uma forma de entrega disponível para este pedido.";
         return;
+      }
+      if (selected.startsWith("Envio — ")) {
+        if (!selectedInput.dataset.shippingQuote) {
+          if (error) error.textContent = "Calcule o frete novamente e escolha uma transportadora.";
+          return;
+        }
+        sessionStorage.setItem("onlyCarsShippingQuote", selectedInput.dataset.shippingQuote);
+      } else {
+        sessionStorage.removeItem("onlyCarsShippingQuote");
       }
       sessionStorage.setItem("onlyCarsDelivery", selected);
       navigateWithTransition("pagamento.html");
@@ -1405,13 +1552,16 @@ function setupCheckoutFlow() {
   }
 
   if (paymentForm) {
-    const savedDelivery = sessionStorage.getItem("onlyCarsDelivery");
-    const delivery = allowedDeliveries.includes(savedDelivery) ? savedDelivery : "";
-    if (!delivery) {
+    const delivery = sessionStorage.getItem("onlyCarsDelivery") || "";
+    const shippingQuote = readShippingQuote();
+    if (!isDeliveryAllowed(delivery) || (delivery.startsWith("Envio — ") && !shippingQuote)) {
       location.replace("entrega.html");
       return;
     }
-    const total = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+    const shippingPrice = delivery.startsWith("Envio — ") ? Number(shippingQuote.price) : 0;
+    const total = productTotal + shippingPrice;
+    const totalLabel = qs(".checkout-order-total span", paymentForm);
+    if (totalLabel) totalLabel.textContent = shippingPrice > 0 ? "Total com frete" : "Total dos produtos";
     qs("[data-checkout-total]", paymentForm).textContent = formatCurrency(total);
     paymentForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1438,11 +1588,15 @@ function setupCheckoutFlow() {
         "",
         "*ENTREGA E PAGAMENTO*",
         `Entrega: _${delivery}_`,
+        shippingQuote ? `CEP: _${shippingQuote.postalCode}_` : null,
+        shippingQuote ? `Frete: _${formatCurrency(shippingPrice)}${shippingQuote.deliveryTime ? ` · até ${shippingQuote.deliveryTime} dias úteis` : ""}_` : null,
         `Pagamento: _${payment}_`,
         registeredWeightGrams > 0 ? `Peso cadastrado dos produtos: _${registeredWeightGrams} g_` : null,
         shippingPackage ? `Pacote: _${shippingPackage.length} × ${shippingPackage.width} × ${shippingPackage.height} cm_` : null,
         "",
-        `*TOTAL DOS PRODUTOS: ${formatCurrency(total)}*`,
+        `Produtos: ${formatCurrency(productTotal)}`,
+        shippingPrice > 0 ? `Frete: ${formatCurrency(shippingPrice)}` : null,
+        `*TOTAL: ${formatCurrency(total)}*`,
         "_Produto, cor, tamanho, quantidade e valores serão conferidos pela equipe antes da confirmação._",
         payment.startsWith("Cartão") ? "_As taxas do cartão serão confirmadas no atendimento._" : null
       ].filter((line) => line !== null).join("\n");
