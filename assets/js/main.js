@@ -1492,7 +1492,7 @@ async function setupCheckoutCustomer(deliveryForm) {
       const postalCode = String(formData.get("postal_code") || "").replace(/\D/g, "");
       const state = String(formData.get("state") || "").trim().toUpperCase();
       if (![10, 11].includes(phone.length)) throw new Error("Digite um telefone com DDD válido.");
-      if (taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
+      if (taxId && taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
       if (postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
       if (!/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
       const recipientName = String(formData.get("recipient_name") || "").trim();
@@ -1513,7 +1513,7 @@ async function setupCheckoutCustomer(deliveryForm) {
       await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
         method:"PATCH",
         headers:{ Prefer:"return=minimal" },
-        body:{ display_name:recipientName, phone, tax_id:taxId }
+        body:{ display_name:recipientName, phone, tax_id:taxId || null }
       });
       if (addressId) {
         await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
@@ -1760,6 +1760,12 @@ function setupCheckoutFlow() {
       if (!isDeliveryAllowed(selected)
         || (!hasCompanionProduct && selected === "Pedir um motoboy para retirar")) {
         if (error) error.textContent = "Escolha uma forma de entrega disponível para este pedido.";
+        return;
+      }
+      const customerTaxId = String(deliveryForm.elements.tax_id?.value || "").replace(/\D/g, "");
+      if (selected.startsWith("Envio — ") && customerTaxId.length !== 11) {
+        if (error) error.textContent = "Informe o CPF para gerar a etiqueta de envio.";
+        deliveryForm.elements.tax_id?.focus();
         return;
       }
       try {
