@@ -2892,3 +2892,50 @@ body.modal-open { overflow:hidden; }
   accent-color:#111;
   box-shadow:none!important;
 }
+
+
+/* v8.8 — salvamento independente do endereço */
+.checkout-customer-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.checkout-customer-footer .checkout-customer-status {
+  flex:1;
+}
+.checkout-save-customer {
+  min-height:42px;
+  flex:0 0 auto;
+  padding:0 17px;
+  border:1px solid #cbc9c1;
+  border-radius:12px;
+  background:#f3f2ed;
+  color:#222;
+  font:inherit;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+.checkout-save-customer:hover {
+  border-color:#99978e;
+  background:#fff;
+  transform:translateY(-1px);
+}
+.checkout-save-customer:disabled {
+  opacity:.65;
+  cursor:wait;
+  transform:none;
+}
+@media(max-width:520px) {
+  .checkout-customer-footer {
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .checkout-save-customer {
+    width:100%;
+  }
+}
