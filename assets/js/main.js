@@ -1426,6 +1426,63 @@ async function setupCheckoutCustomer(deliveryForm) {
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
   });
 
+  const postalCodeInput = deliveryForm.elements.postal_code;
+  const numberInput = deliveryForm.elements.number;
+  const noNumberInput = deliveryForm.elements.no_number;
+  const applyNoNumber = () => {
+    if (!numberInput || !noNumberInput) return;
+    if (noNumberInput.checked) {
+      numberInput.value = "S/N";
+      numberInput.readOnly = true;
+      numberInput.required = false;
+    } else {
+      if (numberInput.value === "S/N") numberInput.value = "";
+      numberInput.readOnly = false;
+      numberInput.required = true;
+    }
+  };
+  if (noNumberInput && numberInput?.value.trim().toUpperCase() === "S/N") noNumberInput.checked = true;
+  applyNoNumber();
+  noNumberInput?.addEventListener("change", applyNoNumber);
+
+  let postalCodeTimer = null;
+  let lastPostalCodeLookup = "";
+  const lookupPostalCode = async () => {
+    const postalCode = postalCodeInput?.value.replace(/\D/g, "") || "";
+    if (postalCode.length !== 8 || postalCode === lastPostalCodeLookup) return;
+    lastPostalCodeLookup = postalCode;
+    setStatus("Buscando o endereço deste CEP...", "loading");
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${postalCode}/json/`, {
+        headers:{ Accept:"application/json" }
+      });
+      if (!response.ok) throw new Error("Não foi possível consultar este CEP.");
+      const address = await response.json();
+      if (address?.erro) throw new Error("CEP não encontrado.");
+      const fields = {
+        street:address.logradouro || "",
+        neighborhood:address.bairro || "",
+        city:address.localidade || "",
+        state:address.uf || ""
+      };
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = deliveryForm.elements[name];
+        if (input && value) input.value = value;
+      });
+      setStatus("Endereço localizado. Confira os dados e informe o número.", "success");
+      if (!noNumberInput?.checked) numberInput?.focus();
+    } catch (error) {
+      lastPostalCodeLookup = "";
+      setStatus(error?.message || "Não foi possível buscar o endereço. Preencha os campos manualmente.", "error");
+    }
+  };
+  postalCodeInput?.addEventListener("input", () => {
+    window.clearTimeout(postalCodeTimer);
+    const postalCode = postalCodeInput.value.replace(/\D/g, "");
+    if (postalCode.length === 8) postalCodeTimer = window.setTimeout(lookupPostalCode, 350);
+  });
+  postalCodeInput?.addEventListener("blur", lookupPostalCode);
+
   return {
     user,
     async save() {
