@@ -970,7 +970,7 @@ function setupProductPage() {
   const availabilityTitle = qs("[data-product-availability-title]");
   const availabilityText = qs("[data-product-availability-text]");
   const addCartButton = qs(".add-cart-button", form);
-  const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+  const formatPrice = (value) => value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }).replace(/[\u00a0\u202f]/g, " ");
   let selectedPrice = getCatalogPrice(product, product.sizes[0], product.variants[0]);
   let inventory = null;
   let inventoryFailed = false;
@@ -1077,7 +1077,7 @@ function setupProductPage() {
   });
 }
 
-const formatCurrency = (value) => Number(value).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+const formatCurrency = (value) => Number(value).toLocaleString("pt-BR", { style:"currency", currency:"BRL" }).replace(/[\u00a0\u202f]/g, " ");
 
 function getCart() {
   try {
