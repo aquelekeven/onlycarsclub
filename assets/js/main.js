@@ -19,6 +19,7 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Unissex",
     price:"R$ 120,00",
     value:120,
+    weightGrams:320,
     description:"Camiseta oversized Only Cars, com modelagem ampla e confortável.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Preto"]),
@@ -60,6 +61,7 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Unissex",
     price:"R$ 195,00",
     value:195,
+    weightGrams:600,
     description:"Moletom preto unissex Only Cars para acompanhar os rolês em qualquer clima.",
     sizes:Object.freeze(["P","M","G","XG"]),
     variants:Object.freeze(["Preto"]),
@@ -147,6 +149,7 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Unissex",
     price:"R$ 120,00",
     value:120,
+    weightGrams:320,
     description:"Camiseta oversized amarela com estampa exclusiva Only Cars.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Amarelo"]),
@@ -165,6 +168,7 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Unissex",
     price:"R$ 80,00",
     value:80,
+    weightGrams:250,
     description:"Camiseta streetwear Only Cars, disponível nas cores preta, amarela e branca.",
     sizes:Object.freeze(["P","M","G","GG","EG"]),
     variants:Object.freeze(["Preto","Amarelo","Branco"]),
@@ -332,6 +336,8 @@ function normalizeCartItem(rawItem) {
     variant,
     quantity,
     gift,
+    weightGrams:Number(product.weightGrams) || 0,
+    pickupOnly:/^(Chaveiros|Adesivos)/.test(product.category),
     image:gallery.images[imageIndex] || gallery.images[0] || "assets/images/placeholder.webp"
   };
 }
@@ -1329,6 +1335,11 @@ function setupCartPage() {
 
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
+  const hasCompanionProduct = cart.some((item) => !item.pickupOnly);
+  const registeredWeightGrams = cart.reduce(
+    (total, item) => total + (Number(item.weightGrams) || 0) * Number(item.quantity),
+    0
+  );
   const allowedDeliveries = [
     "Retirar no próximo evento do Only",
     "Pedir um motoboy para retirar",
@@ -1344,15 +1355,28 @@ function setupCheckoutFlow() {
   }
 
   if (deliveryForm) {
+    const motoboyInput = qs('input[name="delivery"][value="Pedir um motoboy para retirar"]', deliveryForm);
+    const motoboyOption = motoboyInput?.closest(".checkout-option");
+    if (!hasCompanionProduct && motoboyInput) {
+      motoboyInput.checked = false;
+      motoboyInput.disabled = true;
+      if (motoboyOption) motoboyOption.hidden = true;
+      const restriction = qs("[data-checkout-error]", deliveryForm);
+      if (restriction) restriction.textContent = "Chaveiros e adesivos comprados sem outro produto ficam disponíveis somente para retirada no evento ou retirada pessoal.";
+    }
     const savedDelivery = sessionStorage.getItem("onlyCarsDelivery");
-    const validSavedDelivery = allowedDeliveries.includes(savedDelivery) ? savedDelivery : "";
+    const validSavedDelivery = allowedDeliveries.includes(savedDelivery)
+      && (hasCompanionProduct || savedDelivery !== "Pedir um motoboy para retirar")
+      ? savedDelivery
+      : "";
     const savedInput = validSavedDelivery && qs(`input[name="delivery"][value="${CSS.escape(validSavedDelivery)}"]`, deliveryForm);
     if (savedInput) savedInput.checked = true;
     deliveryForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const selected = new FormData(deliveryForm).get("delivery");
-      if (!allowedDeliveries.includes(selected)) {
-        qs("[data-checkout-error]", deliveryForm).textContent = "Escolha uma forma de entrega para continuar.";
+      if (!allowedDeliveries.includes(selected)
+        || (!hasCompanionProduct && selected === "Pedir um motoboy para retirar")) {
+        qs("[data-checkout-error]", deliveryForm).textContent = "Escolha uma forma de entrega disponível para este pedido.";
         return;
       }
       sessionStorage.setItem("onlyCarsDelivery", selected);
@@ -1395,6 +1419,7 @@ function setupCheckoutFlow() {
         "*ENTREGA E PAGAMENTO*",
         `Entrega: _${delivery}_`,
         `Pagamento: _${payment}_`,
+        registeredWeightGrams > 0 ? `Peso cadastrado dos produtos: _${registeredWeightGrams} g_` : null,
         "",
         `*TOTAL DOS PRODUTOS: ${formatCurrency(total)}*`,
         "_Produto, cor, tamanho, quantidade e valores serão conferidos pela equipe antes da confirmação._",
