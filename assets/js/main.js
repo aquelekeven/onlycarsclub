@@ -1696,6 +1696,18 @@ function setupCheckoutFlow() {
   }
 
   if (paymentForm) {
+    const paymentButton = qs("button[type='submit']", paymentForm);
+    if (paymentButton) paymentButton.disabled = true;
+    const paymentAccessPromise = window.OnlySupabase?.getUser?.()
+      .catch(() => null)
+      .then((user) => {
+        if (!user) {
+          location.replace("login.html?next=entrega.html");
+          return null;
+        }
+        if (paymentButton) paymentButton.disabled = false;
+        return user;
+      }) || Promise.resolve(null);
     const delivery = sessionStorage.getItem("onlyCarsDelivery") || "";
     const shippingQuote = readShippingQuote();
     if (!isDeliveryAllowed(delivery) || (delivery.startsWith("Envio — ") && !shippingQuote)) {
@@ -1707,8 +1719,10 @@ function setupCheckoutFlow() {
     const totalLabel = qs(".checkout-order-total span", paymentForm);
     if (totalLabel) totalLabel.textContent = shippingPrice > 0 ? "Total com frete" : "Total dos produtos";
     qs("[data-checkout-total]", paymentForm).textContent = formatCurrency(total);
-    paymentForm.addEventListener("submit", (event) => {
+    paymentForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      const authenticatedUser = await paymentAccessPromise;
+      if (!authenticatedUser) return;
       const payment = new FormData(paymentForm).get("payment");
       if (!allowedPayments.includes(payment)) {
         qs("[data-checkout-error]", paymentForm).textContent = "Escolha uma forma de pagamento para continuar.";
