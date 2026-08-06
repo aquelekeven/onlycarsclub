@@ -68,7 +68,8 @@
           email: form.email.value.trim(),
           password: form.password.value
         });
-        location.replace("minha-conta.html");
+        const requestedNext = new URLSearchParams(location.search).get("next");
+        location.replace(requestedNext === "entrega.html" ? "entrega.html" : "minha-conta.html");
       } catch (error) {
         setFeedback(form, friendlyError(error));
         setSubmitting(form, false);
