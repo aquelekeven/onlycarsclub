@@ -2860,3 +2860,35 @@ body.modal-open { overflow:hidden; }
     width:100%;
   }
 }
+
+
+/* v8.7 — consulta de CEP e endereço sem número */
+.checkout-number-field {
+  align-content:start;
+}
+.checkout-number-field > input[readonly] {
+  color:#65645f;
+  background:#ecebe6;
+}
+.no-number-option {
+  width:max-content;
+  margin-top:2px;
+  display:inline-flex!important;
+  align-items:center;
+  gap:7px;
+  color:#55544f!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  cursor:pointer;
+}
+.no-number-option input {
+  width:17px!important;
+  height:17px!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  accent-color:#111;
+  box-shadow:none!important;
+}
