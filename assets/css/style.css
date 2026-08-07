@@ -431,6 +431,12 @@ body[data-page="loja"] .page-hero { min-height:440px; padding-top:125px; padding
 .confirm-modal button { min-height:44px; border:0; border-radius:13px; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
 .confirm-modal-cancel { background:#e8e8e5; color:#222; }
 .confirm-modal-delete { background:#d92d25; color:#fff; }
+.accessory-rule-modal .confirm-modal-dialog { text-align:left; }
+.accessory-rule-modal h2 { text-align:center; }
+.accessory-rule-modal p { margin-bottom:13px; text-align:center; }
+.accessory-rule-icon { font-size:22px; font-weight:900; }
+.accessory-rule-list { margin:0 0 22px; padding:14px 18px 14px 34px; border-radius:14px; background:#ecece8; color:#333; font-size:13px; font-weight:700; line-height:1.8; }
+.accessory-rule-shop { min-height:44px; display:grid; place-items:center; border-radius:13px; background:var(--yellow); color:#111; font-size:12px; font-weight:900; text-align:center; }
 body.modal-open { overflow:hidden; }
 .account-panel { max-width:900px; margin:auto; padding:40px; border:1px solid #333; background:#111; }
 .account-panel label { display:block; margin-bottom:6px; color:#aaa; font-size:12px; text-transform:uppercase; letter-spacing:.1em; }
