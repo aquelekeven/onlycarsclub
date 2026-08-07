@@ -3184,3 +3184,20 @@ body.modal-open { overflow:hidden; }
     min-width:132px;
   }
 }
+
+/* v10.5 — contraste definitivo do cancelamento de pedido */
+.order-cancel-modal .confirm-modal-dialog,
+.order-cancel-modal .confirm-modal-dialog.liquid-glass {
+  border:1px solid var(--yellow)!important;
+  background:#080808!important;
+  color:#fff!important;
+  box-shadow:0 0 0 1px #f4c90022,0 30px 100px #000!important;
+}
+.order-cancel-modal h2,
+.order-cancel-modal [data-order-cancel-number] { color:#fff!important; }
+.order-cancel-modal [data-order-cancel-number] { color:var(--yellow)!important; }
+.order-cancel-modal .order-cancel-eyebrow { color:var(--yellow)!important; }
+.order-cancel-modal>div>p:not(.order-cancel-eyebrow) { color:#d0d0cc!important; }
+.order-cancel-modal .order-cancel-warning { border-color:#f4c90066!important; background:#f4c90012!important; color:#f0e9bd!important; }
+.order-cancel-modal .confirm-modal-cancel { border:1px solid #ffffff38!important; background:#181818!important; color:#fff!important; }
+.order-cancel-modal .confirm-modal-delete { color:#fff!important; }
