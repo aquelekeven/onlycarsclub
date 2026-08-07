@@ -16,6 +16,7 @@ const COMPANION_PRODUCT_IDS = new Set([
   "camiseta-oversized",
   "camiseta-oversized-amarela",
   "camiseta-streetwear",
+  "cropped",
   "moletom",
   "copo-termico"
 ]);
@@ -51,6 +52,8 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Roupas · Feminino",
     price:"R$ 80,00",
     value:80,
+    weightGrams:200,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Cropped preto Only Cars, com modelagem ampla e estampa do Onlynho nas costas.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
@@ -1181,6 +1184,7 @@ function showAccessoryRuleModal() {
         <ul class="accessory-rule-list">
           <li>Camiseta oversized</li>
           <li>Camiseta streetwear</li>
+          <li>Cropped</li>
           <li>Moletom</li>
           <li>Copo térmico</li>
         </ul>
@@ -1821,7 +1825,7 @@ function setupCheckoutFlow() {
       if (postalCodeInput) postalCodeInput.disabled = true;
       if (calculateButton) calculateButton.disabled = true;
       if (shippingStatus) {
-        shippingStatus.textContent = "A cotação automática está disponível, por enquanto, somente para moletom e camisetas oversized ou streetwear.";
+        shippingStatus.textContent = "A cotação automática está disponível, por enquanto, para moletom, cropped e camisetas oversized ou streetwear.";
       }
     }
 
