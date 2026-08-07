@@ -329,10 +329,15 @@
           qsa("button", row).forEach((item) => item.disabled = true);
           feedback.textContent = action === "resume" ? "Recuperando pagamento..." : "Cancelando pedido...";
           try {
-            const result = await client.invokeFunction("mercado-pago-pedido", {
-              action,
-              order_id:row.dataset.orderId
-            });
+            const result = action === "cancel"
+              ? await client.rest("rpc/customer_cancel_checkout_order", {
+                  method:"POST",
+                  body:{ p_order_id:row.dataset.orderId }
+                })
+              : await client.invokeFunction("mercado-pago-pedido", {
+                  action,
+                  order_id:row.dataset.orderId
+                });
             if (action === "resume") {
               if (!result?.checkout_url) throw new Error("Link de pagamento indisponível.");
               location.assign(result.checkout_url);

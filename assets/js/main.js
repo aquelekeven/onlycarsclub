@@ -1550,11 +1550,16 @@ async function renderPaymentReturn(paymentForm, returnStatus, params) {
   };
 
   try {
-    await confirmPaymentReturn().catch(() => null);
+    let confirmationError = "";
+    await confirmPaymentReturn().catch((error) => { confirmationError = error?.message || ""; });
     let confirmed = renderOrder(await loadOrder());
-    for (let attempt = 0; returnStatus === "success" && !confirmed && attempt < 3; attempt += 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+    for (let attempt = 0; returnStatus === "success" && !confirmed && attempt < 6; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 3000));
+      await confirmPaymentReturn().catch((error) => { confirmationError = error?.message || confirmationError; });
       confirmed = renderOrder(await loadOrder());
+    }
+    if (returnStatus === "success" && !confirmed && confirmationError) {
+      note.textContent = `O pagamento foi recebido, mas a confirmação automática ainda não terminou: ${confirmationError}`;
     }
   } catch (_) {
     orderBox.innerHTML = "<span>Pedido salvo na sua conta</span>";
