@@ -272,7 +272,7 @@
           return `
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
-                <div class="order-row-main"><strong>${escapeHtml(order.order_number)}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
+                <div class="order-row-main"><strong>${escapeHtml(order.order_number)}</strong><span>${new Date(order.created_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" })}</span></div>
                 <span class="order-status" data-order-status>${escapeHtml(statusLabel)}</span>
               </header>
               <details class="order-details">
