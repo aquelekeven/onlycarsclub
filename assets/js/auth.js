@@ -7,7 +7,9 @@
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
   })[character]);
-  const formatMoney = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+  const formatMoney = (cents) => (Number(cents || 0) / 100)
+    .toLocaleString("pt-BR", { style:"currency", currency:"BRL" })
+    .replace(/[\u00a0\u202f]/g, " ");
 
   const messages = {
     "Invalid login credentials": "E-mail ou senha incorretos.",
@@ -273,15 +275,18 @@
                 <div class="order-row-main"><strong>${escapeHtml(order.order_number)}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
                 <span class="order-status" data-order-status>${escapeHtml(statusLabel)}</span>
               </header>
-              <div class="order-review">
-                <ul>${itemsSummary || "<li><span>Itens indisponíveis para exibição.</span></li>"}</ul>
-                <div class="order-delivery-summary"><span>${escapeHtml(deliveryLabels[order.delivery_method] || order.delivery_method)}${shippingService}</span></div>
-                <dl>
-                  <div><dt>Produtos</dt><dd>${formatMoney(order.subtotal_cents)}</dd></div>
-                  ${Number(order.shipping_cents) > 0 ? `<div><dt>Frete</dt><dd>${formatMoney(order.shipping_cents)}</dd></div>` : ""}
-                  <div class="total"><dt>Total</dt><dd>${formatMoney(order.total_cents)}</dd></div>
-                </dl>
-              </div>
+              <details class="order-details">
+                <summary><span>Ver resumo do pedido</span><i aria-hidden="true"></i></summary>
+                <div class="order-review">
+                  <ul>${itemsSummary || "<li><span>Itens indisponíveis para exibição.</span></li>"}</ul>
+                  <div class="order-delivery-summary"><span>${escapeHtml(deliveryLabels[order.delivery_method] || order.delivery_method)}${shippingService}</span></div>
+                  <dl>
+                    <div><dt>Produtos</dt><dd>${formatMoney(order.subtotal_cents)}</dd></div>
+                    ${Number(order.shipping_cents) > 0 ? `<div><dt>Frete</dt><dd>${formatMoney(order.shipping_cents)}</dd></div>` : ""}
+                    <div class="total"><dt>Total</dt><dd>${formatMoney(order.total_cents)}</dd></div>
+                  </dl>
+                </div>
+              </details>
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
