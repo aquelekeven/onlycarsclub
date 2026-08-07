@@ -1834,6 +1834,18 @@ function setupCheckoutFlow() {
     }
     const shippingPrice = delivery.startsWith("Envio — ") ? Number(shippingQuote.price) : 0;
     const total = productTotal + shippingPrice;
+    const productionNotice = qs("[data-checkout-production-notice]", paymentForm);
+    const productionAcknowledgement = qs("[data-checkout-production-ack]", paymentForm);
+    const backorderPromise = loadPublicInventory()
+      .then((inventory) => cart.some((item) => {
+        const available = inventory.get(inventoryKey(item.id, item.size, item.variant)) || 0;
+        return available < Number(item.quantity);
+      }))
+      .catch(() => true)
+      .then((required) => {
+        if (productionNotice) productionNotice.hidden = !required;
+        return required;
+      });
     const totalLabel = qs(".checkout-order-total span", paymentForm);
     if (totalLabel) totalLabel.textContent = shippingPrice > 0 ? "Total com frete" : "Total dos produtos";
     qs("[data-checkout-total]", paymentForm).textContent = formatCurrency(total);
@@ -1843,6 +1855,12 @@ function setupCheckoutFlow() {
       if (!authenticatedUser) return;
       const error = qs("[data-checkout-error]", paymentForm);
       const button = qs("button[type='submit']", paymentForm);
+      const backorderRequired = await backorderPromise;
+      if (backorderRequired && !productionAcknowledgement?.checked) {
+        error.textContent = "Confirme que está ciente do prazo adicional de produção.";
+        productionAcknowledgement?.focus();
+        return;
+      }
       const deliveryMethod = delivery.startsWith("Envio — ")
         ? "shipping"
         : ({
