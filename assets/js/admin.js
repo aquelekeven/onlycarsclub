@@ -14,8 +14,8 @@
     refunded: "Reembolsado", chargeback: "Contestação"
   };
   const fulfillmentLabels = {
-    new: "Novo", preparing: "Em preparação", ready: "Pronto", shipped: "Enviado",
-    completed: "Concluído", cancelled: "Cancelado"
+    new: "Pedido confirmado", preparing: "Em produção", ready: "Preparando envio / pronto para retirada", shipped: "Postado",
+    completed: "Entregue / retirado", cancelled: "Cancelado"
   };
 
   function feedback(selector, message, type = "") {
@@ -42,14 +42,19 @@
     const items = order.order_items || [];
     const itemText = items.length ? items.map((item) => `${item.quantity}× ${safe(item.product_name)}${item.size ? ` · ${safe(item.size)}` : ""}${item.color ? ` · ${safe(item.color)}` : ""}`).join("<br>") : "Itens ainda não registrados";
     if (compact) return `<article class="admin-order compact"><div><strong>${safe(order.order_number)}</strong><span>${safe(order.customer_name)} · ${dateTime(order.created_at)}</span></div><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></article>`;
+    const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
+    const isShipping = order.delivery_method === "shipping";
     return `<article class="admin-order" data-order-id="${order.id}" data-order-search-value="${safe(`${order.order_number} ${order.customer_name} ${order.customer_email}`.toLowerCase())}">
       <header><div><strong>${safe(order.order_number)}</strong><span>${dateTime(order.created_at)}</span></div><strong>${money(order.total_cents)}</strong></header>
       <div class="admin-order-grid"><div><span>Cliente</span><strong>${safe(order.customer_name)}</strong><small>${safe(order.customer_email)} · ${safe(order.customer_phone)}</small></div><div><span>Itens</span><p>${itemText}</p></div></div>
       <div class="admin-order-actions">
         <div class="admin-payment-state"><span>Pagamento</span><strong class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</strong></div>
-        <label><span>Preparação / envio</span><select data-fulfillment-status>${selectOptions(fulfillmentLabels, order.fulfillment_status)}</select></label>
-        <button type="button" data-save-order>Salvar status</button>
+        <label><span>Produção / entrega</span><select data-fulfillment-status>${selectOptions(fulfillmentLabels, order.fulfillment_status)}</select></label>
+        ${isShipping ? `<label><span>Código de rastreio</span><input data-tracking-code value="${safe(shipment?.tracking_code || "")}" placeholder="Ex.: ME123456789BR"></label>
+        <label><span>Link público de acompanhamento</span><input type="url" data-tracking-url value="${safe(shipment?.tracking_url || "")}" placeholder="https://..."></label>` : ""}
+        <button type="button" data-save-order>Salvar acompanhamento</button>
       </div>
+      ${isShipping ? `<div class="admin-label-box"><div><strong>Etiqueta do Melhor Envio</strong><span>${shipment?.provider_order_id ? `Envio ${safe(shipment.provider_order_id)}` : "Ainda não gerada"}</span></div>${shipment?.label_url ? `<a href="${safe(shipment.label_url)}" target="_blank" rel="noopener">Abrir etiqueta</a>` : '<button type="button" disabled title="Cadastre remetente e documentação fiscal antes de gerar etiquetas">Gerar etiqueta Sandbox</button>'}</div>` : ""}
     </article>`;
   }
 
@@ -92,7 +97,7 @@
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
     const [products, orders] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,status,fulfillment_status,delivery_method,total_cents,created_at,order_items(product_name,size,color,quantity)&order=created_at.desc&limit=50")
+      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,status,fulfillment_status,delivery_method,total_cents,created_at,order_items(product_name,size,color,quantity),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at)&order=created_at.desc&limit=50")
     ]);
     state.products = products || [];
     state.orders = orders || [];
@@ -145,14 +150,19 @@
       button.disabled = true;
       button.textContent = "Salvando...";
       try {
-        await client.rest("rpc/admin_update_fulfillment_status", { method: "POST", body: { target_order_id: card.dataset.orderId, new_fulfillment_status: qs("[data-fulfillment-status]", card).value } });
+        await client.rest("rpc/admin_update_order_fulfillment", { method: "POST", body: {
+          target_order_id:card.dataset.orderId,
+          new_fulfillment_status:qs("[data-fulfillment-status]", card).value,
+          new_tracking_code:qs("[data-tracking-code]", card)?.value || null,
+          new_tracking_url:qs("[data-tracking-url]", card)?.value || null
+        } });
         await loadData();
         feedback("[data-orders-feedback]", "Status do pedido atualizado.", "success");
       } catch (error) {
         feedback("[data-orders-feedback]", error.message, "error");
       } finally {
         button.disabled = false;
-        button.textContent = "Salvar status";
+        button.textContent = "Salvar acompanhamento";
       }
     });
   }
