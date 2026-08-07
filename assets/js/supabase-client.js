@@ -204,8 +204,11 @@
 
   async function invokeFunction(name, body) {
     if (!/^[a-z0-9-]+$/.test(name)) throw new SupabaseRequestError("Função inválida.", 400);
-    return request(`/functions/v1/${name}`, {
+    const session = await getSession();
+    if (!session) throw new SupabaseRequestError("Faça login para continuar.", 401);
+    return authenticatedRequest(`/functions/v1/${name}`, {
       method: "POST",
+      token: session.access_token,
       body
     });
   }
