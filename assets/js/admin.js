@@ -7,7 +7,7 @@
   const state = { products: [], orders: [] };
 
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const dateTime = (value) => new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const dateTime = (value) => new Date(value).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
   const safe = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
   const statusLabels = {
     pending_payment: "Aguardando pagamento", paid: "Pago", cancelled: "Cancelado",
@@ -25,10 +25,6 @@
     element.dataset.type = type;
   }
 
-  function selectOptions(labels, selected) {
-    return Object.entries(labels).map(([value, label]) => `<option value="${value}"${value === selected ? " selected" : ""}>${label}</option>`).join("");
-  }
-
   function showTab(name) {
     qsa("[data-admin-tab]").forEach((button) => button.classList.toggle("active", button.dataset.adminTab === name));
     qsa("[data-admin-panel]").forEach((panel) => {
@@ -40,22 +36,73 @@
 
   function orderCard(order, compact = false) {
     const items = order.order_items || [];
-    const itemText = items.length ? items.map((item) => `${item.quantity}× ${safe(item.product_name)}${item.size ? ` · ${safe(item.size)}` : ""}${item.color ? ` · ${safe(item.color)}` : ""}`).join("<br>") : "Itens ainda não registrados";
     if (compact) return `<article class="admin-order compact"><div><strong>${safe(order.order_number)}</strong><span>${safe(order.customer_name)} · ${dateTime(order.created_at)}</span></div><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></article>`;
-    const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
-    const isShipping = order.delivery_method === "shipping";
-    return `<article class="admin-order" data-order-id="${order.id}" data-order-search-value="${safe(`${order.order_number} ${order.customer_name} ${order.customer_email}`.toLowerCase())}">
-      <header><div><strong>${safe(order.order_number)}</strong><span>${dateTime(order.created_at)}</span></div><strong>${money(order.total_cents)}</strong></header>
-      <div class="admin-order-grid"><div><span>Cliente</span><strong>${safe(order.customer_name)}</strong><small>${safe(order.customer_email)} · ${safe(order.customer_phone)}</small></div><div><span>Itens</span><p>${itemText}</p></div></div>
-      <div class="admin-order-actions">
-        <div class="admin-payment-state"><span>Pagamento</span><strong class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</strong></div>
-        <label><span>Produção / entrega</span><select data-fulfillment-status>${selectOptions(fulfillmentLabels, order.fulfillment_status)}</select></label>
-        ${isShipping ? `<label><span>Código de rastreio</span><input data-tracking-code value="${safe(shipment?.tracking_code || "")}" placeholder="Ex.: ME123456789BR"></label>
-        <label><span>Link público de acompanhamento</span><input type="url" data-tracking-url value="${safe(shipment?.tracking_url || "")}" placeholder="https://..."></label>` : ""}
-        <button type="button" data-save-order>Salvar acompanhamento</button>
-      </div>
-      ${isShipping ? `<div class="admin-label-box"><div><strong>Etiqueta do Melhor Envio</strong><span>${shipment?.provider_order_id ? `Envio ${safe(shipment.provider_order_id)}` : "Ainda não gerada"}</span></div>${shipment?.label_url ? `<a href="${safe(shipment.label_url)}" target="_blank" rel="noopener">Abrir etiqueta</a>` : '<button type="button" disabled title="Cadastre remetente e documentação fiscal antes de gerar etiquetas">Gerar etiqueta Sandbox</button>'}</div>` : ""}
+    const itemLabel = items.length === 1 ? items[0].product_name : `${items.reduce((total, item) => total + Number(item.quantity), 0)} itens`;
+    return `<article class="admin-order admin-order-row" data-order-id="${order.id}" data-order-search-value="${safe(`${order.order_number} ${order.customer_name} ${order.customer_email} ${items.map((item) => item.product_name).join(" ")}`.toLowerCase())}">
+      <div><strong>${safe(order.order_number)}</strong><span>${dateTime(order.created_at)}</span></div>
+      <div><span>Cliente</span><strong>${safe(order.customer_name)}</strong></div>
+      <div><span>Pedido</span><strong>${safe(itemLabel)}</strong></div>
+      <span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span>
+      <strong>${money(order.total_cents)}</strong>
+      <button type="button" data-open-order>Ver todos os detalhes</button>
     </article>`;
+  }
+
+  function addressText(address) {
+    if (!address) return "Não se aplica a esta forma de entrega";
+    return [
+      `${address.street || ""}, ${address.number || "S/N"}`,
+      address.complement,
+      `${address.neighborhood || ""} · ${address.city || ""}/${address.state || ""}`,
+      address.postal_code ? `CEP ${String(address.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2")}` : ""
+    ].filter(Boolean).map(safe).join("<br>");
+  }
+
+  function orderItemImage(item) {
+    return item.image_url || item.product_variants?.image_urls?.[0] || "";
+  }
+
+  function openOrderModal(order) {
+    const modal = qs("[data-admin-order-modal]");
+    const dialog = qs("[data-admin-order-dialog]", modal);
+    const items = order.order_items || [];
+    const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
+    const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments;
+    const isShipping = order.delivery_method === "shipping";
+    const deliveryLabels = { shipping:"Envio para o endereço", event_pickup:"Retirada no próximo evento", personal_pickup:"Retirada pessoal", customer_courier:"Motoboy do cliente" };
+    const steps = isShipping
+      ? [["new","Confirmado"],["preparing","Em produção"],["ready","Preparando envio"],["shipped","Postado"],["completed","Entregue"]]
+      : [["new","Confirmado"],["preparing","Em produção"],["ready","Pronto para retirada"],["completed","Retirado"]];
+    const currentIndex = steps.findIndex(([key]) => key === order.fulfillment_status);
+    dialog.dataset.orderId = order.id;
+    dialog.dataset.fulfillmentStatus = order.fulfillment_status;
+    dialog.innerHTML = `
+      <header class="admin-order-modal-header"><div><p class="eyebrow">Detalhes completos</p><h2>${safe(order.order_number)}</h2><span>${dateTime(order.created_at)}</span></div><button type="button" data-close-order aria-label="Fechar">×</button></header>
+      <div class="admin-order-modal-status"><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></div>
+      <section class="admin-order-modal-section"><h3>Produtos</h3><div class="admin-order-products">${items.map((item) => `<article><div class="admin-order-product-image">${orderItemImage(item) ? `<img src="${safe(orderItemImage(item))}" alt="">` : "<span>ONLY</span>"}</div><div><strong>${safe(item.product_name)}</strong><span>${[item.sku,item.color,item.size ? `Tam. ${item.size}` : ""].filter(Boolean).map(safe).join(" · ")}</span><small>${item.quantity} × ${money(item.unit_price_cents)}</small>${item.metadata?.backorder_quantity ? `<em>${item.metadata.backorder_quantity} sob encomenda · até ${item.metadata.production_days || 10} dias úteis</em>` : ""}</div><strong>${money(item.line_total_cents)}</strong></article>`).join("")}</div></section>
+      <div class="admin-order-modal-columns">
+        <section class="admin-order-modal-section"><h3>Cliente</h3><dl><div><dt>Nome</dt><dd>${safe(order.customer_name)}</dd></div><div><dt>E-mail</dt><dd>${safe(order.customer_email)}</dd></div><div><dt>Telefone</dt><dd>${safe(order.customer_phone)}</dd></div><div><dt>CPF</dt><dd>${safe(order.customer_tax_id || "Não informado")}</dd></div></dl></section>
+        <section class="admin-order-modal-section"><h3>Entrega</h3><dl><div><dt>Modalidade</dt><dd>${safe(deliveryLabels[order.delivery_method] || order.delivery_method)}</dd></div><div><dt>Transportadora</dt><dd>${safe(shipment?.carrier_name || order.shipping_quote?.company_name || "—")}</dd></div><div><dt>Serviço</dt><dd>${safe(shipment?.service_name || order.shipping_quote?.service_name || "—")}</dd></div><div><dt>Frete</dt><dd>${money(order.shipping_cents)}</dd></div></dl><address>${addressText(order.shipping_address)}</address></section>
+        <section class="admin-order-modal-section"><h3>Pagamento</h3><dl><div><dt>Status</dt><dd>${safe(payment?.status || statusLabels[order.status] || order.status)}</dd></div><div><dt>Método</dt><dd>${safe(payment?.payment_method || "—")}</dd></div><div><dt>Parcelas</dt><dd>${safe(payment?.installments || "—")}</dd></div><div><dt>ID Mercado Pago</dt><dd>${safe(payment?.provider_payment_id || "—")}</dd></div><div><dt>Aprovado em</dt><dd>${payment?.approved_at ? dateTime(payment.approved_at) : "—"}</dd></div></dl></section>
+        <section class="admin-order-modal-section"><h3>Valores</h3><dl><div><dt>Produtos</dt><dd>${money(order.subtotal_cents)}</dd></div><div><dt>Desconto</dt><dd>${money(order.discount_cents)}</dd></div><div><dt>Frete</dt><dd>${money(order.shipping_cents)}</dd></div><div class="total"><dt>Total</dt><dd>${money(order.total_cents)}</dd></div></dl></section>
+      </div>
+      <section class="admin-order-modal-section admin-fulfillment-control"><div><h3>Processos do pedido</h3><p>Clique em uma etapa. As anteriores serão preenchidas automaticamente.</p></div><div class="admin-fulfillment-steps">${steps.map(([key,label], index) => `<button type="button" data-fulfillment-step="${key}" class="${index <= currentIndex ? "active" : ""}"><i>${index + 1}</i><span>${safe(label)}</span></button>`).join("")}</div>
+        ${isShipping ? `<div class="admin-tracking-fields"><label><span>Código de rastreio</span><input data-tracking-code value="${safe(shipment?.tracking_code || "")}" placeholder="Ex.: ME123456789BR"></label><label><span>Link público</span><input type="url" data-tracking-url value="${safe(shipment?.tracking_url || "")}" placeholder="https://..."></label></div>` : ""}
+        <div class="admin-order-modal-footer"><p data-modal-feedback role="status"></p><button type="button" data-save-order>Salvar acompanhamento</button></div>
+      </section>
+      <section class="admin-order-modal-section admin-technical-details"><details><summary>Dados técnicos e histórico</summary><dl><div><dt>ID interno</dt><dd>${safe(order.id)}</dd></div><div><dt>Criado</dt><dd>${dateTime(order.created_at)}</dd></div><div><dt>Atualizado</dt><dd>${dateTime(order.updated_at)}</dd></div><div><dt>Pago</dt><dd>${order.paid_at ? dateTime(order.paid_at) : "—"}</dd></div><div><dt>Expiração</dt><dd>${order.expires_at ? dateTime(order.expires_at) : "—"}</dd></div><div><dt>Preferência MP</dt><dd>${safe(payment?.provider_preference_id || "—")}</dd></div><div><dt>Detalhe MP</dt><dd>${safe(payment?.raw_status_detail || "—")}</dd></div><div><dt>Status do envio</dt><dd>${safe(shipment?.status || "—")}</dd></div><div><dt>ID Melhor Envio</dt><dd>${safe(shipment?.provider_order_id || "—")}</dd></div><div><dt>Observações</dt><dd>${safe(order.notes || "—")}</dd></div></dl></details></section>
+      ${isShipping ? `<section class="admin-label-box"><div><strong>Etiqueta do Melhor Envio</strong><span>${shipment?.provider_order_id ? `Envio ${safe(shipment.provider_order_id)}` : "Ainda não gerada"}</span></div>${shipment?.label_url ? `<a href="${safe(shipment.label_url)}" target="_blank" rel="noopener">Abrir etiqueta</a>` : '<button type="button" disabled title="Cadastre remetente e documentação fiscal antes de gerar etiquetas">Gerar etiqueta Sandbox</button>'}</section>` : ""}`;
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => modal.classList.add("visible"));
+    qs("[data-close-order]", modal)?.focus();
+  }
+
+  function closeOrderModal() {
+    const modal = qs("[data-admin-order-modal]");
+    modal.classList.remove("visible");
+    document.body.classList.remove("modal-open");
+    window.setTimeout(() => { modal.hidden = true; }, 180);
   }
 
   function renderOrders() {
@@ -97,7 +144,7 @@
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
     const [products, orders] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,status,fulfillment_status,delivery_method,total_cents,created_at,order_items(product_name,size,color,quantity),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at)&order=created_at.desc&limit=50")
+      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at)&order=created_at.desc")
     ]);
     state.products = products || [];
     state.orders = orders || [];
@@ -143,27 +190,51 @@
         button.textContent = "Salvar";
       }
     });
-    qs("[data-admin-orders]")?.addEventListener("click", async (event) => {
+    qs("[data-admin-orders]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-open-order]");
+      const card = button?.closest("[data-order-id]");
+      if (!button || !card) return;
+      const order = state.orders.find((item) => item.id === card.dataset.orderId);
+      if (order) openOrderModal(order);
+    });
+    const orderModal = qs("[data-admin-order-modal]");
+    orderModal?.addEventListener("click", async (event) => {
+      if (event.target === orderModal || event.target.closest("[data-close-order]")) return closeOrderModal();
+      const step = event.target.closest("[data-fulfillment-step]");
+      const dialog = qs("[data-admin-order-dialog]", orderModal);
+      if (step) {
+        dialog.dataset.fulfillmentStatus = step.dataset.fulfillmentStep;
+        const buttons = qsa("[data-fulfillment-step]", dialog);
+        const selectedIndex = buttons.indexOf(step);
+        buttons.forEach((item, index) => item.classList.toggle("active", index <= selectedIndex));
+        return;
+      }
       const button = event.target.closest("[data-save-order]");
       if (!button) return;
-      const card = button.closest("[data-order-id]");
       button.disabled = true;
       button.textContent = "Salvando...";
+      const modalFeedback = qs("[data-modal-feedback]", dialog);
       try {
         await client.rest("rpc/admin_update_order_fulfillment", { method: "POST", body: {
-          target_order_id:card.dataset.orderId,
-          new_fulfillment_status:qs("[data-fulfillment-status]", card).value,
-          new_tracking_code:qs("[data-tracking-code]", card)?.value || null,
-          new_tracking_url:qs("[data-tracking-url]", card)?.value || null
+          target_order_id:dialog.dataset.orderId,
+          new_fulfillment_status:dialog.dataset.fulfillmentStatus,
+          new_tracking_code:qs("[data-tracking-code]", dialog)?.value || null,
+          new_tracking_url:qs("[data-tracking-url]", dialog)?.value || null
         } });
         await loadData();
+        modalFeedback.textContent = "Acompanhamento atualizado para o cliente.";
         feedback("[data-orders-feedback]", "Status do pedido atualizado.", "success");
+        window.setTimeout(closeOrderModal, 650);
       } catch (error) {
+        modalFeedback.textContent = error.message;
         feedback("[data-orders-feedback]", error.message, "error");
       } finally {
         button.disabled = false;
         button.textContent = "Salvar acompanhamento";
       }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !orderModal?.hidden) closeOrderModal();
     });
   }
 
