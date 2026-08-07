@@ -4,6 +4,10 @@
   const client = window.OnlySupabase;
   const qs = (selector, scope = document) => scope.querySelector(selector);
   const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+  const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
+  })[character]);
+  const formatMoney = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
 
   const messages = {
     "Invalid login credentials": "E-mail ou senha incorretos.",
@@ -216,7 +220,7 @@
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
-        client.rest("orders?select=id,order_number,status,fulfillment_status,total_cents,expires_at,created_at&order=created_at.desc&limit=20")
+        client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata)&order=created_at.desc&limit=20")
       ]);
       const profile = profiles?.[0] || {};
       const address = addresses?.[0] || null;
@@ -246,11 +250,38 @@
           const pending = order.status === "pending_payment";
           const expired = pending && order.expires_at && new Date(order.expires_at).getTime() <= Date.now();
           const statusLabel = expired ? "Pagamento expirado" : (orderStatusLabels[order.status] || order.status.replaceAll("_", " "));
+          const deliveryLabels = {
+            shipping:"Envio para o endereço",
+            event_pickup:"Retirada no próximo evento",
+            personal_pickup:"Retirada pessoal",
+            customer_courier:"Motoboy por conta do cliente"
+          };
+          const items = Array.isArray(order.order_items) ? order.order_items : [];
+          const itemsSummary = items.map((item) => {
+            const backorderQuantity = Number(item.metadata?.backorder_quantity || 0);
+            const details = [item.color, item.size ? `Tam. ${item.size}` : "", `${item.quantity}x`].filter(Boolean).map(escapeHtml).join(" · ");
+            return `
+              <li>
+                <div><strong>${escapeHtml(item.product_name)}</strong><span>${details}</span>${backorderQuantity > 0 ? `<small>${backorderQuantity} ${backorderQuantity === 1 ? "unidade sob encomenda" : "unidades sob encomenda"} · até ${Number(item.metadata?.production_days || 10)} dias úteis</small>` : ""}</div>
+                <strong>${formatMoney(item.line_total_cents ?? Number(item.unit_price_cents) * Number(item.quantity))}</strong>
+              </li>`;
+          }).join("");
+          const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
           return `
             <article class="order-row" data-order-id="${order.id}">
-              <div class="order-row-main"><strong>${order.order_number}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
-              <span class="order-status" data-order-status>${statusLabel}</span>
-              <strong>${(order.total_cents / 100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</strong>
+              <header class="order-row-header">
+                <div class="order-row-main"><strong>${escapeHtml(order.order_number)}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
+                <span class="order-status" data-order-status>${escapeHtml(statusLabel)}</span>
+              </header>
+              <div class="order-review">
+                <ul>${itemsSummary || "<li><span>Itens indisponíveis para exibição.</span></li>"}</ul>
+                <div class="order-delivery-summary"><span>${escapeHtml(deliveryLabels[order.delivery_method] || order.delivery_method)}${shippingService}</span></div>
+                <dl>
+                  <div><dt>Produtos</dt><dd>${formatMoney(order.subtotal_cents)}</dd></div>
+                  ${Number(order.shipping_cents) > 0 ? `<div><dt>Frete</dt><dd>${formatMoney(order.shipping_cents)}</dd></div>` : ""}
+                  <div class="total"><dt>Total</dt><dd>${formatMoney(order.total_cents)}</dd></div>
+                </dl>
+              </div>
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
