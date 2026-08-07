@@ -1499,7 +1499,7 @@ async function renderPaymentReturn(paymentForm, returnStatus, params) {
   };
   const loadOrder = async () => {
     if (!window.OnlySupabase?.rest || !/^[0-9a-f-]{36}$/i.test(externalReference)) return null;
-    const rows = await window.OnlySupabase.rest(`orders?id=eq.${encodeURIComponent(externalReference)}&select=id,order_number,status,delivery_method,total_cents,order_items(product_name,size,color,quantity,line_total_cents)&limit=1`);
+    const rows = await window.OnlySupabase.rest(`orders?id=eq.${encodeURIComponent(externalReference)}&select=id,order_number,status,delivery_method,total_cents,created_at,order_items(product_name,size,color,quantity,line_total_cents)&limit=1`);
     return rows?.[0] || null;
   };
   const renderOrder = (order) => {
@@ -1510,6 +1510,9 @@ async function renderPaymentReturn(paymentForm, returnStatus, params) {
     label.textContent = "Pedido";
     number.textContent = order.order_number;
     orderBox.append(label, number);
+    const createdAt = document.createElement("small");
+    createdAt.textContent = new Date(order.created_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    orderBox.appendChild(createdAt);
     const itemsBox = qs("[data-payment-result-items]", paymentForm);
     itemsBox.replaceChildren();
     (order.order_items || []).forEach((item) => {
