@@ -222,7 +222,7 @@
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
-        client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata)&order=created_at.desc&limit=20")
+        client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20")
       ]);
       const profile = profiles?.[0] || {};
       const address = addresses?.[0] || null;
@@ -269,6 +269,28 @@
               </li>`;
           }).join("");
           const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
+          const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
+          const isShipping = order.delivery_method === "shipping";
+          const fulfillmentSteps = isShipping
+            ? [
+                ["new","Pedido confirmado"], ["preparing","Em produção"], ["ready","Preparando envio"],
+                ["shipped","Postado"], ["completed","Entregue"]
+              ]
+            : [
+                ["new","Pedido confirmado"], ["preparing","Em produção"], ["ready","Pronto para retirada"],
+                ["completed","Retirado"]
+              ];
+          const fulfillmentOrder = ["new","preparing","ready","shipped","completed"];
+          const currentStep = fulfillmentOrder.indexOf(order.fulfillment_status);
+          const timeline = order.status === "paid" ? `<section class="order-tracking" aria-label="Acompanhamento do pedido">
+            <header><strong>${isShipping ? "Acompanhe seu envio" : "Acompanhe seu pedido"}</strong><span>${escapeHtml(fulfillmentSteps.find(([key]) => key === order.fulfillment_status)?.[1] || "Atualizando")}</span></header>
+            <ol>${fulfillmentSteps.map(([key,label]) => {
+              const stepIndex = fulfillmentOrder.indexOf(key);
+              const state = order.fulfillment_status === "cancelled" ? "" : (stepIndex < currentStep ? "done" : stepIndex === currentStep ? "current" : "");
+              return `<li class="${state}"><i aria-hidden="true"></i><span>${escapeHtml(label)}</span></li>`;
+            }).join("")}</ol>
+            ${shipment?.tracking_code ? `<div class="order-tracking-code"><span>Código de rastreio</span><strong>${escapeHtml(shipment.tracking_code)}</strong>${shipment.tracking_url ? `<a href="${escapeHtml(shipment.tracking_url)}" target="_blank" rel="noopener">Acompanhar entrega</a>` : ""}</div>` : ""}
+          </section>` : "";
           return `
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
@@ -287,6 +309,7 @@
                   </dl>
                 </div>
               </details>
+              ${timeline}
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}

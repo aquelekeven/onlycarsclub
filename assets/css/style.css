@@ -133,7 +133,7 @@ body.admin-access-pending { visibility:hidden; }
 .admin-status { padding:7px 10px; border-radius:999px; background:#292929; color:#ddd!important; white-space:nowrap; }
 .admin-status[data-status="paid"] { background:#173d22; color:#a9e7b5!important; }
 .admin-status[data-status="pending_payment"] { background:#403812; color:#f7df53!important; }
-.admin-order-actions { display:grid; grid-template-columns:1fr 1fr auto; align-items:end; gap:12px; }
+.admin-order-actions { display:grid; grid-template-columns:.7fr 1.2fr 1fr 1.3fr auto; align-items:end; gap:12px; }
 .admin-order-actions label,.admin-stock-row form label { display:grid; gap:6px; color:#999; font-size:.76rem; }
 .admin-payment-state { display:grid; align-content:end; gap:8px; color:#999; font-size:.76rem; }
 .admin-payment-state .admin-status { width:max-content; font-size:.76rem; }
@@ -565,6 +565,36 @@ body.modal-open { overflow:hidden; }
 .order-review dd,.order-review li>strong { white-space:nowrap; }
 .order-review dl .total { padding-top:7px; color:#fff; font-size:13px; font-weight:900; }
 .order-status { padding:7px 10px; border-radius:999px; background:#ffffff10; text-transform:capitalize; }
+.order-tracking { padding:17px; display:grid; gap:16px; border:1px solid #ffffff12; border-radius:16px; background:linear-gradient(145deg,#111,#080808); }
+.order-tracking header { display:flex; justify-content:space-between; align-items:center; gap:15px; }
+.order-tracking header strong { font-size:12px; }
+.order-tracking header span { color:var(--yellow); font-size:10px; font-weight:900; text-transform:uppercase; }
+.order-tracking ol { margin:0; padding:0; display:grid; grid-template-columns:repeat(5,1fr); list-style:none; }
+.order-tracking li { position:relative; display:grid; justify-items:center; gap:8px; color:#555; font-size:9px; font-weight:800; text-align:center; }
+.order-tracking li::before { content:""; position:absolute; z-index:0; top:7px; right:50%; width:100%; height:2px; background:#242424; }
+.order-tracking li:first-child::before { display:none; }
+.order-tracking li i { position:relative; z-index:1; width:16px; height:16px; border:3px solid #1b1b1b; border-radius:50%; background:#444; }
+.order-tracking li.done::before,.order-tracking li.current::before { background:var(--yellow); }
+.order-tracking li.done,.order-tracking li.current { color:#ddd; }
+.order-tracking li.done i,.order-tracking li.current i { background:var(--yellow); box-shadow:0 0 15px #f4c90045; }
+.order-tracking li.current i { outline:3px solid #f4c90022; }
+.order-tracking-code { padding:13px 14px; display:flex; align-items:center; gap:14px; border-radius:13px; background:#ffffff08; }
+.order-tracking-code span { color:#777; font-size:9px; text-transform:uppercase; }
+.order-tracking-code strong { font-size:11px; letter-spacing:.08em; }
+.order-tracking-code a { margin-left:auto; padding:9px 13px; border-radius:999px; background:var(--yellow); color:#090909; font-size:9px; font-weight:900; text-transform:uppercase; }
+.admin-order-actions input { width:100%; min-height:42px; border:1px solid #343434; border-radius:11px; background:#191919; color:#fff; padding:9px 11px; font:inherit; }
+.admin-label-box { padding:14px; display:flex; align-items:center; justify-content:space-between; gap:15px; border:1px dashed #3a3a3a; border-radius:13px; background:#0b0b0b; }
+.admin-label-box>div { display:grid; gap:4px; }
+.admin-label-box span { color:#777; font-size:10px; }
+.admin-label-box a,.admin-label-box button { padding:10px 14px; border:0; border-radius:999px; background:var(--yellow); color:#090909; font-size:10px; font-weight:900; }
+.admin-label-box button:disabled { opacity:.38; cursor:not-allowed; }
+@media(max-width:600px) {
+  .order-tracking { padding:14px 10px; }
+  .order-tracking ol { overflow-x:auto; }
+  .order-tracking li { min-width:62px; }
+  .order-tracking-code { align-items:flex-start; flex-wrap:wrap; }
+  .order-tracking-code a { width:100%; margin:0; text-align:center; }
+}
 .order-customer-actions { grid-column:1/-1; display:flex!important; flex-wrap:wrap; gap:9px!important; padding-top:4px; }
 .order-customer-actions button { min-height:40px; padding:0 15px; border:0; border-radius:999px; background:var(--yellow); color:#090909; font:inherit; font-size:11px; font-weight:900; cursor:pointer; }
 .order-customer-actions button.danger { border:1px solid #ff666655; background:#ff3b3017; color:#ff8b84; }
