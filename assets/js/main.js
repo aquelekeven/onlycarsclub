@@ -1425,6 +1425,131 @@ function buildShippingPackage(cart) {
   return Object.freeze({ ...dimensions, weightGrams, weightKg:weightGrams / 1000 });
 }
 
+async function renderPaymentReturn(paymentForm, returnStatus, params) {
+  const states = {
+    success:{
+      eyebrow:"Pedido realizado",
+      title:"Pagamento aprovado!",
+      description:"Tudo certo. Estamos confirmando seu pedido na Only Cars Club.",
+      icon:"✓",
+      className:"success"
+    },
+    pending:{
+      eyebrow:"Pagamento em análise",
+      title:"Estamos aguardando",
+      description:"O Mercado Pago ainda está processando o pagamento. Você não precisa refazer o pedido.",
+      icon:"⌛",
+      className:"pending"
+    },
+    failure:{
+      eyebrow:"Pagamento não concluído",
+      title:"Não deu certo desta vez",
+      description:"Seu pedido continua salvo e você pode tentar novamente com outra forma de pagamento.",
+      icon:"×",
+      className:"error"
+    }
+  };
+  const state = states[returnStatus];
+  const heading = qs(".checkout-heading");
+  if (heading) heading.hidden = true;
+  document.body.classList.add("payment-result-page");
+  paymentForm.className = "payment-result-shell";
+  paymentForm.innerHTML = `
+    <section class="payment-result-card payment-result-${state.className}" aria-live="polite">
+      <div class="payment-result-brand">
+        <img src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club">
+        <span>Checkout seguro · Mercado Pago</span>
+      </div>
+      <div class="payment-result-icon" aria-hidden="true"><span>${state.icon}</span></div>
+      <p class="payment-result-eyebrow">${state.eyebrow}</p>
+      <h1>${state.title}</h1>
+      <p class="payment-result-description" data-payment-result-description>${state.description}</p>
+      <div class="payment-result-order" data-payment-result-order>
+        <span>Identificando seu pedido...</span>
+      </div>
+      <div class="payment-result-summary" data-payment-result-summary hidden>
+        <div class="payment-result-items" data-payment-result-items></div>
+        <dl>
+          <div><dt>Entrega</dt><dd data-payment-result-delivery>—</dd></div>
+          <div class="total"><dt>Total</dt><dd data-payment-result-total>—</dd></div>
+        </dl>
+      </div>
+      <p class="payment-result-note" data-payment-result-note>Você também pode acompanhar qualquer atualização em Meus pedidos.</p>
+      <div class="payment-result-actions">
+        <a class="payment-result-primary" href="minha-conta.html">Ver meus pedidos</a>
+        ${returnStatus === "failure" ? '<a class="payment-result-secondary" href="pagamento.html">Tentar novamente</a>' : '<a class="payment-result-secondary" href="loja.html">Voltar para a loja</a>'}
+      </div>
+      <small class="payment-result-reference" data-payment-result-reference></small>
+    </section>`;
+
+  const externalReference = String(params.get("external_reference") || sessionStorage.getItem("onlyCarsLastOrderId") || "");
+  const paymentId = String(params.get("payment_id") || params.get("collection_id") || "");
+  const orderBox = qs("[data-payment-result-order]", paymentForm);
+  const summary = qs("[data-payment-result-summary]", paymentForm);
+  const note = qs("[data-payment-result-note]", paymentForm);
+  const description = qs("[data-payment-result-description]", paymentForm);
+  const reference = qs("[data-payment-result-reference]", paymentForm);
+  if (paymentId && reference) reference.textContent = `Transação Mercado Pago: ${paymentId}`;
+
+  const deliveryLabels = {
+    shipping:"Envio para o endereço",
+    event_pickup:"Retirada no próximo evento",
+    personal_pickup:"Retirada pessoal",
+    customer_courier:"Motoboy por conta do cliente"
+  };
+  const loadOrder = async () => {
+    if (!window.OnlySupabase?.rest || !/^[0-9a-f-]{36}$/i.test(externalReference)) return null;
+    const rows = await window.OnlySupabase.rest(`orders?id=eq.${encodeURIComponent(externalReference)}&select=id,order_number,status,delivery_method,total_cents,order_items(product_name,size,color,quantity,line_total_cents)&limit=1`);
+    return rows?.[0] || null;
+  };
+  const renderOrder = (order) => {
+    if (!order) return;
+    orderBox.innerHTML = "";
+    const label = document.createElement("span");
+    const number = document.createElement("strong");
+    label.textContent = "Pedido";
+    number.textContent = order.order_number;
+    orderBox.append(label, number);
+    const itemsBox = qs("[data-payment-result-items]", paymentForm);
+    itemsBox.replaceChildren();
+    (order.order_items || []).forEach((item) => {
+      const row = document.createElement("div");
+      const info = document.createElement("span");
+      const price = document.createElement("strong");
+      const details = [item.color, item.size ? `Tam. ${item.size}` : ""].filter(Boolean).join(" · ");
+      info.innerHTML = `<b></b><small></small>`;
+      qs("b", info).textContent = `${item.quantity}x ${item.product_name}`;
+      qs("small", info).textContent = details;
+      price.textContent = formatCurrency(Number(item.line_total_cents || 0) / 100);
+      row.append(info, price);
+      itemsBox.appendChild(row);
+    });
+    qs("[data-payment-result-delivery]", paymentForm).textContent = deliveryLabels[order.delivery_method] || "Forma combinada";
+    qs("[data-payment-result-total]", paymentForm).textContent = formatCurrency(Number(order.total_cents || 0) / 100);
+    summary.hidden = false;
+    if (returnStatus === "success" && order.status === "paid") {
+      description.textContent = "Pagamento confirmado. Seu pedido já está registrado e agora segue para preparação.";
+      note.textContent = "Pronto! Você pode acompanhar a preparação e a entrega em Meus pedidos.";
+      return true;
+    }
+    if (returnStatus === "success") {
+      description.textContent = "Pagamento aprovado pelo Mercado Pago. Estamos aguardando a confirmação automática no pedido.";
+      note.textContent = "Isso normalmente leva poucos segundos. Não faça outro pagamento para o mesmo pedido.";
+    }
+    return false;
+  };
+
+  try {
+    let confirmed = renderOrder(await loadOrder());
+    for (let attempt = 0; returnStatus === "success" && !confirmed && attempt < 3; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      confirmed = renderOrder(await loadOrder());
+    }
+  } catch (_) {
+    orderBox.innerHTML = "<span>Pedido salvo na sua conta</span>";
+  }
+}
+
 async function setupCheckoutCustomer(deliveryForm) {
   const section = qs("[data-checkout-customer]", deliveryForm);
   if (!section) return null;
@@ -1644,28 +1769,12 @@ function setupCheckoutFlow() {
     pickupDeliveries.includes(delivery)
     || (typeof delivery === "string" && delivery.startsWith("Envio — "));
   if (!deliveryForm && !paymentForm) return;
+  const paymentReturnParams = new URLSearchParams(location.search);
   const paymentReturnStatus = paymentForm
-    ? new URLSearchParams(location.search).get("status")
+    ? paymentReturnParams.get("status")
     : null;
   if (paymentForm && ["success", "pending", "failure"].includes(paymentReturnStatus)) {
-    const heading = qs(".checkout-heading");
-    const title = qs("h1", heading);
-    const description = qs("h1 + p", heading);
-    const messages = {
-      success:{ title:"Pagamento recebido", description:"Seu pagamento foi aprovado e o pedido está sendo confirmado.", className:"success" },
-      pending:{ title:"Pagamento pendente", description:"Estamos aguardando a confirmação do Mercado Pago. Você pode acompanhar o pedido pela sua conta.", className:"pending" },
-      failure:{ title:"Pagamento não concluído", description:"Seu carrinho continua salvo para você tentar novamente.", className:"error" }
-    };
-    const state = messages[paymentReturnStatus];
-    title.textContent = state.title;
-    description.textContent = state.description;
-    paymentForm.innerHTML = `
-      <section class="payment-return payment-return-${state.className}" aria-live="polite">
-        <strong>${state.title}</strong>
-        <p>${state.description}</p>
-        <a class="checkout-next" href="minha-conta.html">Ver meus pedidos</a>
-        ${paymentReturnStatus === "failure" ? '<a class="checkout-back" href="pagamento.html">Tentar novamente</a>' : '<a class="checkout-back" href="loja.html">Voltar para a loja</a>'}
-      </section>`;
+    renderPaymentReturn(paymentForm, paymentReturnStatus, paymentReturnParams);
     if (paymentReturnStatus === "success") saveCart([]);
     return;
   }
@@ -1977,6 +2086,7 @@ function setupCheckoutFlow() {
           }))
         });
         if (!response?.checkout_url) throw new Error("O Mercado Pago não retornou o link de pagamento.");
+        if (response.order_id) sessionStorage.setItem("onlyCarsLastOrderId", response.order_id);
         location.assign(response.checkout_url);
       } catch (checkoutError) {
         error.textContent = checkoutError?.message || "Não foi possível iniciar o pagamento. Tente novamente.";
