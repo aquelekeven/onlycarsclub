@@ -27,6 +27,65 @@
     return known ? known[1] : original;
   }
 
+  function confirmOrderCancellation(orderNumber, trigger) {
+    return new Promise((resolve) => {
+      let modal = qs("[data-order-cancel-modal]");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.className = "confirm-modal order-cancel-modal";
+        modal.dataset.orderCancelModal = "";
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.setAttribute("aria-labelledby", "order-cancel-title");
+        modal.innerHTML = `
+          <div class="confirm-modal-dialog">
+            <span class="confirm-modal-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01"/><path d="M10.3 3.7 2.6 18a2 2 0 0 0 1.8 3h15.2a2 2 0 0 0 1.8-3L13.7 3.7a2 2 0 0 0-3.4 0Z"/></svg>
+            </span>
+            <p class="order-cancel-eyebrow">Ação permanente</p>
+            <h2 id="order-cancel-title">Cancelar pedido?</h2>
+            <strong data-order-cancel-number></strong>
+            <p>O link de pagamento será desativado e este número de pedido não poderá ser reutilizado.</p>
+            <div class="order-cancel-warning"><i aria-hidden="true"></i><span>Se você já pagou, não cancele. Aguarde a confirmação ou fale com a Only.</span></div>
+            <div class="confirm-modal-actions">
+              <button type="button" class="confirm-modal-cancel" data-order-cancel-keep>Manter pedido</button>
+              <button type="button" class="confirm-modal-delete" data-order-cancel-confirm>Sim, cancelar</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+      }
+      qs("[data-order-cancel-number]", modal).textContent = orderNumber;
+      const keep = qs("[data-order-cancel-keep]", modal);
+      const confirm = qs("[data-order-cancel-confirm]", modal);
+      let closed = false;
+      const close = (answer) => {
+        if (closed) return;
+        closed = true;
+        modal.classList.remove("visible");
+        document.body.classList.remove("modal-open");
+        document.removeEventListener("keydown", onKeydown);
+        window.setTimeout(() => {
+          trigger?.focus();
+          resolve(answer);
+        }, 180);
+      };
+      const onKeydown = (event) => {
+        if (event.key === "Escape") close(false);
+      };
+      keep.onclick = () => close(false);
+      confirm.onclick = () => close(true);
+      modal.onclick = (event) => {
+        if (event.target === modal) close(false);
+      };
+      document.addEventListener("keydown", onKeydown);
+      document.body.classList.add("modal-open");
+      requestAnimationFrame(() => {
+        modal.classList.add("visible");
+        keep.focus();
+      });
+    });
+  }
+
   function setFeedback(form, text, type = "error") {
     const target = qs("[data-form-feedback]", form);
     if (!target) return;
@@ -324,7 +383,10 @@
           const row = button?.closest("[data-order-id]");
           if (!button || !row) return;
           const action = button.dataset.orderAction;
-          if (action === "cancel" && !window.confirm("Cancelar este pedido? O link de pagamento deixará de funcionar.")) return;
+          if (action === "cancel") {
+            const orderNumber = qs(".order-row-main strong", row)?.textContent || "Este pedido";
+            if (!await confirmOrderCancellation(orderNumber, button)) return;
+          }
           const feedback = qs("[data-order-feedback]", row);
           qsa("button", row).forEach((item) => item.disabled = true);
           feedback.textContent = action === "resume" ? "Recuperando pagamento..." : "Cancelando pedido...";
