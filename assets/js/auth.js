@@ -330,6 +330,20 @@
           const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
           const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
           const isShipping = order.delivery_method === "shipping";
+          const isCoordinatedPickup = ["personal_pickup", "customer_courier"].includes(order.delivery_method);
+          const pickupMessage = [
+            "Olá! Quero combinar a retirada do meu pedido da Only Cars Club.",
+            "",
+            `Pedido: ${order.order_number}`,
+            `Modalidade: ${deliveryLabels[order.delivery_method] || order.delivery_method}`,
+            "",
+            "Itens:",
+            ...items.map((item) => `- ${Number(item.quantity)}x ${item.product_name}${item.size ? ` · Tam. ${item.size}` : ""}${item.color ? ` · ${item.color}` : ""}`),
+            `Total: ${formatMoney(order.total_cents)}`,
+            "",
+            "Podemos combinar a estação e o horário para retirada na Linha 3–Vermelha do Metrô, em São Paulo/SP?"
+          ].join("\n");
+          const pickupWhatsappUrl = `https://wa.me/5511976842147?text=${encodeURIComponent(pickupMessage)}`;
           const fulfillmentSteps = isShipping
             ? [
                 ["new","Pedido confirmado"], ["preparing","Em produção"], ["ready","Preparando envio"],
@@ -369,6 +383,11 @@
                 </div>
               </details>
               ${timeline}
+              ${isCoordinatedPickup && order.status === "paid" ? `
+                <aside class="order-pickup-contact">
+                  <div><strong>Combine sua retirada</strong><span>Disponível somente em São Paulo/SP, em uma estação combinada da Linha 3–Vermelha do Metrô.</span></div>
+                  <a href="${escapeHtml(pickupWhatsappUrl)}" target="_blank" rel="noopener noreferrer">Combinar pelo WhatsApp</a>
+                </aside>` : ""}
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
