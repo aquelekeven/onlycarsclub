@@ -1502,6 +1502,13 @@ async function renderPaymentReturn(paymentForm, returnStatus, params) {
     const rows = await window.OnlySupabase.rest(`orders?id=eq.${encodeURIComponent(externalReference)}&select=id,order_number,status,delivery_method,total_cents,created_at,order_items(product_name,size,color,quantity,line_total_cents)&limit=1`);
     return rows?.[0] || null;
   };
+  const confirmPaymentReturn = async () => {
+    if (!window.OnlySupabase?.invokeFunction || !/^\d+$/.test(paymentId) || !/^[0-9a-f-]{36}$/i.test(externalReference)) return null;
+    return window.OnlySupabase.invokeFunction("mercado-pago-confirmar-retorno", {
+      payment_id:paymentId,
+      order_id:externalReference
+    });
+  };
   const renderOrder = (order) => {
     if (!order) return;
     orderBox.innerHTML = "";
@@ -1543,6 +1550,7 @@ async function renderPaymentReturn(paymentForm, returnStatus, params) {
   };
 
   try {
+    await confirmPaymentReturn().catch(() => null);
     let confirmed = renderOrder(await loadOrder());
     for (let attempt = 0; returnStatus === "success" && !confirmed && attempt < 3; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
