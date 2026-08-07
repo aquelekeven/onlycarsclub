@@ -1770,9 +1770,7 @@ function setupCheckoutFlow() {
   );
   const productTotal = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
   const pickupDeliveries = [
-    "Retirar no próximo evento do Only",
-    "Pedir um motoboy para retirar",
-    "Vou retirar pessoalmente"
+    "Retirar no próximo evento do Only"
   ];
   const deliveryForm = qs("[data-delivery-form]");
   const paymentForm = qs("[data-payment-form]");
@@ -2076,9 +2074,7 @@ function setupCheckoutFlow() {
       const deliveryMethod = delivery.startsWith("Envio — ")
         ? "shipping"
         : ({
-            "Retirar no próximo evento do Only":"event_pickup",
-            "Vou retirar pessoalmente":"personal_pickup",
-            "Pedir um motoboy para retirar":"customer_courier"
+            "Retirar no próximo evento do Only":"event_pickup"
           })[delivery];
       if (!deliveryMethod) {
         location.replace("entrega.html");
