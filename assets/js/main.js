@@ -12,6 +12,13 @@ const MOLETOM_GIFT_OPTIONS = Object.freeze([
   "Mascote branco",
   "Mascote holográfico"
 ]);
+const COMPANION_PRODUCT_IDS = new Set([
+  "camiseta-oversized",
+  "camiseta-oversized-amarela",
+  "camiseta-streetwear",
+  "moletom",
+  "copo-termico"
+]);
 
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
@@ -1151,6 +1158,60 @@ function showCartToast(item) {
   }, 3200);
 }
 
+function cartNeedsCompanionProduct(cart = getCart()) {
+  const items = cart.filter((item) => Number(item.quantity) > 0);
+  return items.some((item) => item.pickupOnly)
+    && !items.some((item) => COMPANION_PRODUCT_IDS.has(item.id));
+}
+
+function showAccessoryRuleModal() {
+  let modal = qs("[data-accessory-rule-modal]");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.className = "confirm-modal accessory-rule-modal";
+    modal.dataset.accessoryRuleModal = "";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "accessory-rule-title");
+    modal.innerHTML = `
+      <div class="confirm-modal-dialog">
+        <span class="confirm-modal-icon accessory-rule-icon" aria-hidden="true">!</span>
+        <h2 id="accessory-rule-title">Adicione outro produto</h2>
+        <p>Chaveiros e adesivos não podem ser comprados sozinhos. Inclua pelo menos um destes produtos no carrinho:</p>
+        <ul class="accessory-rule-list">
+          <li>Camiseta oversized</li>
+          <li>Camiseta streetwear</li>
+          <li>Moletom</li>
+          <li>Copo térmico</li>
+        </ul>
+        <div class="confirm-modal-actions">
+          <button type="button" class="confirm-modal-cancel" data-accessory-rule-close>Fechar</button>
+          <a class="accessory-rule-shop" href="loja.html">Continuar comprando</a>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  const closeButton = qs("[data-accessory-rule-close]", modal);
+  const close = () => {
+    modal.classList.remove("visible");
+    document.body.classList.remove("modal-open");
+    document.removeEventListener("keydown", onKeydown);
+  };
+  const onKeydown = (event) => {
+    if (event.key === "Escape") close();
+  };
+  closeButton.onclick = close;
+  modal.onclick = (event) => {
+    if (event.target === modal) close();
+  };
+  document.addEventListener("keydown", onKeydown);
+  document.body.classList.add("modal-open");
+  requestAnimationFrame(() => {
+    modal.classList.add("visible");
+    closeButton.focus();
+  });
+}
+
 function setupCartPage() {
   const page = qs("[data-cart-page]");
   if (!page) return;
@@ -1338,14 +1399,23 @@ function setupCartPage() {
     render();
   });
 
+  const checkoutButton = qs("[data-cart-checkout]", page);
+  checkoutButton?.addEventListener("click", (event) => {
+    if (!cartNeedsCompanionProduct()) return;
+    event.preventDefault();
+    showAccessoryRuleModal();
+  });
+
   render();
 }
 
 function buildShippingPackage(cart) {
   const items = cart.filter((item) => Number(item.quantity) > 0);
-  if (!items.length || items.some((item) => !item.shippingEligible)) return null;
+  if (!items.length || items.some((item) => !item.shippingEligible && !item.pickupOnly)) return null;
+  const shippableItems = items.filter((item) => item.shippingEligible);
+  if (!shippableItems.length) return null;
   const quantity = items.reduce((total, item) => total + Number(item.quantity), 0);
-  const weightGrams = items.reduce(
+  const weightGrams = shippableItems.reduce(
     (total, item) => total + Number(item.weightGrams) * Number(item.quantity),
     0
   );
@@ -1486,18 +1556,19 @@ async function setupCheckoutCustomer(deliveryForm) {
 
   return {
     user,
-    async save() {
+    async save({ requireAddress = true } = {}) {
       const formData = new FormData(deliveryForm);
       const phone = String(formData.get("phone") || "").replace(/\D/g, "");
       const taxId = String(formData.get("tax_id") || "").replace(/\D/g, "");
       const postalCode = String(formData.get("postal_code") || "").replace(/\D/g, "");
       const state = String(formData.get("state") || "").trim().toUpperCase();
+      const recipientName = String(formData.get("recipient_name") || "").trim();
+      if (!recipientName) throw new Error("Digite o nome completo.");
       if (![10, 11].includes(phone.length)) throw new Error("Digite um telefone com DDD válido.");
       if (taxId && taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
-      if (postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
-      if (!/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
-      const recipientName = String(formData.get("recipient_name") || "").trim();
-      const address = {
+      if (requireAddress && postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
+      if (requireAddress && !/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
+      const address = requireAddress ? {
         user_id:user.id,
         label:"Principal",
         recipient_name:recipientName,
@@ -1509,20 +1580,20 @@ async function setupCheckoutCustomer(deliveryForm) {
         city:String(formData.get("city") || "").trim(),
         state,
         is_default:true
-      };
+      } : null;
       setStatus("Salvando seus dados...", "loading");
       await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
         method:"PATCH",
         headers:{ Prefer:"return=minimal" },
         body:{ display_name:recipientName, phone, tax_id:taxId || null }
       });
-      if (addressId) {
+      if (requireAddress && addressId) {
         await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
           method:"PATCH",
           headers:{ Prefer:"return=minimal" },
           body:address
         });
-      } else {
+      } else if (requireAddress) {
         const created = await client.rest("addresses", {
           method:"POST",
           headers:{ Prefer:"return=representation" },
@@ -1532,12 +1603,13 @@ async function setupCheckoutCustomer(deliveryForm) {
       }
       const checkoutCustomer = {
         email:user.email || "",
+        recipient_name:recipientName,
         phone,
         taxId,
-        ...address
+        ...(address || {})
       };
       sessionStorage.setItem("onlyCarsCheckoutCustomer", JSON.stringify(checkoutCustomer));
-      setStatus("Dados de entrega salvos.", "success");
+      setStatus(requireAddress ? "Dados de entrega salvos." : "Dados de contato salvos para a retirada.", "success");
       return checkoutCustomer;
     }
   };
@@ -1545,7 +1617,7 @@ async function setupCheckoutCustomer(deliveryForm) {
 
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
-  const hasCompanionProduct = cart.some((item) => !item.pickupOnly);
+  const needsCompanionProduct = cartNeedsCompanionProduct(cart);
   const shippingPackage = buildShippingPackage(cart);
   const registeredWeightGrams = cart.reduce(
     (total, item) => total + (Number(item.weightGrams) || 0) * Number(item.quantity),
@@ -1602,6 +1674,11 @@ function setupCheckoutFlow() {
     return;
   }
 
+  if (needsCompanionProduct) {
+    showAccessoryRuleModal();
+    return;
+  }
+
   if (deliveryForm) {
     const customerPromise = setupCheckoutCustomer(deliveryForm);
     const error = qs("[data-checkout-error]", deliveryForm);
@@ -1611,17 +1688,8 @@ function setupCheckoutFlow() {
     const shippingStatus = qs("[data-shipping-status]", deliveryForm);
     const shippingResults = qs("[data-shipping-results]", deliveryForm);
     const saveCustomerButton = qs("[data-checkout-save-customer]", deliveryForm);
-    const motoboyInput = qs('input[name="delivery"][value="Pedir um motoboy para retirar"]', deliveryForm);
-    const motoboyOption = motoboyInput?.closest(".checkout-option");
     const savedDelivery = sessionStorage.getItem("onlyCarsDelivery") || "";
     const savedQuote = readShippingQuote();
-
-    if (!hasCompanionProduct && motoboyInput) {
-      motoboyInput.checked = false;
-      motoboyInput.disabled = true;
-      if (motoboyOption) motoboyOption.hidden = true;
-      if (error) error.textContent = "Chaveiros e adesivos comprados sem outro produto ficam disponíveis somente para retirada no evento ou retirada pessoal.";
-    }
 
     if (!shippingPackage && calculator) {
       calculator.classList.add("is-unavailable");
@@ -1633,7 +1701,6 @@ function setupCheckoutFlow() {
     }
 
     const savedPickup = pickupDeliveries.includes(savedDelivery)
-      && (hasCompanionProduct || savedDelivery !== "Pedir um motoboy para retirar")
       ? qs(`input[name="delivery"][value="${CSS.escape(savedDelivery)}"]`, deliveryForm)
       : null;
     if (savedPickup) savedPickup.checked = true;
@@ -1768,6 +1835,21 @@ function setupCheckoutFlow() {
         saveCustomerButton.disabled = false;
       }
     });
+
+    const addressFieldNames = ["postal_code", "state", "street", "number", "neighborhood", "city"];
+    const updateAddressRequirements = () => {
+      const selected = qs('input[name="delivery"]:checked', deliveryForm)?.value || "";
+      const requireAddress = selected.startsWith("Envio — ");
+      addressFieldNames.forEach((name) => {
+        const input = deliveryForm.elements[name];
+        if (!input) return;
+        input.required = requireAddress && !(name === "number" && deliveryForm.elements.no_number?.checked);
+      });
+    };
+    deliveryForm.addEventListener("change", (event) => {
+      if (event.target.matches('input[name="delivery"], input[name="no_number"]')) updateAddressRequirements();
+    });
+    updateAddressRequirements();
     calculateButton?.addEventListener("click", calculateShipping);
     postalCodeInput?.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return;
@@ -1779,22 +1861,23 @@ function setupCheckoutFlow() {
       event.preventDefault();
       const customer = await customerPromise;
       if (!customer) return;
-      if (!deliveryForm.reportValidity()) return;
       const selectedInput = qs('input[name="delivery"]:checked', deliveryForm);
       const selected = selectedInput?.value || "";
-      if (!isDeliveryAllowed(selected)
-        || (!hasCompanionProduct && selected === "Pedir um motoboy para retirar")) {
+      updateAddressRequirements();
+      if (!deliveryForm.reportValidity()) return;
+      if (!isDeliveryAllowed(selected)) {
         if (error) error.textContent = "Escolha uma forma de entrega disponível para este pedido.";
         return;
       }
+      const requiresShipping = selected.startsWith("Envio — ");
       const customerTaxId = String(deliveryForm.elements.tax_id?.value || "").replace(/\D/g, "");
-      if (selected.startsWith("Envio — ") && customerTaxId.length !== 11) {
+      if (requiresShipping && customerTaxId.length !== 11) {
         if (error) error.textContent = "Informe o CPF para gerar a etiqueta de envio.";
         deliveryForm.elements.tax_id?.focus();
         return;
       }
       try {
-        await customer.save();
+        await customer.save({ requireAddress:requiresShipping });
       } catch (customerError) {
         if (error) error.textContent = customerError?.message || "Revise os dados de entrega.";
         return;
