@@ -493,6 +493,11 @@ body.modal-open { overflow:hidden; }
 .order-row div { display:grid; gap:5px; }
 .order-row span { color:#999; font-size:11px; }
 .order-status { padding:7px 10px; border-radius:999px; background:#ffffff10; text-transform:capitalize; }
+.order-customer-actions { grid-column:1/-1; display:flex!important; flex-wrap:wrap; gap:9px!important; padding-top:4px; }
+.order-customer-actions button { min-height:40px; padding:0 15px; border:0; border-radius:999px; background:var(--yellow); color:#090909; font:inherit; font-size:11px; font-weight:900; cursor:pointer; }
+.order-customer-actions button.danger { border:1px solid #ff666655; background:#ff3b3017; color:#ff8b84; }
+.order-customer-actions button:disabled { opacity:.55; cursor:wait; }
+.order-action-feedback { grid-column:1/-1; min-height:16px; margin:0; color:#bbb; font-size:11px; }
 .account-empty { display:grid; gap:7px; padding:24px; border:1px dashed #ffffff25; border-radius:16px; color:#999; text-align:center; }
 .account-empty strong { color:#fff; }
 
