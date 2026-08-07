@@ -472,20 +472,33 @@ if (availableStock < quantity && !allowBackorder) {
     const payerFirstName = payerNameParts.shift() || customerName;
     const payerLastName = payerNameParts.join(" ");
 
-    const preferenceBody = {
-      items: canonicalItems.map((item) => ({
-        id: `${item.product_slug}-${item.size}-${item.color}`,
-        title: item.name,
-        description: [
-          item.color,
-          item.size ? `Tamanho ${item.size}` : "",
-        ].filter(Boolean).join(" · "),
-        quantity: item.quantity,
+    const preferenceItems = canonicalItems.map((item) => ({
+      id: `${item.product_slug}-${item.size}-${item.color}`,
+      title: item.name,
+      description: [
+        item.color,
+        item.size ? `Tamanho ${item.size}` : "",
+      ].filter(Boolean).join(" · "),
+      quantity: item.quantity,
+      currency_id: "BRL",
+      unit_price: Number(
+        (item.unit_price_cents / 100).toFixed(2),
+      ),
+    }));
+
+    if (shippingCents > 0) {
+      preferenceItems.push({
+        id: `frete-${canonicalShippingQuote?.service_id || "envio"}`,
+        title: `Frete · ${canonicalShippingQuote?.service_name || "Entrega"}`,
+        description: canonicalShippingQuote?.company_name || "Envio para o endereço",
+        quantity: 1,
         currency_id: "BRL",
-        unit_price: Number(
-          (item.unit_price_cents / 100).toFixed(2),
-        ),
-      })),
+        unit_price: Number((shippingCents / 100).toFixed(2)),
+      });
+    }
+
+    const preferenceBody = {
+      items: preferenceItems,
       payer: {
         email: user.email,
         name: payerFirstName,
@@ -497,12 +510,6 @@ if (availableStock < quantity && !allowBackorder) {
             }
           : undefined,
       },
-      shipments: shippingCents > 0
-        ? {
-            cost: Number((shippingCents / 100).toFixed(2)),
-            mode: "not_specified",
-          }
-        : undefined,
       external_reference: orderId,
       notification_url:
         `${supabaseUrl}/functions/v1/mercado-pago-webhook`,
