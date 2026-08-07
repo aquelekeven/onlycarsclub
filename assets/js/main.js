@@ -1092,6 +1092,7 @@ function getCart() {
 function saveCart(cart) {
   const normalizedCart = Array.isArray(cart) ? cart.map(normalizeCartItem).filter(Boolean) : [];
   localStorage.setItem("onlyCarsCart", JSON.stringify(normalizedCart));
+  sessionStorage.removeItem("onlyCarsCheckoutKey");
   if (!normalizedCart.length) {
     sessionStorage.removeItem("onlyCarsDelivery");
     sessionStorage.removeItem("onlyCarsShippingQuote");
@@ -1556,7 +1557,6 @@ function setupCheckoutFlow() {
     "Pedir um motoboy para retirar",
     "Vou retirar pessoalmente"
   ];
-  const allowedPayments = ["Pix", "Cartão — sujeito a taxas"];
   const deliveryForm = qs("[data-delivery-form]");
   const paymentForm = qs("[data-payment-form]");
   const readShippingQuote = () => {
@@ -1572,6 +1572,31 @@ function setupCheckoutFlow() {
     pickupDeliveries.includes(delivery)
     || (typeof delivery === "string" && delivery.startsWith("Envio — "));
   if (!deliveryForm && !paymentForm) return;
+  const paymentReturnStatus = paymentForm
+    ? new URLSearchParams(location.search).get("status")
+    : null;
+  if (paymentForm && ["success", "pending", "failure"].includes(paymentReturnStatus)) {
+    const heading = qs(".checkout-heading");
+    const title = qs("h1", heading);
+    const description = qs("h1 + p", heading);
+    const messages = {
+      success:{ title:"Pagamento recebido", description:"Seu pagamento foi aprovado e o pedido está sendo confirmado.", className:"success" },
+      pending:{ title:"Pagamento pendente", description:"Estamos aguardando a confirmação do Mercado Pago. Você pode acompanhar o pedido pela sua conta.", className:"pending" },
+      failure:{ title:"Pagamento não concluído", description:"Seu carrinho continua salvo para você tentar novamente.", className:"error" }
+    };
+    const state = messages[paymentReturnStatus];
+    title.textContent = state.title;
+    description.textContent = state.description;
+    paymentForm.innerHTML = `
+      <section class="payment-return payment-return-${state.className}" aria-live="polite">
+        <strong>${state.title}</strong>
+        <p>${state.description}</p>
+        <a class="checkout-next" href="minha-conta.html">Ver meus pedidos</a>
+        ${paymentReturnStatus === "failure" ? '<a class="checkout-back" href="pagamento.html">Tentar novamente</a>' : '<a class="checkout-back" href="loja.html">Voltar para a loja</a>'}
+      </section>`;
+    if (paymentReturnStatus === "success") saveCart([]);
+    return;
+  }
   if (!cart.length) {
     location.replace("carrinho.html");
     return;
@@ -1816,42 +1841,47 @@ function setupCheckoutFlow() {
       event.preventDefault();
       const authenticatedUser = await paymentAccessPromise;
       if (!authenticatedUser) return;
-      const payment = new FormData(paymentForm).get("payment");
-      if (!allowedPayments.includes(payment)) {
-        qs("[data-checkout-error]", paymentForm).textContent = "Escolha uma forma de pagamento para continuar.";
+      const error = qs("[data-checkout-error]", paymentForm);
+      const button = qs("button[type='submit']", paymentForm);
+      const deliveryMethod = delivery.startsWith("Envio — ")
+        ? "shipping"
+        : ({
+            "Retirar no próximo evento do Only":"event_pickup",
+            "Vou retirar pessoalmente":"personal_pickup",
+            "Pedir um motoboy para retirar":"customer_courier"
+          })[delivery];
+      if (!deliveryMethod) {
+        location.replace("entrega.html");
         return;
       }
-      const lines = cart.map((item, index) => {
-        const details = [
-          `*${index + 1}. ${item.name}*${item.variant ? ` - ${item.variant}` : ""}${item.size ? ` - Tamanho: ${item.size}` : ""}`,
-          item.gift ? `Adesivo de brinde: *${item.gift}* (grátis)` : "",
-          Number(item.quantity) > 1 ? `Quantidade: ${item.quantity}` : "",
-          `Valor unitário: ${formatCurrency(item.price)}`,
-          Number(item.quantity) > 1 ? `Subtotal: ${formatCurrency(item.price * item.quantity)}` : ""
-        ].filter(Boolean);
-        return details.join("\n");
-      });
-      const message = [
-        "Olá! Quero finalizar este pedido na *Loja Only Cars Club*.",
-        "",
-        "*RESUMO DO PEDIDO*",
-        lines.join("\n\n"),
-        "",
-        "*ENTREGA E PAGAMENTO*",
-        `Entrega: _${delivery}_`,
-        shippingQuote ? `CEP: _${shippingQuote.postalCode}_` : null,
-        shippingQuote ? `Frete: _${formatCurrency(shippingPrice)}${shippingQuote.deliveryTime ? ` · até ${shippingQuote.deliveryTime} dias úteis` : ""}_` : null,
-        `Pagamento: _${payment}_`,
-        registeredWeightGrams > 0 ? `Peso cadastrado dos produtos: _${registeredWeightGrams} g_` : null,
-        shippingPackage ? `Pacote: _${shippingPackage.length} × ${shippingPackage.width} × ${shippingPackage.height} cm_` : null,
-        "",
-        `Produtos: ${formatCurrency(productTotal)}`,
-        shippingPrice > 0 ? `Frete: ${formatCurrency(shippingPrice)}` : null,
-        `*TOTAL: ${formatCurrency(total)}*`,
-        "_Produto, cor, tamanho, quantidade e valores serão conferidos pela equipe antes da confirmação._",
-        payment.startsWith("Cartão") ? "_As taxas do cartão serão confirmadas no atendimento._" : null
-      ].filter((line) => line !== null).join("\n");
-      window.open(`https://wa.me/5511976842147?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      let checkoutKey = sessionStorage.getItem("onlyCarsCheckoutKey");
+      if (!checkoutKey) {
+        checkoutKey = crypto.randomUUID();
+        sessionStorage.setItem("onlyCarsCheckoutKey", checkoutKey);
+      }
+      button.disabled = true;
+      button.textContent = "Abrindo Mercado Pago...";
+      error.textContent = "";
+      try {
+        const response = await window.OnlySupabase.invokeFunction("mercado-pago-checkout", {
+          checkout_key:checkoutKey,
+          delivery_method:deliveryMethod,
+          shipping_quote:shippingQuote ? { service_id:shippingQuote.serviceId } : null,
+          items:cart.map((item) => ({
+            product_slug:item.id,
+            size:item.size || "",
+            color:item.variant || "",
+            quantity:Number(item.quantity),
+            gift:item.gift || null
+          }))
+        });
+        if (!response?.checkout_url) throw new Error("O Mercado Pago não retornou o link de pagamento.");
+        location.assign(response.checkout_url);
+      } catch (checkoutError) {
+        error.textContent = checkoutError?.message || "Não foi possível iniciar o pagamento. Tente novamente.";
+        button.disabled = false;
+        button.textContent = "Pagar com Mercado Pago";
+      }
     });
   }
 }

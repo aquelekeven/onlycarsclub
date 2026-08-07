@@ -12,7 +12,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=20260729-v63">
   <link rel="manifest" href="manifest.webmanifest?v=20260729-v63">
   <link rel="stylesheet" href="assets/css/style.css?v=20260806-v90">
-  <script src="assets/js/supabase-client.js?v=20260806-v85" defer></script>\n  <script src="assets/js/main.js?v=20260806-v90" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260807-v91" defer></script>
+  <script src="assets/js/main.js?v=20260807-v91" defer></script>
 </head>
 <body data-page="loja">
 <header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
@@ -20,7 +21,7 @@
   <section class="checkout-heading">
     <p class="eyebrow">Etapa 4 de 4</p>
     <h1>Como você quer pagar?</h1>
-    <p>O pagamento será combinado e confirmado pelo WhatsApp.</p>
+    <p>Finalize com segurança no ambiente do Mercado Pago.</p>
     <ol class="checkout-steps" data-checkout-steps data-current-step="4" aria-label="Etapas da compra">
       <li data-step="1"><a href="loja.html" aria-label="Ir para produtos"><span>1</span><b>Produtos</b></a></li>
       <li data-step="2"><a href="carrinho.html" aria-label="Ir para o carrinho"><span>2</span><b>Carrinho</b></a></li>
@@ -29,21 +30,13 @@
     </ol>
   </section>
   <form class="checkout-options" data-payment-form>
-    <label class="checkout-option">
-      <input type="radio" name="payment" value="Pix" required>
+    <div class="checkout-option selected" aria-label="Pagamento pelo Mercado Pago">
       <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 4-4 4 4M8 19l4 4 4-4M5 8l-4 4 4 4M19 8l4 4-4 4"/><path d="m8 8 4-4 4 4 4 4-4 4-4 4-4-4-4-4Z"/></svg></span>
-      <span><strong>Pix</strong><small>Os dados para pagamento serão enviados no atendimento.</small></span>
-      <i aria-hidden="true"></i>
-    </label>
-    <label class="checkout-option">
-      <input type="radio" name="payment" value="Cartão — sujeito a taxas" required>
-      <span class="checkout-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>
-      <span><strong>Cartão</strong><small>Sujeito às taxas informadas durante o atendimento.</small></span>
-      <i aria-hidden="true"></i>
-    </label>
+      <span><strong>Mercado Pago</strong><small>Escolha Pix ou cartão na próxima tela.</small></span>
+    </div>
     <div class="checkout-order-total"><span>Total dos produtos</span><strong data-checkout-total>R$ 0,00</strong></div>
     <p class="checkout-error" data-checkout-error role="alert"></p>
-    <button class="checkout-next" type="submit">Finalizar pelo WhatsApp</button>
+    <button class="checkout-next" type="submit">Pagar com Mercado Pago</button>
     <a class="checkout-back" href="entrega.html">Voltar para entrega</a>
   </form>
 </main>
