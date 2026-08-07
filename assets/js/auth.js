@@ -212,10 +212,11 @@
     }
 
     try {
+      await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
-        client.rest("orders?select=order_number,status,fulfillment_status,total_cents,created_at&order=created_at.desc&limit=20")
+        client.rest("orders?select=id,order_number,status,fulfillment_status,total_cents,expires_at,created_at&order=created_at.desc&limit=20")
       ]);
       const profile = profiles?.[0] || {};
       const address = addresses?.[0] || null;
@@ -241,12 +242,50 @@
       if (!orders?.length) {
         ordersList.innerHTML = '<div class="account-empty"><strong>Nenhum pedido ainda.</strong><span>Quando a loja integrada entrar no ar, seus pedidos aparecerão aqui.</span></div>';
       } else {
-        ordersList.innerHTML = orders.map((order) => `
-          <article class="order-row">
-            <div><strong>${order.order_number}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
-            <span class="order-status">${orderStatusLabels[order.status] || order.status.replaceAll("_", " ")}</span>
-            <strong>${(order.total_cents / 100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</strong>
-          </article>`).join("");
+        ordersList.innerHTML = orders.map((order) => {
+          const pending = order.status === "pending_payment";
+          const expired = pending && order.expires_at && new Date(order.expires_at).getTime() <= Date.now();
+          const statusLabel = expired ? "Pagamento expirado" : (orderStatusLabels[order.status] || order.status.replaceAll("_", " "));
+          return `
+            <article class="order-row" data-order-id="${order.id}">
+              <div class="order-row-main"><strong>${order.order_number}</strong><span>${new Date(order.created_at).toLocaleDateString("pt-BR")}</span></div>
+              <span class="order-status" data-order-status>${statusLabel}</span>
+              <strong>${(order.total_cents / 100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</strong>
+              ${pending ? `
+                <div class="order-customer-actions">
+                  ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
+                  <button type="button" class="danger" data-order-action="cancel">Cancelar pedido</button>
+                </div>
+                <p class="order-action-feedback" data-order-feedback aria-live="polite"></p>` : ""}
+            </article>`;
+        }).join("");
+
+        ordersList.addEventListener("click", async (event) => {
+          const button = event.target.closest("[data-order-action]");
+          const row = button?.closest("[data-order-id]");
+          if (!button || !row) return;
+          const action = button.dataset.orderAction;
+          if (action === "cancel" && !window.confirm("Cancelar este pedido? O link de pagamento deixará de funcionar.")) return;
+          const feedback = qs("[data-order-feedback]", row);
+          qsa("button", row).forEach((item) => item.disabled = true);
+          feedback.textContent = action === "resume" ? "Recuperando pagamento..." : "Cancelando pedido...";
+          try {
+            const result = await client.invokeFunction("mercado-pago-pedido", {
+              action,
+              order_id:row.dataset.orderId
+            });
+            if (action === "resume") {
+              if (!result?.checkout_url) throw new Error("Link de pagamento indisponível.");
+              location.assign(result.checkout_url);
+              return;
+            }
+            feedback.textContent = "Pedido cancelado.";
+            window.setTimeout(() => location.reload(), 500);
+          } catch (error) {
+            feedback.textContent = friendlyError(error);
+            qsa("button", row).forEach((item) => item.disabled = false);
+          }
+        });
       }
 
       profileForm.addEventListener("submit", async (event) => {
