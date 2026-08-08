@@ -7,10 +7,10 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260808-admin-v111">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260808-admin-v112">
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
   <script src="assets/js/supabase-client.js?v=20260805-admin2" defer></script>
-  <script src="assets/js/admin.js?v=20260808-admin-v111" defer></script>
+  <script src="assets/js/admin.js?v=20260808-admin-v112" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -86,10 +86,16 @@
         <section class="admin-panel" data-admin-panel="reports" hidden>
           <div class="admin-section-heading"><div><p class="eyebrow">Inteligência</p><h2>Relatório comercial</h2></div><button type="button" data-admin-refresh>Atualizar</button></div>
           <div class="admin-report-toolbar">
-            <label><span>Período</span><select data-report-mode><option value="month">Mensal</option><option value="year">Anual</option></select></label>
-            <label data-report-month-field><span>Mês</span><input type="month" data-report-month></label>
-            <label><span>Ano</span><select data-report-year></select></label>
-            <button type="button" data-export-report>Exportar planilha (.csv)</button>
+            <div class="admin-report-switch" role="group" aria-label="Visualização do relatório">
+              <button class="active" type="button" data-report-mode-button="month">Mensal</button>
+              <button type="button" data-report-mode-button="year">Anual</button>
+            </div>
+            <div class="admin-period-picker" aria-label="Período selecionado">
+              <button type="button" data-report-period-step="-1" aria-label="Período anterior">←</button>
+              <div><span>Período analisado</span><strong data-report-period-label></strong></div>
+              <button type="button" data-report-period-step="1" aria-label="Próximo período">→</button>
+            </div>
+            <button class="admin-report-export" type="button" data-export-report><span>↓</span> Exportar CSV</button>
           </div>
           <div class="admin-report-grid">
             <article class="admin-report-card"><span>Receita em produtos</span><strong data-report-products>R$ 0,00</strong><small>pedidos aprovados</small></article>
