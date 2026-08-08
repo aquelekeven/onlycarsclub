@@ -254,6 +254,16 @@
       : digits.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
   }
 
+  function showAccountView(name) {
+    qsa("[data-account-tab]").forEach((button) => button.classList.toggle("active", button.dataset.accountTab === name));
+    qsa("[data-account-view]").forEach((view) => {
+      const active = view.dataset.accountView === name;
+      view.hidden = !active;
+      view.classList.toggle("active", active);
+    });
+    if (window.innerWidth < 820) qs("[data-account-content]")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
   async function loadAccount(user) {
     const loading = qs("[data-account-loading]");
     const guest = qs("[data-account-guest]");
@@ -287,8 +297,12 @@
       const address = addresses?.[0] || null;
       addressId = address?.id || null;
 
-      qs("[data-account-name]").textContent = profile.display_name || user.email.split("@")[0];
+      const displayName = profile.display_name || user.email.split("@")[0];
+      qsa("[data-account-name]").forEach((element) => element.textContent = displayName);
+      qs("[data-account-greeting]").textContent = displayName.split(" ")[0];
+      qs("[data-account-initial]").textContent = displayName.trim().charAt(0).toUpperCase() || "O";
       qs("[data-account-email]").textContent = user.email;
+      qs("[data-security-email]").textContent = user.email;
       const role = qs("[data-account-role]");
       role.textContent = profile.role === "admin" ? "Administrador" : "Cliente";
       role.dataset.role = profile.role || "customer";
@@ -303,6 +317,53 @@
           if (addressForm.elements[key]) addressForm.elements[key].value = value || "";
         });
       }
+      qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
+      qsa("input", addressForm).forEach((input) => input.defaultValue = input.value);
+      const postalCodeInput = addressForm.postal_code;
+      const numberInput = addressForm.number;
+      const noNumberInput = addressForm.no_number;
+      const applyNoNumber = () => {
+        if (!numberInput || !noNumberInput) return;
+        numberInput.readOnly = noNumberInput.checked;
+        numberInput.required = !noNumberInput.checked;
+        if (noNumberInput.checked) numberInput.value = "S/N";
+        else if (numberInput.value === "S/N") numberInput.value = "";
+      };
+      if (numberInput?.value.trim().toUpperCase() === "S/N") noNumberInput.checked = true;
+      applyNoNumber();
+      noNumberInput?.addEventListener("change", applyNoNumber);
+      addressForm.addEventListener("reset", () => window.setTimeout(applyNoNumber));
+      let postalCodeTimer = null;
+      postalCodeInput?.addEventListener("input", () => {
+        clearTimeout(postalCodeTimer);
+        const postalCode = postalCodeInput.value.replace(/\D/g, "");
+        if (postalCode.length !== 8) return;
+        postalCodeTimer = setTimeout(async () => {
+          setFeedback(addressForm, "Buscando endereço...");
+          try {
+            const response = await fetch(`https://viacep.com.br/ws/${postalCode}/json/`, { headers:{ Accept:"application/json" } });
+            const result = await response.json();
+            if (!response.ok || result?.erro) throw new Error("CEP não encontrado.");
+            const fields = { street:result.logradouro, neighborhood:result.bairro, city:result.localidade, state:result.uf };
+            Object.entries(fields).forEach(([name, value]) => { if (addressForm.elements[name] && value) addressForm.elements[name].value = value; });
+            setFeedback(addressForm, "Endereço localizado. Agora informe o número.", "success");
+            if (!noNumberInput?.checked) numberInput?.focus();
+          } catch (error) { setFeedback(addressForm, friendlyError(error)); }
+        }, 250);
+      });
+
+      const paidAndActive = (orders || []).filter((order) => order.status === "paid" && !["completed", "cancelled"].includes(order.fulfillment_status));
+      const pendingOrders = (orders || []).filter((order) => order.status === "pending_payment");
+      qs("[data-account-total-orders]").textContent = (orders || []).length;
+      qs("[data-account-active-orders]").textContent = paidAndActive.length;
+      qs("[data-account-pending-orders]").textContent = pendingOrders.length;
+      qs("[data-account-order-badge]").textContent = (orders || []).length;
+      const addressPreview = qs("[data-account-address-preview]");
+      if (addressPreview && address) addressPreview.innerHTML = `<strong>${escapeHtml(address.street)}, ${escapeHtml(address.number || "S/N")}</strong><span>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · CEP ${escapeHtml(String(address.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</span>`;
+      const recentOrders = qs("[data-account-recent-orders]");
+      if (recentOrders) recentOrders.innerHTML = (orders || []).length
+        ? orders.slice(0, 3).map((order) => `<button type="button" data-account-go="orders"><span><strong>${escapeHtml(order.order_number)}</strong><small>${new Date(order.created_at).toLocaleDateString("pt-BR")}</small></span><b>${escapeHtml(orderStatusLabels[order.status] || order.status)}</b><i>→</i></button>`).join("")
+        : '<div class="account-overview-empty"><strong>Nada por aqui ainda</strong><span>Seu primeiro pedido vai aparecer neste espaço.</span></div>';
 
       if (!orders?.length) {
         ordersList.innerHTML = '<div class="account-empty"><strong>Nenhum pedido ainda.</strong><span>Quando a loja integrada entrar no ar, seus pedidos aparecerão aqui.</span></div>';
@@ -433,7 +494,10 @@
               tax_id: cpfDigits || null
             }
           });
-          qs("[data-account-name]").textContent = profileForm.display_name.value.trim() || user.email.split("@")[0];
+          const updatedName = profileForm.display_name.value.trim() || user.email.split("@")[0];
+          qsa("[data-account-name]").forEach((element) => element.textContent = updatedName);
+          qs("[data-account-greeting]").textContent = updatedName.split(" ")[0];
+          qs("[data-account-initial]").textContent = updatedName.charAt(0).toUpperCase() || "O";
           setFeedback(profileForm, "Dados salvos.", "success");
         } catch (error) {
           setFeedback(profileForm, friendlyError(error));
@@ -490,6 +554,11 @@
 
   async function setupAccount() {
     if (!qs("[data-account-page]")) return;
+    qsa("[data-account-tab]").forEach((button) => button.addEventListener("click", () => showAccountView(button.dataset.accountTab)));
+    qs("[data-account-content]")?.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-account-go]");
+      if (target) showAccountView(target.dataset.accountGo);
+    });
     const user = await client.getUser().catch(() => null);
     await loadAccount(user);
     const logout = qs("[data-logout]");
