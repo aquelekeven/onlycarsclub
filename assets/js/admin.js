@@ -264,22 +264,30 @@
     const maxDelivery = Math.max(...deliveryCounts.map((item) => item.value), 1);
     qs("[data-delivery-breakdown]").innerHTML = deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("");
 
-    const bucketCount = state.reportMode === "year" ? 12 : new Date(selectedYear, monthNumber, 0).getDate();
+    const daysInMonth = new Date(selectedYear, monthNumber, 0).getDate();
+    const bucketCount = state.reportMode === "year" ? 12 : Math.ceil(daysInMonth / 7);
     const buckets = Array.from({ length:bucketCount }, (_, index) => {
       const value = paidOrders.filter((order) => {
         const date = new Date(order.paid_at || order.created_at);
-        return state.reportMode === "year" ? date.getMonth() === index : date.getDate() === index + 1;
+        return state.reportMode === "year" ? date.getMonth() === index : Math.floor((date.getDate() - 1) / 7) === index;
       }).reduce((total, order) => total + Number(order.total_cents || 0), 0);
-      const label = state.reportMode === "year" ? new Date(selectedYear, index, 1).toLocaleDateString("pt-BR", { month:"short" }).replace(".", "") : String(index + 1);
-      return { label, value };
+      const startDay = index * 7 + 1;
+      const endDay = Math.min(startDay + 6, daysInMonth);
+      const label = state.reportMode === "year" ? new Date(selectedYear, index, 1).toLocaleDateString("pt-BR", { month:"short" }).replace(".", "") : `Semana ${index + 1}`;
+      const detail = state.reportMode === "year" ? label : `${String(startDay).padStart(2, "0")}–${String(endDay).padStart(2, "0")}`;
+      return { label, detail, value };
     });
     const max = Math.max(...buckets.map((bucket) => bucket.value), 1);
     const chart = qs("[data-report-chart]");
-    chart.style.gridTemplateColumns = `repeat(${bucketCount},minmax(${state.reportMode === "year" ? 38 : 24}px,1fr))`;
-    chart.innerHTML = buckets.map((bucket) => `<div class="admin-bar-column" title="${safe(bucket.label)} · ${safe(money(bucket.value))}"><strong>${bucket.value ? safe(money(bucket.value)) : ""}</strong><i style="height:${bucket.value ? Math.max(10, Math.round((bucket.value / max) * 100)) : 3}%"></i><span>${safe(bucket.label)}</span></div>`).join("");
+    chart.style.gridTemplateColumns = `repeat(${bucketCount},minmax(52px,1fr))`;
+    chart.innerHTML = buckets.map((bucket) => `<div class="admin-bar-column admin-report-bar" tabindex="0" aria-label="${safe(bucket.label)}, ${safe(bucket.detail)}, ${safe(money(bucket.value))}"><strong>${bucket.value ? safe(money(bucket.value)) : "R$ 0"}</strong><i style="height:${bucket.value ? Math.max(10, Math.round((bucket.value / max) * 100)) : 3}%"></i><span>${safe(bucket.label)}<small>${safe(bucket.detail)}</small></span></div>`).join("");
     const periodTotal = paidOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
     qs("[data-report-chart-total]").textContent = money(periodTotal);
     qs("[data-report-chart-title]").textContent = state.reportMode === "year" ? `Vendas de ${selectedYear}` : `Vendas do mês selecionado`;
+    const periodLabel = qs("[data-report-period-label]");
+    if (periodLabel) periodLabel.textContent = state.reportMode === "year"
+      ? String(selectedYear)
+      : new Date(selectedYear, monthNumber - 1, 1).toLocaleDateString("pt-BR", { month:"long", year:"numeric" });
   }
 
   function exportReportCsv() {
@@ -326,11 +334,6 @@
     const now = new Date();
     state.reportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     state.reportYear = now.getFullYear();
-    const monthInput = qs("[data-report-month]");
-    const yearSelect = qs("[data-report-year]");
-    if (monthInput) monthInput.value = state.reportMonth;
-    if (yearSelect) yearSelect.innerHTML = Array.from({ length:6 }, (_, index) => now.getFullYear() - index).map((year) => `<option value="${year}">${year}</option>`).join("");
-    if (yearSelect?.parentElement) yearSelect.parentElement.hidden = true;
     qsa("[data-admin-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.adminTab)));
     qsa("[data-open-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.openTab)));
     qsa("[data-admin-refresh]").forEach((button) => button.addEventListener("click", async () => {
@@ -391,20 +394,21 @@
       const order = state.orders.find((item) => item.id === button.dataset.attentionOrder);
       if (order) openOrderModal(order);
     });
-    qs("[data-report-mode]")?.addEventListener("change", (event) => {
-      state.reportMode = event.target.value;
-      qs("[data-report-month-field]").hidden = state.reportMode === "year";
-      qs("[data-report-year]").parentElement.hidden = state.reportMode === "month";
+    qsa("[data-report-mode-button]").forEach((button) => button.addEventListener("click", () => {
+      state.reportMode = button.dataset.reportModeButton;
+      qsa("[data-report-mode-button]").forEach((item) => item.classList.toggle("active", item === button));
       renderReport();
-    });
-    qs("[data-report-month]")?.addEventListener("change", (event) => {
-      state.reportMonth = event.target.value;
+    }));
+    qsa("[data-report-period-step]").forEach((button) => button.addEventListener("click", () => {
+      const direction = Number(button.dataset.reportPeriodStep);
+      if (state.reportMode === "year") state.reportYear += direction;
+      else {
+        const [year, month] = state.reportMonth.split("-").map(Number);
+        const target = new Date(year, month - 1 + direction, 1);
+        state.reportMonth = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}`;
+      }
       renderReport();
-    });
-    qs("[data-report-year]")?.addEventListener("change", (event) => {
-      state.reportYear = Number(event.target.value);
-      renderReport();
-    });
+    }));
     qs("[data-export-report]")?.addEventListener("click", exportReportCsv);
     const orderModal = qs("[data-admin-order-modal]");
     orderModal?.addEventListener("click", async (event) => {
