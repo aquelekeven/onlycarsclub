@@ -4,7 +4,7 @@
   const client = window.OnlySupabase;
   const qs = (selector, scope = document) => scope.querySelector(selector);
   const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-  const state = { products: [], orders: [] };
+  const state = { products: [], orders: [], orderPage:1, orderPageSize:8, orderSearch:"", reportMode:"month", reportMonth:"", reportYear:new Date().getFullYear() };
 
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dateTime = (value) => new Date(value).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
@@ -109,7 +109,30 @@
     const list = qs("[data-admin-orders]");
     const dashboard = qs("[data-dashboard-orders]");
     if (dashboard) dashboard.innerHTML = state.orders.length ? state.orders.slice(0, 5).map((order) => orderCard(order, true)).join("") : '<div class="account-empty"><strong>Nenhum pedido ainda.</strong><span>Os pedidos aparecerão aqui assim que o checkout estiver conectado.</span></div>';
-    if (list) list.innerHTML = state.orders.length ? state.orders.map((order) => orderCard(order)).join("") : '<div class="account-empty"><strong>Nenhum pedido ainda.</strong><span>Os pedidos aparecerão aqui assim que o checkout estiver conectado.</span></div>';
+    const filtered = state.orders.filter((order) => `${order.order_number} ${order.customer_name} ${order.customer_email} ${(order.order_items || []).map((item) => item.product_name).join(" ")}`.toLowerCase().includes(state.orderSearch));
+    const totalPages = Math.max(1, Math.ceil(filtered.length / state.orderPageSize));
+    state.orderPage = Math.min(state.orderPage, totalPages);
+    const start = (state.orderPage - 1) * state.orderPageSize;
+    const visible = filtered.slice(start, start + state.orderPageSize);
+    if (list) list.innerHTML = visible.length ? visible.map((order) => orderCard(order)).join("") : '<div class="account-empty"><strong>Nenhum pedido encontrado.</strong><span>Ajuste a busca ou aguarde novos pedidos.</span></div>';
+    const pagination = qs("[data-order-pagination]");
+    if (pagination) pagination.innerHTML = filtered.length > state.orderPageSize ? `
+      <button type="button" data-page="${state.orderPage - 1}" ${state.orderPage === 1 ? "disabled" : ""}>← Anterior</button>
+      <span>Página ${state.orderPage} de ${totalPages} · ${filtered.length} pedidos</span>
+      <button type="button" data-page="${state.orderPage + 1}" ${state.orderPage === totalPages ? "disabled" : ""}>Próxima →</button>` : `<span>${filtered.length} ${filtered.length === 1 ? "pedido" : "pedidos"}</span>`;
+    renderAttention();
+  }
+
+  function ordersNeedingAttention() {
+    return state.orders.filter((order) => order.status === "paid" && !["completed", "cancelled"].includes(order.fulfillment_status));
+  }
+
+  function renderAttention() {
+    const attention = ordersNeedingAttention();
+    qs("[data-stat-attention]").textContent = attention.length;
+    const list = qs("[data-attention-orders]");
+    if (!list) return;
+    list.innerHTML = attention.length ? attention.slice(0, 6).map((order) => `<button type="button" data-attention-order="${order.id}"><span><strong>${safe(order.order_number)}</strong><small>${safe(order.customer_name)} · ${dateTime(order.created_at)}</small></span><i>${safe(fulfillmentLabels[order.fulfillment_status] || order.fulfillment_status)}</i><b>${money(order.total_cents)}</b></button>`).join("") : '<div class="account-empty"><strong>Tudo em dia.</strong><span>Nenhum pedido pago está aguardando atualização.</span></div>';
   }
 
   function inventoryRow(product, variant) {
@@ -139,7 +162,7 @@
     qs("[data-stat-revenue]").textContent = money(revenue);
     qs("[data-stat-paid]").textContent = paidOrders.length;
     qs("[data-stat-ticket]").textContent = money(ticket);
-    qs("[data-stat-pending]").textContent = state.orders.filter((order) => order.status === "pending_payment").length;
+    qs("[data-stat-attention]").textContent = ordersNeedingAttention().length;
     qs("[data-stat-orders-caption]").textContent = `de ${state.orders.length} pedidos`;
     renderAnalytics(paidOrders, revenue);
   }
@@ -206,6 +229,81 @@
     const deliveryCounts = ["shipping", "event_pickup"].map((method) => ({ method, value:paidOrders.filter((order) => order.delivery_method === method).length }));
     const maxDelivery = Math.max(...deliveryCounts.map((item) => item.value), 1);
     qs("[data-delivery-breakdown]").innerHTML = deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("");
+    renderReport();
+  }
+
+  function reportOrders() {
+    const [monthYear, monthNumber] = (state.reportMonth || "").split("-").map(Number);
+    const selectedYear = state.reportMode === "month" ? monthYear : Number(state.reportYear);
+    return state.orders.filter((order) => {
+      const date = new Date(order.paid_at || order.created_at);
+      return order.status === "paid" && date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
+    });
+  }
+
+  function renderReport() {
+    const paidOrders = reportOrders();
+    const [monthYear, monthNumber] = (state.reportMonth || "").split("-").map(Number);
+    const selectedYear = state.reportMode === "month" ? monthYear : Number(state.reportYear);
+    const createdInPeriod = state.orders.filter((order) => {
+      const date = new Date(order.created_at);
+      return date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
+    });
+    qs("[data-report-products]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.subtotal_cents || 0), 0));
+    qs("[data-report-shipping]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.shipping_cents || 0), 0));
+    qs("[data-report-items]").textContent = paidOrders.flatMap((order) => order.order_items || []).reduce((total, item) => total + Number(item.quantity || 0), 0);
+    qs("[data-report-conversion]").textContent = createdInPeriod.length ? `${Math.round((paidOrders.length / createdInPeriod.length) * 100)}%` : "0%";
+
+    const productCounts = new Map();
+    paidOrders.flatMap((order) => order.order_items || []).forEach((item) => productCounts.set(item.product_name, (productCounts.get(item.product_name) || 0) + Number(item.quantity || 0)));
+    const ranking = [...productCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    qs("[data-product-ranking]").innerHTML = ranking.length ? ranking.map(([name, quantity], index) => `<li><i>${index + 1}</i><span>${safe(name)}</span><strong>${quantity} un.</strong></li>`).join("") : "<li><span>Nenhuma venda aprovada no período.</span></li>";
+
+    const deliveryLabels = { shipping:"Envio para endereço", event_pickup:"Próximo evento" };
+    const deliveryCounts = ["shipping", "event_pickup"].map((method) => ({ method, value:paidOrders.filter((order) => order.delivery_method === method).length }));
+    const maxDelivery = Math.max(...deliveryCounts.map((item) => item.value), 1);
+    qs("[data-delivery-breakdown]").innerHTML = deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("");
+
+    const bucketCount = state.reportMode === "year" ? 12 : new Date(selectedYear, monthNumber, 0).getDate();
+    const buckets = Array.from({ length:bucketCount }, (_, index) => {
+      const value = paidOrders.filter((order) => {
+        const date = new Date(order.paid_at || order.created_at);
+        return state.reportMode === "year" ? date.getMonth() === index : date.getDate() === index + 1;
+      }).reduce((total, order) => total + Number(order.total_cents || 0), 0);
+      const label = state.reportMode === "year" ? new Date(selectedYear, index, 1).toLocaleDateString("pt-BR", { month:"short" }).replace(".", "") : String(index + 1);
+      return { label, value };
+    });
+    const max = Math.max(...buckets.map((bucket) => bucket.value), 1);
+    const chart = qs("[data-report-chart]");
+    chart.style.gridTemplateColumns = `repeat(${bucketCount},minmax(${state.reportMode === "year" ? 38 : 24}px,1fr))`;
+    chart.innerHTML = buckets.map((bucket) => `<div class="admin-bar-column" title="${safe(bucket.label)} · ${safe(money(bucket.value))}"><strong>${bucket.value ? safe(money(bucket.value)) : ""}</strong><i style="height:${bucket.value ? Math.max(10, Math.round((bucket.value / max) * 100)) : 3}%"></i><span>${safe(bucket.label)}</span></div>`).join("");
+    const periodTotal = paidOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
+    qs("[data-report-chart-total]").textContent = money(periodTotal);
+    qs("[data-report-chart-title]").textContent = state.reportMode === "year" ? `Vendas de ${selectedYear}` : `Vendas do mês selecionado`;
+  }
+
+  function exportReportCsv() {
+    const orders = reportOrders();
+    const rows = [["Pedido","Data","Cliente","E-mail","Entrega","Itens","Produtos","Frete","Total","Pagamento"]];
+    orders.forEach((order) => rows.push([
+      order.order_number,
+      dateTime(order.paid_at || order.created_at),
+      order.customer_name,
+      order.customer_email,
+      order.delivery_method === "shipping" ? "Envio" : "Próximo evento",
+      (order.order_items || []).map((item) => `${item.quantity}x ${item.product_name}`).join(" | "),
+      (Number(order.subtotal_cents || 0) / 100).toFixed(2).replace(".", ","),
+      (Number(order.shipping_cents || 0) / 100).toFixed(2).replace(".", ","),
+      (Number(order.total_cents || 0) / 100).toFixed(2).replace(".", ","),
+      "Pago"
+    ]));
+    const csv = "\ufeff" + rows.map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(";")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `only-cars-relatorio-${state.reportMode === "year" ? state.reportYear : state.reportMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function loadData() {
@@ -225,6 +323,14 @@
   }
 
   function bindInteractions() {
+    const now = new Date();
+    state.reportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    state.reportYear = now.getFullYear();
+    const monthInput = qs("[data-report-month]");
+    const yearSelect = qs("[data-report-year]");
+    if (monthInput) monthInput.value = state.reportMonth;
+    if (yearSelect) yearSelect.innerHTML = Array.from({ length:6 }, (_, index) => now.getFullYear() - index).map((year) => `<option value="${year}">${year}</option>`).join("");
+    if (yearSelect?.parentElement) yearSelect.parentElement.hidden = true;
     qsa("[data-admin-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.adminTab)));
     qsa("[data-open-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.openTab)));
     qsa("[data-admin-refresh]").forEach((button) => button.addEventListener("click", async () => {
@@ -233,8 +339,21 @@
       button.disabled = false;
     }));
     qs("[data-order-search]")?.addEventListener("input", (event) => {
-      const term = event.target.value.trim().toLowerCase();
-      qsa("[data-order-search-value]").forEach((row) => row.hidden = !row.dataset.orderSearchValue.includes(term));
+      state.orderSearch = event.target.value.trim().toLowerCase();
+      state.orderPage = 1;
+      renderOrders();
+    });
+    qs("[data-order-pagination]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-page]");
+      if (!button || button.disabled) return;
+      state.orderPage = Number(button.dataset.page);
+      renderOrders();
+      qs('[data-admin-panel="orders"]')?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+    qs("[data-toggle-attention]")?.addEventListener("click", () => {
+      const panel = qs("[data-attention-panel]");
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) panel.scrollIntoView({ behavior:"smooth", block:"nearest" });
     });
     qs("[data-stock-search]")?.addEventListener("input", (event) => {
       const term = event.target.value.trim().toLowerCase();
@@ -266,6 +385,27 @@
       const order = state.orders.find((item) => item.id === card.dataset.orderId);
       if (order) openOrderModal(order);
     });
+    qs("[data-attention-orders]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-attention-order]");
+      if (!button) return;
+      const order = state.orders.find((item) => item.id === button.dataset.attentionOrder);
+      if (order) openOrderModal(order);
+    });
+    qs("[data-report-mode]")?.addEventListener("change", (event) => {
+      state.reportMode = event.target.value;
+      qs("[data-report-month-field]").hidden = state.reportMode === "year";
+      qs("[data-report-year]").parentElement.hidden = state.reportMode === "month";
+      renderReport();
+    });
+    qs("[data-report-month]")?.addEventListener("change", (event) => {
+      state.reportMonth = event.target.value;
+      renderReport();
+    });
+    qs("[data-report-year]")?.addEventListener("change", (event) => {
+      state.reportYear = Number(event.target.value);
+      renderReport();
+    });
+    qs("[data-export-report]")?.addEventListener("click", exportReportCsv);
     const orderModal = qs("[data-admin-order-modal]");
     orderModal?.addEventListener("click", async (event) => {
       if (event.target === orderModal || event.target.closest("[data-close-order]")) return closeOrderModal();
