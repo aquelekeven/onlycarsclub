@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co https://viacep.com.br; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260807-v107">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260808-account-v120">
   <script src="assets/js/main.js?v=20260807-v93" defer></script>
   <script src="assets/js/supabase-client.js?v=20260807-v93" defer></script>
-  <script src="assets/js/auth.js?v=20260807-v107" defer></script>
+  <script src="assets/js/auth.js?v=20260808-account-v120" defer></script>
 </head>
 <body data-page="conta" data-account-page>
   <header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -17,12 +17,41 @@
   <main class="account-page"><div class="account-wrap">
     <section class="account-state" data-account-loading><strong>Carregando sua conta...</strong><span>Aguarde só um instante.</span></section>
     <section class="account-state" data-account-guest hidden><strong>Você ainda não entrou.</strong><span>Faça login ou crie sua conta para acessar esta área.</span><div class="actions"><a class="button primary" href="login.html">Entrar</a><a class="button ghost" href="cadastro.html">Criar conta</a></div></section>
-    <div data-account-content hidden>
-      <header class="account-top"><div><p class="eyebrow">Minha conta</p><h1>Olá, <em data-account-name>cliente</em>.</h1><p data-account-email></p></div><div class="account-actions"><a class="account-admin-link" href="admin.html" data-admin-link hidden>Abrir painel</a><span class="account-role" data-account-role>Cliente</span><button class="account-logout" type="button" data-logout>Sair</button></div></header>
-      <div class="account-grid">
-        <section class="account-card"><h2>Meus dados</h2><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div></div><p class="form-feedback" data-form-feedback></p><button class="auth-submit" type="submit">Salvar dados</button></form></section>
-        <section class="account-card"><h2>Endereço principal</h2><form class="account-form" data-address-form><div class="field"><label for="recipient_name">Nome do destinatário</label><input id="recipient_name" name="recipient_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="postal_code">CEP</label><input id="postal_code" name="postal_code" inputmode="numeric" autocomplete="postal-code" data-mask="cep" required></div><div class="field"><label for="state">Estado</label><input id="state" name="state" maxlength="2" autocomplete="address-level1" required></div><div class="field full"><label for="street">Rua</label><input id="street" name="street" autocomplete="address-line1" required></div><div class="field"><label for="number">Número</label><input id="number" name="number" required></div><div class="field"><label for="complement">Complemento</label><input id="complement" name="complement" autocomplete="address-line2"></div><div class="field"><label for="neighborhood">Bairro</label><input id="neighborhood" name="neighborhood" required></div><div class="field"><label for="city">Cidade</label><input id="city" name="city" autocomplete="address-level2" required></div></div><p class="form-feedback" data-form-feedback></p><button class="auth-submit" type="submit">Salvar endereço</button></form></section>
-        <section class="account-card full"><h2>Meus pedidos</h2><div class="orders-list" data-orders-list></div></section>
+    <div class="account-center" data-account-content hidden>
+      <aside class="account-sidebar">
+        <div class="account-profile-summary"><span class="account-avatar" data-account-initial>O</span><strong data-account-name>cliente</strong><small data-account-email></small><span class="account-role" data-account-role>Cliente</span></div>
+        <nav class="account-menu" aria-label="Menu da conta">
+          <button class="active" type="button" data-account-tab="overview"><i>⌂</i><span>Visão geral</span></button>
+          <button type="button" data-account-tab="orders"><i>▤</i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
+          <button type="button" data-account-tab="profile"><i>○</i><span>Meus dados</span></button>
+          <button type="button" data-account-tab="address"><i>◇</i><span>Endereço</span></button>
+          <button type="button" data-account-tab="security"><i>□</i><span>Segurança</span></button>
+        </nav>
+        <div class="account-sidebar-footer"><a class="account-admin-link" href="admin.html" data-admin-link hidden>Abrir painel administrativo</a><button class="account-logout" type="button" data-logout><i>↗</i> Sair da conta</button></div>
+      </aside>
+
+      <div class="account-main">
+        <section class="account-view active" data-account-view="overview">
+          <header class="account-view-heading"><div><p class="eyebrow">Minha conta</p><h1>Olá, <em data-account-greeting>cliente</em>.</h1><p>Seu espaço para acompanhar pedidos e manter seus dados em dia.</p></div></header>
+          <div class="account-overview-stats">
+            <article><span>Pedidos realizados</span><strong data-account-total-orders>0</strong><small>histórico da sua conta</small></article>
+            <article><span>Em andamento</span><strong data-account-active-orders>0</strong><small>pagos e sendo preparados</small></article>
+            <article class="featured"><span>Aguardando pagamento</span><strong data-account-pending-orders>0</strong><small>pedidos que pedem atenção</small></article>
+          </div>
+          <div class="account-overview-grid">
+            <article class="account-overview-card"><header><div><p class="eyebrow">Entrega</p><h2>Endereço principal</h2></div><button type="button" data-account-go="address">Editar</button></header><div class="account-address-preview" data-account-address-preview><strong>Nenhum endereço salvo</strong><span>Cadastre um endereço para agilizar o próximo pedido.</span></div></article>
+            <article class="account-overview-card"><header><div><p class="eyebrow">Atalho</p><h2>Pedidos recentes</h2></div><button type="button" data-account-go="orders">Ver todos</button></header><div class="account-recent-orders" data-account-recent-orders></div></article>
+          </div>
+          <section class="account-tip"><i>!</i><div><strong>Dica da Only</strong><span>Deixe telefone, CPF e endereço atualizados antes da próxima compra. Assim o checkout fica muito mais rápido.</span></div><button type="button" data-account-go="profile">Revisar dados</button></section>
+        </section>
+
+        <section class="account-view" data-account-view="orders" hidden><header class="account-view-heading"><div><p class="eyebrow">Histórico</p><h1>Meus pedidos</h1><p>Acompanhe pagamentos, produção, postagem e entrega.</p></div></header><div class="orders-list" data-orders-list></div></section>
+
+        <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
+
+        <section class="account-view" data-account-view="address" hidden><header class="account-view-heading"><div><p class="eyebrow">Entrega</p><h1>Endereço principal</h1><p>O CEP preenche rua, bairro e cidade automaticamente.</p></div></header><section class="account-card"><form class="account-form" data-address-form><div class="field"><label for="recipient_name">Nome do destinatário</label><input id="recipient_name" name="recipient_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="postal_code">CEP</label><input id="postal_code" name="postal_code" inputmode="numeric" autocomplete="postal-code" data-mask="cep" required></div><div class="field"><label for="state">Estado</label><input id="state" name="state" maxlength="2" autocomplete="address-level1" required></div><div class="field full"><label for="street">Rua</label><input id="street" name="street" autocomplete="address-line1" required></div><div class="field"><label for="number">Número</label><input id="number" name="number" required><label class="account-no-number"><input type="checkbox" name="no_number"> Endereço sem número</label></div><div class="field"><label for="complement">Complemento</label><input id="complement" name="complement" autocomplete="address-line2"></div><div class="field"><label for="neighborhood">Bairro</label><input id="neighborhood" name="neighborhood" required></div><div class="field"><label for="city">Cidade</label><input id="city" name="city" autocomplete="address-level2" required></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar endereço</button></div></form></section></section>
+
+        <section class="account-view" data-account-view="security" hidden><header class="account-view-heading"><div><p class="eyebrow">Acesso</p><h1>Segurança</h1><p>Controle o acesso à sua conta Only.</p></div></header><div class="account-security-grid"><article><i>@</i><div><span>E-mail da conta</span><strong data-security-email></strong><small>Este é o e-mail usado para entrar.</small></div></article><article><i>••</i><div><span>Senha</span><strong>Proteja sua conta</strong><small>Enviaremos um link seguro para criar uma nova senha.</small></div><a href="recuperar-senha.html">Redefinir senha</a></article><article class="wide"><i>✓</i><div><span>Pagamentos protegidos</span><strong>Checkout Mercado Pago</strong><small>A Only não armazena números de cartão ou códigos de segurança.</small></div></article></div></section>
       </div>
     </div>
   </div></main>
