@@ -176,18 +176,18 @@
       date.setDate(today.getDate() - (6 - index));
       const next = new Date(date);
       next.setDate(date.getDate() + 1);
-      const value = paidOrders
-        .filter((order) => {
+      const orders = paidOrders.filter((order) => {
           const paidAt = new Date(order.paid_at || order.created_at);
           return paidAt >= date && paidAt < next;
-        })
-        .reduce((total, order) => total + Number(order.total_cents || 0), 0);
-      return { date, value };
+        });
+      const value = orders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
+      return { date, value, count:orders.length };
     });
     const max = Math.max(...days.map((day) => day.value), 1);
     if (chart) chart.innerHTML = days.map((day) => {
       const height = day.value ? Math.max(12, Math.round((day.value / max) * 100)) : 4;
-      return `<div class="admin-bar-column" title="${safe(day.date.toLocaleDateString("pt-BR"))} · ${safe(money(day.value))}"><strong>${day.value ? safe(money(day.value)) : "—"}</strong><i style="height:${height}%"></i><span>${safe(day.date.toLocaleDateString("pt-BR", { weekday:"short" }).replace(".", ""))}</span></div>`;
+      const orderLabel = `${day.count} ${day.count === 1 ? "pedido" : "pedidos"}`;
+      return `<div class="admin-bar-column admin-dashboard-bar" tabindex="0" aria-label="${safe(day.date.toLocaleDateString("pt-BR"))}, ${safe(money(day.value))}, ${safe(orderLabel)}"><strong>${safe(money(day.value))}<small>${safe(orderLabel)}</small></strong><i style="height:${height}%"></i><span>${safe(day.date.toLocaleDateString("pt-BR", { weekday:"short" }).replace(".", ""))}</span></div>`;
     }).join("");
     qs("[data-chart-total]").textContent = money(days.reduce((total, day) => total + day.value, 0));
 
@@ -257,30 +257,37 @@
     const productCounts = new Map();
     paidOrders.flatMap((order) => order.order_items || []).forEach((item) => productCounts.set(item.product_name, (productCounts.get(item.product_name) || 0) + Number(item.quantity || 0)));
     const ranking = [...productCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-    qs("[data-product-ranking]").innerHTML = ranking.length ? ranking.map(([name, quantity], index) => `<li><i>${index + 1}</i><span>${safe(name)}</span><strong>${quantity} un.</strong></li>`).join("") : "<li><span>Nenhuma venda aprovada no período.</span></li>";
+    qs("[data-product-ranking]").innerHTML = ranking.length ? ranking.map(([name, quantity], index) => `<li><i>${index + 1}</i><span>${safe(name)}</span><strong>${quantity} un.</strong></li>`).join("") : '<li class="admin-report-empty"><i>○</i><strong>Nada por aqui ainda</strong><span>Quando uma venda for aprovada, os produtos favoritos aparecem neste ranking.</span></li>';
 
     const deliveryLabels = { shipping:"Envio para endereço", event_pickup:"Próximo evento" };
     const deliveryCounts = ["shipping", "event_pickup"].map((method) => ({ method, value:paidOrders.filter((order) => order.delivery_method === method).length }));
     const maxDelivery = Math.max(...deliveryCounts.map((item) => item.value), 1);
-    qs("[data-delivery-breakdown]").innerHTML = deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("");
+    qs("[data-delivery-breakdown]").innerHTML = paidOrders.length ? deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("") : '<div class="admin-report-empty"><i>↗</i><strong>Nenhuma entrega ainda</strong><span>As modalidades escolhidas pelos clientes vão aparecer aqui.</span></div>';
 
     const daysInMonth = new Date(selectedYear, monthNumber, 0).getDate();
     const bucketCount = state.reportMode === "year" ? 12 : Math.ceil(daysInMonth / 7);
     const buckets = Array.from({ length:bucketCount }, (_, index) => {
-      const value = paidOrders.filter((order) => {
+      const bucketOrders = paidOrders.filter((order) => {
         const date = new Date(order.paid_at || order.created_at);
         return state.reportMode === "year" ? date.getMonth() === index : Math.floor((date.getDate() - 1) / 7) === index;
-      }).reduce((total, order) => total + Number(order.total_cents || 0), 0);
+      });
+      const value = bucketOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
       const startDay = index * 7 + 1;
       const endDay = Math.min(startDay + 6, daysInMonth);
       const label = state.reportMode === "year" ? new Date(selectedYear, index, 1).toLocaleDateString("pt-BR", { month:"short" }).replace(".", "") : `Semana ${index + 1}`;
       const detail = state.reportMode === "year" ? label : `${String(startDay).padStart(2, "0")}–${String(endDay).padStart(2, "0")}`;
-      return { label, detail, value };
+      return { label, detail, value, count:bucketOrders.length };
     });
     const max = Math.max(...buckets.map((bucket) => bucket.value), 1);
     const chart = qs("[data-report-chart]");
-    chart.style.gridTemplateColumns = `repeat(${bucketCount},minmax(52px,1fr))`;
-    chart.innerHTML = buckets.map((bucket) => `<div class="admin-bar-column admin-report-bar" tabindex="0" aria-label="${safe(bucket.label)}, ${safe(bucket.detail)}, ${safe(money(bucket.value))}"><strong>${bucket.value ? safe(money(bucket.value)) : "R$ 0"}</strong><i style="height:${bucket.value ? Math.max(10, Math.round((bucket.value / max) * 100)) : 3}%"></i><span>${safe(bucket.label)}<small>${safe(bucket.detail)}</small></span></div>`).join("");
+    chart.classList.toggle("empty", !paidOrders.length);
+    chart.style.gridTemplateColumns = paidOrders.length ? `repeat(${bucketCount},minmax(62px,1fr))` : "1fr";
+    chart.innerHTML = paidOrders.length
+      ? buckets.map((bucket) => {
+          const orderLabel = `${bucket.count} ${bucket.count === 1 ? "pedido" : "pedidos"}`;
+          return `<div class="admin-bar-column admin-report-bar" tabindex="0" aria-label="${safe(bucket.label)}, ${safe(bucket.detail)}, ${safe(money(bucket.value))}, ${safe(orderLabel)}"><strong>${safe(money(bucket.value))}<small>${safe(orderLabel)}</small></strong><i style="height:${bucket.value ? Math.max(10, Math.round((bucket.value / max) * 100)) : 3}%"></i><span>${safe(bucket.label)}<small>${safe(bucket.detail)}</small></span></div>`;
+        }).join("")
+      : '<div class="admin-chart-empty"><i>↗</i><strong>Tudo zerado por aqui</strong><span>Nenhuma venda aprovada neste período. Que tal conferir o mês anterior?</span></div>';
     const periodTotal = paidOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
     qs("[data-report-chart-total]").textContent = money(periodTotal);
     qs("[data-report-chart-title]").textContent = state.reportMode === "year" ? `Vendas de ${selectedYear}` : `Vendas do mês selecionado`;
