@@ -453,12 +453,6 @@ body[data-page="loja"] .page-hero { min-height:440px; padding-top:125px; padding
 .order-cancel-warning i { width:7px; height:7px; margin-top:4px; flex:0 0 7px; border-radius:50%; background:var(--yellow); box-shadow:0 0 9px #f4c90088; }
 .order-cancel-modal .confirm-modal-cancel { border:1px solid #ffffff14; background:#ffffff0b; color:#fff; }
 .order-cancel-modal .confirm-modal-delete { background:linear-gradient(145deg,#ff5d53,#c9231b); box-shadow:0 9px 25px #d92d2530; }
-.accessory-rule-modal .confirm-modal-dialog { text-align:left; }
-.accessory-rule-modal h2 { text-align:center; }
-.accessory-rule-modal p { margin-bottom:13px; text-align:center; }
-.accessory-rule-icon { font-size:22px; font-weight:900; }
-.accessory-rule-list { margin:0 0 22px; padding:14px 18px 14px 34px; border-radius:14px; background:#ecece8; color:#333; font-size:13px; font-weight:700; line-height:1.8; }
-.accessory-rule-shop { min-height:44px; display:grid; place-items:center; border-radius:13px; background:var(--yellow); color:#111; font-size:12px; font-weight:900; text-align:center; }
 body.modal-open { overflow:hidden; }
 .payment-result-page { min-height:100vh; background:radial-gradient(circle at 50% 18%,#302900 0,#0b0b0a 38%,#050505 75%); }
 .payment-result-page .checkout-page { min-height:100vh; padding:128px 20px 120px; display:grid; place-items:center; }

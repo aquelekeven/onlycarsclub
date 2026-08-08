@@ -12,15 +12,6 @@ const MOLETOM_GIFT_OPTIONS = Object.freeze([
   "Mascote branco",
   "Mascote holográfico"
 ]);
-const COMPANION_PRODUCT_IDS = new Set([
-  "camiseta-oversized",
-  "camiseta-oversized-amarela",
-  "camiseta-streetwear",
-  "cropped",
-  "moletom",
-  "copo-termico"
-]);
-
 const PRODUCT_CATALOG = Object.freeze({
   "camiseta-oversized": Object.freeze({
     name:"Camiseta oversized",
@@ -1161,61 +1152,6 @@ function showCartToast(item) {
   }, 3200);
 }
 
-function cartNeedsCompanionProduct(cart = getCart()) {
-  const items = cart.filter((item) => Number(item.quantity) > 0);
-  return items.some((item) => item.pickupOnly)
-    && !items.some((item) => COMPANION_PRODUCT_IDS.has(item.id));
-}
-
-function showAccessoryRuleModal() {
-  let modal = qs("[data-accessory-rule-modal]");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.className = "confirm-modal accessory-rule-modal";
-    modal.dataset.accessoryRuleModal = "";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "accessory-rule-title");
-    modal.innerHTML = `
-      <div class="confirm-modal-dialog">
-        <span class="confirm-modal-icon accessory-rule-icon" aria-hidden="true">!</span>
-        <h2 id="accessory-rule-title">Adicione outro produto</h2>
-        <p>Chaveiros e adesivos não podem ser comprados sozinhos. Inclua pelo menos um destes produtos no carrinho:</p>
-        <ul class="accessory-rule-list">
-          <li>Camiseta oversized</li>
-          <li>Camiseta streetwear</li>
-          <li>Cropped</li>
-          <li>Moletom</li>
-          <li>Copo térmico</li>
-        </ul>
-        <div class="confirm-modal-actions">
-          <button type="button" class="confirm-modal-cancel" data-accessory-rule-close>Fechar</button>
-          <a class="accessory-rule-shop" href="loja.html">Continuar comprando</a>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  const closeButton = qs("[data-accessory-rule-close]", modal);
-  const close = () => {
-    modal.classList.remove("visible");
-    document.body.classList.remove("modal-open");
-    document.removeEventListener("keydown", onKeydown);
-  };
-  const onKeydown = (event) => {
-    if (event.key === "Escape") close();
-  };
-  closeButton.onclick = close;
-  modal.onclick = (event) => {
-    if (event.target === modal) close();
-  };
-  document.addEventListener("keydown", onKeydown);
-  document.body.classList.add("modal-open");
-  requestAnimationFrame(() => {
-    modal.classList.add("visible");
-    closeButton.focus();
-  });
-}
-
 function setupCartPage() {
   const page = qs("[data-cart-page]");
   if (!page) return;
@@ -1401,13 +1337,6 @@ function setupCartPage() {
     if (!await confirmRemoval(true)) return;
     saveCart([]);
     render();
-  });
-
-  const checkoutButton = qs("[data-cart-checkout]", page);
-  checkoutButton?.addEventListener("click", (event) => {
-    if (!cartNeedsCompanionProduct()) return;
-    event.preventDefault();
-    showAccessoryRuleModal();
   });
 
   render();
@@ -1762,7 +1691,6 @@ async function setupCheckoutCustomer(deliveryForm) {
 
 function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
-  const needsCompanionProduct = cartNeedsCompanionProduct(cart);
   const shippingPackage = buildShippingPackage(cart);
   const registeredWeightGrams = cart.reduce(
     (total, item) => total + (Number(item.weightGrams) || 0) * Number(item.quantity),
@@ -1798,11 +1726,6 @@ function setupCheckoutFlow() {
   }
   if (!cart.length) {
     location.replace("carrinho.html");
-    return;
-  }
-
-  if (needsCompanionProduct) {
-    showAccessoryRuleModal();
     return;
   }
 
