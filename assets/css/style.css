@@ -1,5 +1,7 @@
 
-:root { --yellow:#f4c900; --yellow-soft:#ffe04d; --ink:#090909; --paper:#f5f4f0; --muted:#a4a4a4; --radius:22px; --font-site:Gotham, "Gotham SSm", "Montserrat", "Avenir Next", Arial, sans-serif; }
+@font-face { font-family:"Montserrat"; src:url("../fonts/montserrat-latin-variable.woff2") format("woff2"); font-style:normal; font-weight:100 900; font-display:swap; }
+@font-face { font-family:"Montserrat"; src:url("../fonts/montserrat-latin-variable-italic.woff2") format("woff2"); font-style:italic; font-weight:100 900; font-display:swap; }
+:root { --yellow:#f4c900; --yellow-soft:#ffe04d; --ink:#090909; --paper:#f5f4f0; --muted:#a4a4a4; --radius:22px; --font-site:"Montserrat", Arial, sans-serif; }
 * { box-sizing:border-box; font-family:inherit; }
 html { max-width:100%; overflow-x:clip; scroll-behavior:smooth; font-family:var(--font-site); }
 body { max-width:100%; margin:0; overflow-x:clip; background:var(--ink); color:#fff; font-family:var(--font-site); -webkit-font-smoothing:antialiased; }
@@ -683,6 +685,41 @@ body.modal-open { overflow:hidden; }
   .account-grid,.account-fields { grid-template-columns:1fr; }
   .account-fields .full,.account-card.full { grid-column:auto; }
   .order-row-header { align-items:flex-start; }
+}
+
+/* v12.2 — auditoria tipográfica e legibilidade global */
+html,body,body * { font-family:"Montserrat",Arial,sans-serif!important; }
+body { font-size:16px; line-height:1.5; }
+small { font-size:10px!important; line-height:1.45; }
+.brand small,.bottom-nav span,.shop-search span,.promo-pill,.shop-section-heading>span,
+.product-visual>span,.product-copy>p,.product-coming-soon,.product-card-availability,
+.cart-toast a,.cart-item-info p,.checkout-steps li,.payment-result-reference,
+.account-role,.order-tracking li,.order-tracking-code span,.order-tracking-code a,
+.admin-order-product-image,.admin-order-products article em,.admin-fulfillment-steps button i,
+.admin-fulfillment-steps button span,.shop-status,.order-cancel-eyebrow,.admin-hint,
+.event-numbers dt,.launch-sale-banner span,.product-price span,
+.product-detail-pricing>.product-detail-discount,.cart-item-price span,
+.delivery-divider,.checkout-customer-fields label { font-size:10px!important; }
+.field label,.admin-search,.admin-intro,.admin-feedback,.order-row span,
+.order-review dl div,.order-action-feedback { font-size:11px!important; }
+.account-profile-summary>small,.account-menu button b,.account-sidebar-footer .account-admin-link,
+.account-sidebar-footer .account-logout,.account-overview-stats span,.account-overview-stats small,
+.account-overview-card header button,.account-tip button,.account-address-preview span,
+.account-recent-orders>button strong,.account-recent-orders>button small,
+.account-recent-orders>button b,.account-overview-empty span,.account-tip span,
+.account-no-number,.account-security-grid span,.account-security-grid small,
+.account-security-grid a { font-size:10px!important; }
+.admin-nav-brand small,.admin-bar-column strong,.admin-bar-column strong small,
+.admin-bar-column span,.admin-donut span,.admin-status,.admin-attention-list>button small,
+.admin-attention-list>button i,.admin-period-picker span,.admin-report-toolbar .admin-report-export,
+.admin-report-bar span small,.admin-report-empty>span { font-size:10px!important; }
+.admin-tabs button,.admin-tabs>a,.admin-order-row>button,.admin-section-heading button,
+.admin-pagination button,.admin-report-switch button { font-size:11px; }
+.admin-stock-product span { font-family:"Montserrat",Arial,sans-serif!important; font-size:11px; }
+@media(max-width:700px) {
+  .checkout-steps li { font-size:9px!important; }
+  .admin-tabs button.active,.account-menu button.active { font-size:11px!important; }
+  .admin-dashboard-bar strong,.admin-report-bar strong { font-size:9px!important; }
 }
 
 /* v12.0 — central da conta do cliente */
