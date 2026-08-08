@@ -133,10 +133,79 @@
 
   function renderStats() {
     const variants = state.products.flatMap((product) => product.product_variants || []).filter((variant) => variant.active);
-    qs("[data-stat-orders]").textContent = state.orders.length;
+    const paidOrders = state.orders.filter((order) => order.status === "paid");
+    const revenue = paidOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
+    const ticket = paidOrders.length ? Math.round(revenue / paidOrders.length) : 0;
+    qs("[data-stat-revenue]").textContent = money(revenue);
+    qs("[data-stat-paid]").textContent = paidOrders.length;
+    qs("[data-stat-ticket]").textContent = money(ticket);
     qs("[data-stat-pending]").textContent = state.orders.filter((order) => order.status === "pending_payment").length;
-    qs("[data-stat-stock]").textContent = variants.reduce((total, variant) => total + Math.max(0, variant.stock_quantity - variant.reserved_quantity), 0);
-    qs("[data-stat-zero]").textContent = variants.filter((variant) => variant.stock_quantity - variant.reserved_quantity <= 0).length;
+    qs("[data-stat-orders-caption]").textContent = `de ${state.orders.length} pedidos`;
+    renderAnalytics(paidOrders, revenue);
+  }
+
+  function renderAnalytics(paidOrders, revenue) {
+    const chart = qs("[data-sales-chart]");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Array.from({ length:7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - index));
+      const next = new Date(date);
+      next.setDate(date.getDate() + 1);
+      const value = paidOrders
+        .filter((order) => {
+          const paidAt = new Date(order.paid_at || order.created_at);
+          return paidAt >= date && paidAt < next;
+        })
+        .reduce((total, order) => total + Number(order.total_cents || 0), 0);
+      return { date, value };
+    });
+    const max = Math.max(...days.map((day) => day.value), 1);
+    if (chart) chart.innerHTML = days.map((day) => {
+      const height = day.value ? Math.max(12, Math.round((day.value / max) * 100)) : 4;
+      return `<div class="admin-bar-column" title="${safe(day.date.toLocaleDateString("pt-BR"))} · ${safe(money(day.value))}"><strong>${day.value ? safe(money(day.value)) : "—"}</strong><i style="height:${height}%"></i><span>${safe(day.date.toLocaleDateString("pt-BR", { weekday:"short" }).replace(".", ""))}</span></div>`;
+    }).join("");
+    qs("[data-chart-total]").textContent = money(days.reduce((total, day) => total + day.value, 0));
+
+    const statusConfig = [
+      ["paid", "Pagos", "#19945b"],
+      ["pending_payment", "Pendentes", "#f0bf19"],
+      ["cancelled", "Cancelados", "#ef625d"],
+      ["other", "Outros", "#728095"]
+    ];
+    const counts = statusConfig.map(([key, label, color]) => ({
+      key, label, color,
+      value:key === "other"
+        ? state.orders.filter((order) => !["paid", "pending_payment", "cancelled"].includes(order.status)).length
+        : state.orders.filter((order) => order.status === key).length
+    }));
+    const totalOrders = Math.max(state.orders.length, 1);
+    let cursor = 0;
+    const segments = counts.map((item) => {
+      const start = cursor;
+      cursor += (item.value / totalOrders) * 360;
+      return `${item.color} ${start}deg ${cursor}deg`;
+    });
+    const donut = qs("[data-status-donut]");
+    if (donut) donut.style.background = state.orders.length ? `conic-gradient(${segments.join(",")})` : "#e8e8e3";
+    qs("[data-donut-total]").textContent = state.orders.length;
+    qs("[data-status-legend]").innerHTML = counts.map((item) => `<li><i style="background:${item.color}"></i><span>${item.label}</span><strong>${item.value}</strong></li>`).join("");
+
+    qs("[data-report-products]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.subtotal_cents || 0), 0));
+    qs("[data-report-shipping]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.shipping_cents || 0), 0));
+    qs("[data-report-items]").textContent = paidOrders.flatMap((order) => order.order_items || []).reduce((total, item) => total + Number(item.quantity || 0), 0);
+    qs("[data-report-conversion]").textContent = state.orders.length ? `${Math.round((paidOrders.length / state.orders.length) * 100)}%` : "0%";
+
+    const productCounts = new Map();
+    paidOrders.flatMap((order) => order.order_items || []).forEach((item) => productCounts.set(item.product_name, (productCounts.get(item.product_name) || 0) + Number(item.quantity || 0)));
+    const ranking = [...productCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+    qs("[data-product-ranking]").innerHTML = ranking.length ? ranking.map(([name, quantity], index) => `<li><i>${index + 1}</i><span>${safe(name)}</span><strong>${quantity} un.</strong></li>`).join("") : "<li><span>Nenhuma venda aprovada ainda.</span></li>";
+
+    const deliveryLabels = { shipping:"Envio para endereço", event_pickup:"Próximo evento" };
+    const deliveryCounts = ["shipping", "event_pickup"].map((method) => ({ method, value:paidOrders.filter((order) => order.delivery_method === method).length }));
+    const maxDelivery = Math.max(...deliveryCounts.map((item) => item.value), 1);
+    qs("[data-delivery-breakdown]").innerHTML = deliveryCounts.map((item) => `<div><header><span>${deliveryLabels[item.method]}</span><strong>${item.value}</strong></header><i><b style="width:${Math.round((item.value / maxDelivery) * 100)}%"></b></i></div>`).join("");
   }
 
   async function loadData() {

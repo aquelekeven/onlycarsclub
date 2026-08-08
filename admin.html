@@ -7,10 +7,10 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260807-v101">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260808-admin-v110">
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
   <script src="assets/js/supabase-client.js?v=20260805-admin2" defer></script>
-  <script src="assets/js/admin.js?v=20260807-v101" defer></script>
+  <script src="assets/js/admin.js?v=20260808-admin-v110" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -27,22 +27,35 @@
 
       <div data-admin-content hidden>
         <header class="admin-hero">
-          <div><p class="eyebrow">Administração</p><h1>Painel da <em>Only.</em></h1><p>Pedidos, produtos e estoque em um só lugar.</p></div>
+          <div><p class="eyebrow">Only Control Center</p><h1>Visão geral</h1><p>Acompanhe vendas, pedidos e operação em tempo real.</p></div>
           <div class="admin-user"><span>Conectado como</span><strong data-admin-name>Administrador</strong><small data-admin-email></small></div>
         </header>
 
         <nav class="admin-tabs" aria-label="Seções do painel">
-          <button class="active" type="button" data-admin-tab="dashboard">Visão geral</button>
-          <button type="button" data-admin-tab="orders">Pedidos</button>
-          <button type="button" data-admin-tab="inventory">Estoque</button>
+          <strong class="admin-nav-brand"><i>OC</i><span>Only Admin<small>Control center</small></span></strong>
+          <button class="active" type="button" data-admin-tab="dashboard"><i>⌂</i>Visão geral</button>
+          <button type="button" data-admin-tab="orders"><i>▤</i>Pedidos</button>
+          <button type="button" data-admin-tab="inventory"><i>◇</i>Estoque</button>
+          <button type="button" data-admin-tab="reports"><i>↗</i>Relatórios</button>
+          <a href="loja.html"><i>↗</i>Ver loja</a>
         </nav>
 
         <section class="admin-panel active" data-admin-panel="dashboard">
           <div class="admin-stat-grid">
-            <article class="admin-stat"><span>Pedidos recentes</span><strong data-stat-orders>0</strong><small>últimos 50</small></article>
-            <article class="admin-stat"><span>Aguardando pagamento</span><strong data-stat-pending>0</strong><small>pedidos pendentes</small></article>
-            <article class="admin-stat"><span>Unidades disponíveis</span><strong data-stat-stock>0</strong><small>descontadas as reservas</small></article>
-            <article class="admin-stat"><span>Estoque zerado</span><strong data-stat-zero>0</strong><small>variações ativas</small></article>
+            <article class="admin-stat admin-stat-featured"><span>Faturamento aprovado</span><strong data-stat-revenue>R$ 0,00</strong><small data-stat-revenue-caption>todos os pedidos pagos</small></article>
+            <article class="admin-stat"><span>Pedidos pagos</span><strong data-stat-paid>0</strong><small data-stat-orders-caption>de 0 pedidos</small></article>
+            <article class="admin-stat"><span>Ticket médio</span><strong data-stat-ticket>R$ 0,00</strong><small>por pedido aprovado</small></article>
+            <article class="admin-stat admin-stat-alert"><span>Aguardando pagamento</span><strong data-stat-pending>0</strong><small>precisam de atenção</small></article>
+          </div>
+          <div class="admin-analytics-grid">
+            <section class="admin-card-panel admin-sales-chart">
+              <div class="admin-section-heading"><div><p class="eyebrow">Desempenho</p><h2>Vendas nos últimos 7 dias</h2></div><span data-chart-total>R$ 0,00</span></div>
+              <div class="admin-bar-chart" data-sales-chart aria-label="Gráfico de vendas dos últimos sete dias"></div>
+            </section>
+            <section class="admin-card-panel admin-status-overview">
+              <div class="admin-section-heading"><div><p class="eyebrow">Operação</p><h2>Status dos pedidos</h2></div></div>
+              <div class="admin-donut-wrap"><div class="admin-donut" data-status-donut><strong data-donut-total>0</strong><span>pedidos</span></div><ul data-status-legend></ul></div>
+            </section>
           </div>
           <section class="admin-card-panel">
             <div class="admin-section-heading"><div><p class="eyebrow">Atividade</p><h2>Pedidos mais recentes</h2></div><button type="button" data-open-tab="orders">Ver todos</button></div>
@@ -63,6 +76,20 @@
           <div class="admin-toolbar"><label class="admin-search"><span>Buscar produto, SKU, tamanho ou cor</span><input type="search" data-stock-search placeholder="Ex.: streetwear preta M"></label></div>
           <p class="admin-feedback" data-inventory-feedback role="status"></p>
           <div class="admin-inventory" data-admin-inventory></div>
+        </section>
+
+        <section class="admin-panel" data-admin-panel="reports" hidden>
+          <div class="admin-section-heading"><div><p class="eyebrow">Inteligência</p><h2>Relatório comercial</h2></div><button type="button" data-admin-refresh>Atualizar</button></div>
+          <div class="admin-report-grid">
+            <article class="admin-report-card"><span>Receita em produtos</span><strong data-report-products>R$ 0,00</strong><small>pedidos aprovados</small></article>
+            <article class="admin-report-card"><span>Frete cobrado</span><strong data-report-shipping>R$ 0,00</strong><small>pedidos aprovados</small></article>
+            <article class="admin-report-card"><span>Itens vendidos</span><strong data-report-items>0</strong><small>unidades em pedidos pagos</small></article>
+            <article class="admin-report-card"><span>Conversão registrada</span><strong data-report-conversion>0%</strong><small>pagos sobre pedidos criados</small></article>
+          </div>
+          <div class="admin-analytics-grid admin-report-lists">
+            <section class="admin-card-panel"><div class="admin-section-heading"><div><p class="eyebrow">Produtos</p><h2>Mais vendidos</h2></div></div><ol class="admin-ranking" data-product-ranking></ol></section>
+            <section class="admin-card-panel"><div class="admin-section-heading"><div><p class="eyebrow">Entrega</p><h2>Modalidades escolhidas</h2></div></div><div class="admin-delivery-breakdown" data-delivery-breakdown></div></section>
+          </div>
         </section>
       </div>
     </div>
