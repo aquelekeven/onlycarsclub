@@ -7,10 +7,10 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260808-admin-v110">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260808-admin-v111">
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
   <script src="assets/js/supabase-client.js?v=20260805-admin2" defer></script>
-  <script src="assets/js/admin.js?v=20260808-admin-v110" defer></script>
+  <script src="assets/js/admin.js?v=20260808-admin-v111" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -45,8 +45,12 @@
             <article class="admin-stat admin-stat-featured"><span>Faturamento aprovado</span><strong data-stat-revenue>R$ 0,00</strong><small data-stat-revenue-caption>todos os pedidos pagos</small></article>
             <article class="admin-stat"><span>Pedidos pagos</span><strong data-stat-paid>0</strong><small data-stat-orders-caption>de 0 pedidos</small></article>
             <article class="admin-stat"><span>Ticket médio</span><strong data-stat-ticket>R$ 0,00</strong><small>por pedido aprovado</small></article>
-            <article class="admin-stat admin-stat-alert"><span>Aguardando pagamento</span><strong data-stat-pending>0</strong><small>precisam de atenção</small></article>
+            <button class="admin-stat admin-stat-alert admin-stat-action" type="button" data-toggle-attention><span>Pedidos para atualizar</span><strong data-stat-attention>0</strong><small>Abrir acesso rápido</small></button>
           </div>
+          <section class="admin-attention-panel" data-attention-panel hidden>
+            <div class="admin-section-heading"><div><p class="eyebrow">Acesso rápido</p><h2>Pedidos que precisam de atualização</h2></div><button type="button" data-open-tab="orders">Ver todos</button></div>
+            <div class="admin-attention-list" data-attention-orders></div>
+          </section>
           <div class="admin-analytics-grid">
             <section class="admin-card-panel admin-sales-chart">
               <div class="admin-section-heading"><div><p class="eyebrow">Desempenho</p><h2>Vendas nos últimos 7 dias</h2></div><span data-chart-total>R$ 0,00</span></div>
@@ -68,6 +72,7 @@
           <div class="admin-toolbar"><label class="admin-search"><span>Buscar pedido ou cliente</span><input type="search" data-order-search placeholder="Ex.: ONLY-001000 ou nome"></label></div>
           <p class="admin-feedback" data-orders-feedback role="status"></p>
           <div class="admin-orders" data-admin-orders></div>
+          <nav class="admin-pagination" data-order-pagination aria-label="Paginação dos pedidos"></nav>
         </section>
 
         <section class="admin-panel" data-admin-panel="inventory" hidden>
@@ -80,6 +85,12 @@
 
         <section class="admin-panel" data-admin-panel="reports" hidden>
           <div class="admin-section-heading"><div><p class="eyebrow">Inteligência</p><h2>Relatório comercial</h2></div><button type="button" data-admin-refresh>Atualizar</button></div>
+          <div class="admin-report-toolbar">
+            <label><span>Período</span><select data-report-mode><option value="month">Mensal</option><option value="year">Anual</option></select></label>
+            <label data-report-month-field><span>Mês</span><input type="month" data-report-month></label>
+            <label><span>Ano</span><select data-report-year></select></label>
+            <button type="button" data-export-report>Exportar planilha (.csv)</button>
+          </div>
           <div class="admin-report-grid">
             <article class="admin-report-card"><span>Receita em produtos</span><strong data-report-products>R$ 0,00</strong><small>pedidos aprovados</small></article>
             <article class="admin-report-card"><span>Frete cobrado</span><strong data-report-shipping>R$ 0,00</strong><small>pedidos aprovados</small></article>
@@ -90,6 +101,7 @@
             <section class="admin-card-panel"><div class="admin-section-heading"><div><p class="eyebrow">Produtos</p><h2>Mais vendidos</h2></div></div><ol class="admin-ranking" data-product-ranking></ol></section>
             <section class="admin-card-panel"><div class="admin-section-heading"><div><p class="eyebrow">Entrega</p><h2>Modalidades escolhidas</h2></div></div><div class="admin-delivery-breakdown" data-delivery-breakdown></div></section>
           </div>
+          <section class="admin-card-panel admin-report-chart-panel"><div class="admin-section-heading"><div><p class="eyebrow">Histórico</p><h2 data-report-chart-title>Vendas do período</h2></div><span data-report-chart-total>R$ 0,00</span></div><div class="admin-bar-chart admin-report-chart" data-report-chart></div></section>
         </section>
       </div>
     </div>
