@@ -1536,7 +1536,7 @@ async function setupCheckoutCustomer(deliveryForm) {
   try {
     const [profiles, savedAddresses] = await Promise.all([
       client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,display_name,phone,tax_id`),
-      client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3")
+      client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`)
     ]);
     const profile = profiles?.[0] || {};
     addresses = Array.isArray(savedAddresses) ? savedAddresses : [];
