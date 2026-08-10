@@ -87,6 +87,8 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Chaveiros · Logotipo",
     price:"R$ 15,00",
     value:15,
+    weightGrams:50,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Chaveiro com o logotipo oficial do Only Cars Club, disponível em branco ou preto.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Branco","Preto"]),
@@ -106,6 +108,8 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Chaveiros · Mascote",
     price:"R$ 25,00",
     value:25,
+    weightGrams:50,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Chaveiro de resina com o mascote Onlynho para levar o clube com você.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Resina"]),
@@ -123,6 +127,8 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Chaveiros · Mascote",
     price:"R$ 15,00",
     value:15,
+    weightGrams:50,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Chaveiro 3D com o mascote Onlynho para levar o clube com você.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["3D"]),
@@ -140,6 +146,8 @@ const PRODUCT_CATALOG = Object.freeze({
     category:"Acessórios · Copos",
     price:"R$ 75,00",
     value:75,
+    weightGrams:400,
+    shippingPackage:Object.freeze({ length:30, width:20, height:8 }),
     description:"Copo térmico do Only Cars Club para acompanhar encontros, viagens e o dia a dia.",
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
@@ -1347,7 +1355,7 @@ function buildShippingPackage(cart) {
   if (!items.length || items.some((item) => !item.shippingEligible && !item.pickupOnly)) return null;
   const shippableItems = items.filter((item) => item.shippingEligible);
   if (!shippableItems.length) return null;
-  const quantity = items.reduce((total, item) => total + Number(item.quantity), 0);
+  const quantity = shippableItems.reduce((total, item) => total + Number(item.quantity), 0);
   const weightGrams = shippableItems.reduce(
     (total, item) => total + Number(item.weightGrams) * Number(item.quantity),
     0
