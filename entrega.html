@@ -7,9 +7,9 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Entrega — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260808-typography-v122">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260810-addresses-v124">
   <script src="assets/js/supabase-client.js?v=20260806-v85" defer></script>
-  <script src="assets/js/main.js?v=20260810-shipping-v123" defer></script>
+  <script src="assets/js/main.js?v=20260810-addresses-v124" defer></script>
 </head>
 <body data-page="loja">
 <header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
@@ -31,6 +31,11 @@
         <div><p class="eyebrow">Destinatário</p><h2 id="customer-title">Seus dados de entrega</h2></div>
         <span data-checkout-customer-email></span>
       </div>
+      <div class="checkout-address-book" data-checkout-address-book>
+        <div class="checkout-address-book-heading"><strong>Endereços cadastrados</strong><span data-checkout-address-count>0 de 3</span></div>
+        <div class="checkout-address-cards" data-checkout-address-cards></div>
+        <button type="button" class="checkout-other-address" data-checkout-other-address>+ Inserir um CEP não cadastrado</button>
+      </div>
       <div class="checkout-customer-fields">
         <div class="field full"><label for="checkout-recipient-name">Nome completo</label><input id="checkout-recipient-name" name="recipient_name" autocomplete="name" required></div>
         <div class="field"><label for="checkout-phone">Telefone</label><input id="checkout-phone" name="phone" inputmode="tel" autocomplete="tel" required></div>
@@ -42,6 +47,10 @@
         <div class="field"><label for="checkout-complement">Complemento</label><input id="checkout-complement" name="complement" autocomplete="address-line2"></div>
         <div class="field"><label for="checkout-neighborhood">Bairro</label><input id="checkout-neighborhood" name="neighborhood" required></div>
         <div class="field"><label for="checkout-city">Cidade</label><input id="checkout-city" name="city" autocomplete="address-level2" required></div>
+      </div>
+      <div class="checkout-address-save-options" data-checkout-address-save-options hidden>
+        <label><input type="checkbox" name="save_address"><span>Salvar como novo endereço</span></label>
+        <label data-checkout-save-default hidden><input type="checkbox" name="save_as_default"><span>Salvar como principal</span></label>
       </div>
       <div class="checkout-customer-footer">
         <p class="checkout-customer-status" data-checkout-customer-status aria-live="polite">Carregando os dados da sua conta...</p>

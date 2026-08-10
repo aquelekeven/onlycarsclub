@@ -161,19 +161,29 @@ Deno.serve(async (request) => {
       throw new Error("Não foi possível carregar os dados do cliente.");
     }
 
-    const { data: address, error: addressError } = await serviceClient
-      .from("addresses")
-      .select(
-        "recipient_name, postal_code, street, number, complement, neighborhood, city, state",
-      )
-      .eq("user_id", user.id)
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (addressError) {
-      throw new Error("Não foi possível carregar o endereço.");
+    let address: Record<string, any> | null = null;
+    const requestedAddressId = String(payload?.address_id || "");
+    if (deliveryMethod === "shipping" && requestedAddressId) {
+      if (!validUuid(requestedAddressId)) throw new Error("Endereço inválido.");
+      const { data, error } = await serviceClient.from("addresses")
+        .select("recipient_name, postal_code, street, number, complement, neighborhood, city, state")
+        .eq("id", requestedAddressId).eq("user_id", user.id).maybeSingle();
+      if (error || !data) throw new Error("Endereço salvo não encontrado.");
+      address = data;
+    } else if (deliveryMethod === "shipping") {
+      const raw = payload?.shipping_address || {};
+      address = {
+        recipient_name:String(raw.recipient_name || "").trim(),
+        postal_code:String(raw.postal_code || "").replace(/\D/g, ""),
+        street:String(raw.street || "").trim(), number:String(raw.number || "").trim(),
+        complement:String(raw.complement || "").trim() || null,
+        neighborhood:String(raw.neighborhood || "").trim(), city:String(raw.city || "").trim(),
+        state:String(raw.state || "").trim().toUpperCase(),
+      };
+      if (!address.recipient_name || address.postal_code.length !== 8 || !address.street ||
+        !address.number || !address.neighborhood || !address.city || !/^[A-Z]{2}$/.test(address.state)) {
+        throw new Error("Preencha o endereço de entrega completo.");
+      }
     }
 
     const customerName = String(

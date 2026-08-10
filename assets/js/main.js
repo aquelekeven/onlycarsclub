@@ -1,5 +1,8 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const escapeMarkup = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
+})[character]);
 const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
@@ -1528,15 +1531,17 @@ async function setupCheckoutCustomer(deliveryForm) {
     return null;
   }
   if (email) email.textContent = user.email || "";
-  let addressId = null;
+  let addresses = [];
+  let selectedAddressId = null;
   try {
-    const [profiles, addresses] = await Promise.all([
+    const [profiles, savedAddresses] = await Promise.all([
       client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,display_name,phone,tax_id`),
-      client.rest("addresses?select=id,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1")
+      client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3")
     ]);
     const profile = profiles?.[0] || {};
-    const address = addresses?.[0] || {};
-    addressId = address.id || null;
+    addresses = Array.isArray(savedAddresses) ? savedAddresses : [];
+    const address = addresses.find((item) => item.is_default) || addresses[0] || {};
+    selectedAddressId = address.id || null;
     const values = {
       recipient_name:address.recipient_name || profile.display_name || "",
       phone:profile.phone || "",
@@ -1558,7 +1563,51 @@ async function setupCheckoutCustomer(deliveryForm) {
       const digits = postalCode.value.replace(/\D/g, "").slice(0, 8);
       postalCode.value = digits.replace(/(\d{5})(\d)/, "$1-$2");
     }
-    setStatus(addressId ? "Endereço principal carregado. Você pode atualizar os dados abaixo." : "Complete os dados para salvar seu endereço principal.", "success");
+    const cards = qs("[data-checkout-address-cards]", section);
+    const count = qs("[data-checkout-address-count]", section);
+    const saveOptions = qs("[data-checkout-address-save-options]", section);
+    const saveDefault = qs("[data-checkout-save-default]", section);
+    const fillAddress = (item) => {
+      ["recipient_name","postal_code","street","number","complement","neighborhood","city","state"].forEach((name) => {
+        if (deliveryForm.elements[name]) deliveryForm.elements[name].value = item?.[name] || (name === "recipient_name" ? profile.display_name || "" : "");
+      });
+      const postal = deliveryForm.elements.postal_code;
+      if (postal?.value) postal.value = postal.value.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+      selectedAddressId = item?.id || null;
+      ["postal_code","street","number","complement","neighborhood","city","state"].forEach((name) => {
+        if (deliveryForm.elements[name]) deliveryForm.elements[name].readOnly = Boolean(selectedAddressId);
+      });
+      qsa("[data-checkout-address-id]", section).forEach((card) => card.classList.toggle("selected", card.dataset.checkoutAddressId === selectedAddressId));
+      if (saveOptions) saveOptions.hidden = Boolean(selectedAddressId) || addresses.length >= 3;
+      if (deliveryForm.elements.save_address) deliveryForm.elements.save_address.checked = false;
+      if (deliveryForm.elements.save_as_default) deliveryForm.elements.save_as_default.checked = false;
+      if (saveDefault) saveDefault.hidden = true;
+      sessionStorage.removeItem("onlyCarsShippingQuote");
+      qsa('input[name="delivery"]', deliveryForm).forEach((input) => { input.checked = false; });
+      qs("[data-shipping-results]", deliveryForm)?.replaceChildren();
+    };
+    if (count) count.textContent = `${addresses.length} de 3`;
+    if (cards) cards.innerHTML = addresses.length ? addresses.map((item) => `
+      <button type="button" class="checkout-address-card ${item.is_default ? "is-default" : ""} ${item.id === selectedAddressId ? "selected" : ""}" data-checkout-address-id="${escapeMarkup(item.id)}">
+        <span>${escapeMarkup(item.label || "Endereço")}${item.is_default ? " · Principal" : ""}</span>
+        <strong>${escapeMarkup(item.street)}, ${escapeMarkup(item.number || "S/N")}</strong>
+        <small>${escapeMarkup(item.neighborhood)} · ${escapeMarkup(item.city)}/${escapeMarkup(item.state)} · ${escapeMarkup(String(item.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</small>
+      </button>`).join("") : '<p class="checkout-address-empty">Nenhum endereço cadastrado ainda.</p>';
+    cards?.addEventListener("click", (event) => {
+      const card = event.target.closest("[data-checkout-address-id]");
+      const item = addresses.find((entry) => entry.id === card?.dataset.checkoutAddressId);
+      if (item) fillAddress(item);
+    });
+    qs("[data-checkout-other-address]", section)?.addEventListener("click", () => {
+      fillAddress({ recipient_name:profile.display_name || "" });
+      deliveryForm.elements.postal_code?.focus();
+      setStatus(addresses.length >= 3 ? "Este endereço será usado somente nesta compra; você já possui 3 endereços salvos." : "Digite um CEP para usar um endereço diferente nesta compra.", "success");
+    });
+    deliveryForm.elements.save_address?.addEventListener("change", () => {
+      if (saveDefault) saveDefault.hidden = !deliveryForm.elements.save_address.checked || addresses.length >= 3;
+    });
+    fillAddress(address);
+    setStatus(selectedAddressId ? "Endereço principal selecionado. Calcule o frete para continuar." : "Digite um CEP para calcular o frete.", "success");
   } catch (error) {
     setStatus(error?.message || "Não foi possível carregar seus dados. Preencha-os para continuar.", "error");
   }
@@ -1650,9 +1699,9 @@ async function setupCheckoutCustomer(deliveryForm) {
       if (taxId && taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
       if (requireAddress && postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
       if (requireAddress && !/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
-      const address = requireAddress ? {
+      let address = requireAddress ? {
         user_id:user.id,
-        label:"Principal",
+        label:"Endereço",
         recipient_name:recipientName,
         postal_code:postalCode,
         street:String(formData.get("street") || "").trim(),
@@ -1661,7 +1710,7 @@ async function setupCheckoutCustomer(deliveryForm) {
         neighborhood:String(formData.get("neighborhood") || "").trim(),
         city:String(formData.get("city") || "").trim(),
         state,
-        is_default:true
+        is_default:false
       } : null;
       setStatus("Salvando seus dados...", "loading");
       await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
@@ -1669,19 +1718,22 @@ async function setupCheckoutCustomer(deliveryForm) {
         headers:{ Prefer:"return=minimal" },
         body:{ display_name:recipientName, phone, tax_id:taxId || null }
       });
-      if (requireAddress && addressId) {
-        await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
-          method:"PATCH",
-          headers:{ Prefer:"return=minimal" },
-          body:address
-        });
-      } else if (requireAddress) {
-        const created = await client.rest("addresses", {
-          method:"POST",
-          headers:{ Prefer:"return=representation" },
-          body:address
-        });
-        addressId = created?.[0]?.id || null;
+      const wantsSave = requireAddress && !selectedAddressId && Boolean(formData.get("save_address"));
+      const wantsDefault = wantsSave && Boolean(formData.get("save_as_default"));
+      if (wantsSave) {
+        if (addresses.length >= 3) throw new Error("Você já possui o limite de 3 endereços salvos.");
+        const saved = await client.rest("rpc/save_customer_address", { method:"POST", body:{
+          p_address_id:null, p_label:wantsDefault ? "Principal" : `Endereço ${addresses.length + 1}`,
+          p_recipient_name:address.recipient_name, p_postal_code:address.postal_code,
+          p_street:address.street, p_number:address.number, p_complement:address.complement,
+          p_neighborhood:address.neighborhood, p_city:address.city, p_state:address.state,
+          p_is_default:wantsDefault
+        }});
+        const created = Array.isArray(saved) ? saved[0] : saved;
+        selectedAddressId = created?.id || null;
+      } else if (requireAddress && selectedAddressId) {
+        const selected = addresses.find((item) => item.id === selectedAddressId);
+        if (selected) address = { ...selected, user_id:user.id };
       }
       const checkoutCustomer = {
         email:user.email || "",
@@ -1690,6 +1742,7 @@ async function setupCheckoutCustomer(deliveryForm) {
         taxId,
         ...(address || {})
       };
+      checkoutCustomer.address_id = selectedAddressId;
       sessionStorage.setItem("onlyCarsCheckoutCustomer", JSON.stringify(checkoutCustomer));
       setStatus(requireAddress ? "Dados de entrega salvos." : "Dados de contato salvos para a retirada.", "success");
       return checkoutCustomer;
@@ -2020,10 +2073,20 @@ function setupCheckoutFlow() {
       button.textContent = "Abrindo Mercado Pago...";
       error.textContent = "";
       try {
+        let checkoutCustomer = {};
+        try { checkoutCustomer = JSON.parse(sessionStorage.getItem("onlyCarsCheckoutCustomer") || "{}"); } catch (_) {}
         const response = await window.OnlySupabase.invokeFunction("mercado-pago-checkout", {
           checkout_key:checkoutKey,
           delivery_method:deliveryMethod,
           shipping_quote:shippingQuote ? { service_id:shippingQuote.serviceId } : null,
+          address_id:checkoutCustomer.address_id || null,
+          shipping_address:deliveryMethod === "shipping" ? {
+            recipient_name:checkoutCustomer.recipient_name || "",
+            postal_code:String(checkoutCustomer.postal_code || "").replace(/\D/g, ""),
+            street:checkoutCustomer.street || "", number:checkoutCustomer.number || "",
+            complement:checkoutCustomer.complement || null, neighborhood:checkoutCustomer.neighborhood || "",
+            city:checkoutCustomer.city || "", state:checkoutCustomer.state || ""
+          } : null,
           items:cart.map((item) => ({
             product_slug:item.id,
             size:item.size || "",

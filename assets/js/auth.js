@@ -271,7 +271,9 @@
     const profileForm = qs("[data-profile-form]");
     const addressForm = qs("[data-address-form]");
     const ordersList = qs("[data-orders-list]");
-    let addressId = null;
+    const addressList = qs("[data-address-list]");
+    const addressEditor = qs("[data-address-editor]");
+    let savedAddresses = [];
     const orderStatusLabels = {
       pending_payment: "Aguardando pagamento",
       paid: "Pago",
@@ -290,12 +292,12 @@
       await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
-        client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
+        client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3"),
         client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20")
       ]);
       const profile = profiles?.[0] || {};
-      const address = addresses?.[0] || null;
-      addressId = address?.id || null;
+      savedAddresses = Array.isArray(addresses) ? addresses : [];
+      const address = savedAddresses.find((item) => item.is_default) || savedAddresses[0] || null;
 
       const displayName = profile.display_name || user.email.split("@")[0];
       qsa("[data-account-name]").forEach((element) => element.textContent = displayName);
@@ -312,13 +314,7 @@
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
 
-      if (address) {
-        Object.entries(address).forEach(([key, value]) => {
-          if (addressForm.elements[key]) addressForm.elements[key].value = value || "";
-        });
-      }
       qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
-      qsa("input", addressForm).forEach((input) => input.defaultValue = input.value);
       const postalCodeInput = addressForm.postal_code;
       const numberInput = addressForm.number;
       const noNumberInput = addressForm.no_number;
@@ -350,6 +346,59 @@
             if (!noNumberInput?.checked) numberInput?.focus();
           } catch (error) { setFeedback(addressForm, friendlyError(error)); }
         }, 250);
+      });
+
+      const resetAddressEditor = (addressToEdit = null) => {
+        addressForm.reset();
+        addressForm.elements.address_id.value = addressToEdit?.id || "";
+        if (addressToEdit) Object.entries(addressToEdit).forEach(([key, value]) => {
+          if (addressForm.elements[key]) addressForm.elements[key].value = value ?? "";
+        });
+        addressForm.elements.is_default.checked = Boolean(addressToEdit?.is_default || !savedAddresses.length);
+        noNumberInput.checked = String(addressToEdit?.number || "").toUpperCase() === "S/N";
+        applyNoNumber();
+        addressEditor.hidden = false;
+        addressEditor.scrollIntoView({ behavior:"smooth", block:"nearest" });
+      };
+      const renderAddressList = () => {
+        if (!addressList) return;
+        addressList.innerHTML = savedAddresses.length ? savedAddresses.map((item) => `
+          <article class="account-address-card ${item.is_default ? "is-default" : ""}" data-address-id="${escapeHtml(item.id)}">
+            <header><span>${escapeHtml(item.label || "Endereço")}</span>${item.is_default ? "<b>Principal</b>" : ""}</header>
+            <strong>${escapeHtml(item.street)}, ${escapeHtml(item.number || "S/N")}</strong>
+            <p>${escapeHtml(item.neighborhood)} · ${escapeHtml(item.city)}/${escapeHtml(item.state)} · CEP ${escapeHtml(String(item.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</p>
+            <footer><button type="button" data-address-edit>Editar</button>${item.is_default ? "" : '<button type="button" data-address-default>Tornar principal</button>'}<button type="button" class="danger" data-address-delete>Excluir</button></footer>
+          </article>`).join("") : '<div class="account-address-empty"><strong>Nenhum endereço salvo</strong><span>Cadastre o primeiro endereço para agilizar suas compras.</span></div>';
+        const addButton = qs("[data-address-add]");
+        if (addButton) {
+          addButton.disabled = savedAddresses.length >= 3;
+          addButton.textContent = savedAddresses.length >= 3 ? "Limite de 3 atingido" : "+ Novo endereço";
+        }
+      };
+      renderAddressList();
+      qs("[data-address-add]")?.addEventListener("click", () => resetAddressEditor());
+      qs("[data-address-editor-cancel]")?.addEventListener("click", () => { addressEditor.hidden = true; addressForm.reset(); });
+      addressList?.addEventListener("click", async (event) => {
+        const card = event.target.closest("[data-address-id]");
+        const item = savedAddresses.find((entry) => entry.id === card?.dataset.addressId);
+        if (!item) return;
+        if (event.target.closest("[data-address-edit]")) return resetAddressEditor(item);
+        if (event.target.closest("[data-address-default]")) {
+          await client.rest("rpc/set_default_customer_address", { method:"POST", body:{ p_address_id:item.id } });
+          location.reload();
+          return;
+        }
+        const deleteButton = event.target.closest("[data-address-delete]");
+        if (deleteButton) {
+          if (deleteButton.dataset.confirm !== "true") {
+            deleteButton.dataset.confirm = "true";
+            deleteButton.textContent = "Confirmar exclusão";
+            window.setTimeout(() => { deleteButton.dataset.confirm = ""; deleteButton.textContent = "Excluir"; }, 3500);
+            return;
+          }
+          await client.rest("rpc/delete_customer_address", { method:"POST", body:{ p_address_id:item.id } });
+          location.reload();
+        }
       });
 
       const paidAndActive = (orders || []).filter((order) => order.status === "paid" && !["completed", "cancelled"].includes(order.fulfillment_status));
@@ -513,31 +562,17 @@
         if (!/^[A-Za-z]{2}$/.test(addressForm.state.value.trim())) return setFeedback(addressForm, "Digite a sigla do estado com 2 letras.");
         setSubmitting(addressForm, true, "Salvando...");
         setFeedback(addressForm, "");
-        const payload = {
-          user_id: user.id,
-          label: "Principal",
-          recipient_name: addressForm.recipient_name.value.trim(),
-          postal_code: addressForm.postal_code.value.replace(/\D/g, ""),
-          street: addressForm.street.value.trim(),
-          number: addressForm.number.value.trim(),
-          complement: addressForm.complement.value.trim() || null,
-          neighborhood: addressForm.neighborhood.value.trim(),
-          city: addressForm.city.value.trim(),
-          state: addressForm.state.value.trim().toUpperCase(),
-          is_default: true
-        };
         try {
-          if (addressId) {
-            await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
-              method: "PATCH", headers: { Prefer: "return=minimal" }, body: payload
-            });
-          } else {
-            const created = await client.rest("addresses", {
-              method: "POST", headers: { Prefer: "return=representation" }, body: payload
-            });
-            addressId = created?.[0]?.id || null;
-          }
+          await client.rest("rpc/save_customer_address", { method:"POST", body:{
+            p_address_id:addressForm.elements.address_id.value || null,
+            p_label:addressForm.elements.label.value.trim(), p_recipient_name:addressForm.recipient_name.value.trim(),
+            p_postal_code:addressForm.postal_code.value.replace(/\D/g, ""), p_street:addressForm.street.value.trim(),
+            p_number:addressForm.number.value.trim(), p_complement:addressForm.complement.value.trim() || null,
+            p_neighborhood:addressForm.neighborhood.value.trim(), p_city:addressForm.city.value.trim(),
+            p_state:addressForm.state.value.trim().toUpperCase(), p_is_default:addressForm.elements.is_default.checked
+          }});
           setFeedback(addressForm, "Endereço salvo.", "success");
+          window.setTimeout(() => location.reload(), 450);
         } catch (error) {
           setFeedback(addressForm, friendlyError(error));
         } finally {
