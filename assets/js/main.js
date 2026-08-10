@@ -2367,11 +2367,15 @@ function setupOnlyCarsAppMetadata() {
 function setupAccountShortcut() {
   const header = qs(".header");
   if (!header || qs(".account-shortcut", header)) return;
+  const isAccountPage = document.body.dataset.page === "conta";
   const link = document.createElement("a");
   link.className = "account-shortcut";
-  link.href = "minha-conta.html";
-  link.setAttribute("aria-label", "Minha conta");
-  link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
+  link.href = isAccountPage ? "index.html" : "minha-conta.html";
+  link.setAttribute("aria-label", isAccountPage ? "Voltar ao início" : "Minha conta");
+  link.title = isAccountPage ? "Voltar ao início" : "Minha conta";
+  link.innerHTML = isAccountPage
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/><path d="M8 12h11"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
   header.appendChild(link);
 }
 
