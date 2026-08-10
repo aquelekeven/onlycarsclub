@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co https://viacep.com.br; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260810-addresses-v124">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260810-account-nav-v126">
   <script src="assets/js/main.js?v=20260807-v93" defer></script>
   <script src="assets/js/supabase-client.js?v=20260807-v93" defer></script>
   <script src="assets/js/auth.js?v=20260810-privacy-v125" defer></script>
@@ -21,11 +21,11 @@
       <aside class="account-sidebar">
         <div class="account-profile-summary"><span class="account-avatar" data-account-initial>O</span><strong data-account-name>cliente</strong><small data-account-email></small><span class="account-role" data-account-role>Cliente</span></div>
         <nav class="account-menu" aria-label="Menu da conta">
-          <button class="active" type="button" data-account-tab="overview"><i>⌂</i><span>Visão geral</span></button>
-          <button type="button" data-account-tab="orders"><i>▤</i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
-          <button type="button" data-account-tab="profile"><i>○</i><span>Meus dados</span></button>
-          <button type="button" data-account-tab="address"><i>◇</i><span>Endereço</span></button>
-          <button type="button" data-account-tab="security"><i>□</i><span>Segurança</span></button>
+          <button class="active" type="button" data-account-tab="overview"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg></i><span>Visão geral</span></button>
+          <button type="button" data-account-tab="orders"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"/><path d="M4 7.5V17l8 4 8-4V7.5M12 12v9"/></svg></i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
+          <button type="button" data-account-tab="profile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4 3-6 7-6s6.5 2 7 6"/></svg></i><span>Meus dados</span></button>
+          <button type="button" data-account-tab="address"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></i><span>Endereço</span></button>
+          <button type="button" data-account-tab="security"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></i><span>Segurança</span></button>
         </nav>
         <div class="account-sidebar-footer"><a class="account-admin-link" href="admin.html" data-admin-link hidden>Abrir painel administrativo</a><button class="account-logout" type="button" data-logout><i>↗</i> Sair da conta</button></div>
       </aside>
