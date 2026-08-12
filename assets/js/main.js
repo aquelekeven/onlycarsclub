@@ -1567,6 +1567,18 @@ async function setupCheckoutCustomer(deliveryForm) {
     const count = qs("[data-checkout-address-count]", section);
     const saveOptions = qs("[data-checkout-address-save-options]", section);
     const saveDefault = qs("[data-checkout-save-default]", section);
+    const addressEditor = qs("[data-checkout-address-editor]", section);
+    const otherAddressButton = qs("[data-checkout-other-address]", section);
+    const setAddressEditorOpen = (open) => {
+      if (addressEditor) addressEditor.hidden = !open;
+      if (otherAddressButton) {
+        otherAddressButton.textContent = addresses.length
+          ? (open ? "Cancelar novo endereço" : "+ Usar outro endereço")
+          : (open ? "Cancelar cadastro" : "Cadastrar endereço");
+        otherAddressButton.setAttribute("aria-expanded", String(open));
+      }
+      if (!open && saveOptions) saveOptions.hidden = true;
+    };
     const fillAddress = (item) => {
       ["recipient_name","postal_code","street","number","complement","neighborhood","city","state"].forEach((name) => {
         if (deliveryForm.elements[name]) deliveryForm.elements[name].value = item?.[name] || (name === "recipient_name" ? profile.display_name || "" : "");
@@ -1582,6 +1594,7 @@ async function setupCheckoutCustomer(deliveryForm) {
       if (deliveryForm.elements.save_address) deliveryForm.elements.save_address.checked = false;
       if (deliveryForm.elements.save_as_default) deliveryForm.elements.save_as_default.checked = false;
       if (saveDefault) saveDefault.hidden = true;
+      setAddressEditorOpen(false);
       sessionStorage.removeItem("onlyCarsShippingQuote");
       qsa('input[name="delivery"]', deliveryForm).forEach((input) => { input.checked = false; });
       qs("[data-shipping-results]", deliveryForm)?.replaceChildren();
@@ -1598,8 +1611,16 @@ async function setupCheckoutCustomer(deliveryForm) {
       const item = addresses.find((entry) => entry.id === card?.dataset.checkoutAddressId);
       if (item) fillAddress(item);
     });
-    qs("[data-checkout-other-address]", section)?.addEventListener("click", () => {
+    otherAddressButton?.addEventListener("click", () => {
+      if (addressEditor && !addressEditor.hidden) {
+        const selected = addresses.find((entry) => entry.id === selectedAddressId);
+        fillAddress(selected || address);
+        setStatus(selectedAddressId ? "Endereço cadastrado selecionado." : "Cadastre um endereço para calcular o frete.", "success");
+        return;
+      }
       fillAddress({ recipient_name:profile.display_name || "" });
+      setAddressEditorOpen(true);
+      if (saveOptions) saveOptions.hidden = addresses.length >= 3;
       deliveryForm.elements.postal_code?.focus();
       setStatus(addresses.length >= 3 ? "Este endereço será usado somente nesta compra; você já possui 3 endereços salvos." : "Digite um CEP para usar um endereço diferente nesta compra.", "success");
     });
@@ -1607,7 +1628,8 @@ async function setupCheckoutCustomer(deliveryForm) {
       if (saveDefault) saveDefault.hidden = !deliveryForm.elements.save_address.checked || addresses.length >= 3;
     });
     fillAddress(address);
-    setStatus(selectedAddressId ? "Endereço principal selecionado. Calcule o frete para continuar." : "Digite um CEP para calcular o frete.", "success");
+    setAddressEditorOpen(false);
+    setStatus(selectedAddressId ? "Endereço principal selecionado. Calcule o frete para continuar." : "Nenhum endereço cadastrado. Clique em Cadastrar endereço para informar o local de entrega.", "success");
   } catch (error) {
     setStatus(error?.message || "Não foi possível carregar seus dados. Preencha-os para continuar.", "error");
   }
