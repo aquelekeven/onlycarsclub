@@ -213,6 +213,39 @@
     });
   }
 
+  async function uploadPrivateFile(bucket, path, file) {
+    const session = await getSession();
+    if (!session) throw new SupabaseRequestError("Faça login para continuar.", 401);
+    const response = await fetch(
+      `${PROJECT_URL}/storage/v1/object/${encodeURIComponent(bucket)}/${path.split("/").map(encodeURIComponent).join("/")}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "true"
+        },
+        body: file
+      }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new SupabaseRequestError(data?.message || data?.error || "Não foi possível enviar o arquivo.", response.status, data);
+    return data;
+  }
+
+  async function createPrivateDownload(bucket, path, expiresIn = 120) {
+    const session = await getSession();
+    if (!session) throw new SupabaseRequestError("Faça login para continuar.", 401);
+    const data = await authenticatedRequest(
+      `/storage/v1/object/sign/${encodeURIComponent(bucket)}/${path.split("/").map(encodeURIComponent).join("/")}`,
+      { method: "POST", token: session.access_token, body: { expiresIn } }
+    );
+    const signedPath = data?.signedURL || data?.signedUrl || data?.signed_url;
+    if (!signedPath) throw new SupabaseRequestError("Não foi possível preparar o download.", 500, data);
+    return signedPath.startsWith("http") ? signedPath : `${PROJECT_URL}/storage/v1${signedPath}`;
+  }
+
   window.OnlySupabase = {
     getSession,
     getUser,
@@ -223,6 +256,8 @@
     updatePassword,
     consumeAuthRedirect,
     invokeFunction,
+    uploadPrivateFile,
+    createPrivateDownload,
     publicRest,
     rest,
     projectUrl: PROJECT_URL
