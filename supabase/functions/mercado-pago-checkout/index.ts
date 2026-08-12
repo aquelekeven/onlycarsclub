@@ -484,10 +484,15 @@ if (availableStock < quantity && !allowBackorder) {
 
     const preferenceItems = canonicalItems.map((item) => ({
       id: `${item.product_slug}-${item.size}-${item.color}`,
-      title: item.name,
+      // O Mercado Pago pode agrupar visualmente itens com o mesmo título.
+      // Incluir a variação impede que P e M apareçam como uma única linha.
+      title: [
+        item.name,
+        item.size ? `Tam. ${item.size}` : "",
+        item.color || "",
+      ].filter(Boolean).join(" · "),
       description: [
-        item.color,
-        item.size ? `Tamanho ${item.size}` : "",
+        item.gift ? `Brinde: ${item.gift}` : "",
       ].filter(Boolean).join(" · "),
       quantity: item.quantity,
       currency_id: "BRL",
