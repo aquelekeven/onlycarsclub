@@ -46,6 +46,8 @@
     quick.addEventListener("click", (event) => {
       const button = event.target.closest("[data-exchange-quick-status]");
       if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
       select.value = button.dataset.exchangeQuickStatus;
       qsa("[data-exchange-quick-status]", quick).forEach((item) => item.classList.toggle("active", item === button));
       if (!customerMessage.value.trim() && messageTemplates[select.value]) customerMessage.value = messageTemplates[select.value];
@@ -53,8 +55,10 @@
     templates.addEventListener("click", (event) => {
       const button = event.target.closest("[data-exchange-template]");
       if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
       customerMessage.value = messageTemplates[button.dataset.exchangeTemplate] || "";
-      customerMessage.focus();
+      customerMessage.dispatchEvent(new Event("input", { bubbles:true }));
     });
   }
 
@@ -72,6 +76,8 @@
   let scanning = false;
   let lastToken = "";
   let currentTicket = null;
+  const fallbackCanvas = document.createElement("canvas");
+  const fallbackContext = fallbackCanvas.getContext("2d", { willReadFrequently:true });
 
   function normalizeQrValue(value) {
     const raw = String(value || "").trim();
@@ -122,12 +128,24 @@
   }
 
   async function scanLoop() {
-    if (!scanning || !detector || !qs("[data-scanner-video]")) return;
+    if (!scanning || !qs("[data-scanner-video]")) return;
     const video = qs("[data-scanner-video]");
     if (video.readyState >= 2) {
       try {
-        const codes = await detector.detect(video);
-        if (codes[0]?.rawValue) { await inspectToken(codes[0].rawValue); return; }
+        let rawValue = "";
+        if (detector) {
+          const codes = await detector.detect(video);
+          rawValue = codes[0]?.rawValue || "";
+        } else if (window.jsQR && fallbackContext && video.videoWidth && video.videoHeight) {
+          const maxWidth = 720;
+          const scale = Math.min(1, maxWidth / video.videoWidth);
+          fallbackCanvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+          fallbackCanvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+          fallbackContext.drawImage(video, 0, 0, fallbackCanvas.width, fallbackCanvas.height);
+          const image = fallbackContext.getImageData(0, 0, fallbackCanvas.width, fallbackCanvas.height);
+          rawValue = window.jsQR(image.data, image.width, image.height, { inversionAttempts:"dontInvert" })?.data || "";
+        }
+        if (rawValue) { await inspectToken(rawValue); return; }
       } catch (error) {
         if (scanning) setScannerFeedback("Mantenha o QR centralizado e com boa iluminação.");
       }
@@ -136,13 +154,16 @@
   }
 
   async function startScanner() {
-    if (!("BarcodeDetector" in window) || !navigator.mediaDevices?.getUserMedia) {
-      setScannerFeedback("A leitura automática não está disponível neste navegador. Use o campo manual abaixo.", "warning");
-      qs("[data-scanner-input]")?.focus();
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setScannerFeedback("Este navegador não permite acesso à câmera. Tente abrir no Chrome ou Safari atualizado.", "warning");
       return;
     }
     try {
-      detector = new BarcodeDetector({ formats:["qr_code"] });
+      detector = null;
+      if ("BarcodeDetector" in window) {
+        try { detector = new BarcodeDetector({ formats:["qr_code"] }); } catch (_) { detector = null; }
+      }
+      if (!detector && !window.jsQR) throw new Error("Leitor de QR indisponível.");
       stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" }, width:{ ideal:1280 }, height:{ ideal:720 } }, audio:false });
       const video = qs("[data-scanner-video]");
       video.srcObject = stream;
@@ -185,9 +206,9 @@
 
   function setupScanner() {
     if (!qs("[data-admin-panel='tickets']")) return;
-    qs("[data-scanner-start]").addEventListener("click", startScanner);
-    qs("[data-scanner-stop]").addEventListener("click", stopScanner);
-    qs("[data-scanner-search]").addEventListener("click", () => inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")));
+    qs("[data-scanner-start]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); startScanner(); });
+    qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
+    qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
     qs("[data-ticket-refresh]").addEventListener("click", loadTicketStats);
     qs("[data-ticket-result]").addEventListener("click", async (event) => {
