@@ -356,10 +356,12 @@
 
     try {
       await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
+      const ordersWithExchange = `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc&limit=20`;
+      const ordersWithoutExchange = `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at)&order=created_at.desc&limit=20`;
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc&limit=20`)
+        client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange))
       ]);
       const profile = profiles?.[0] || {};
       savedAddresses = Array.isArray(addresses) ? addresses : [];
