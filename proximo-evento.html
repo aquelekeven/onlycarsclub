@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="theme-color" content="#090909">
   <title>Próximo evento — Only Cars Club</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
   <link rel="shortcut icon" href="favicon.ico?v=20260729-v65">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260808-typography-v122">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260812-event-v123">
   <script src="assets/js/main.js?v=20260730-v68" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
+  <script src="assets/js/event.js?v=20260812-event-v1" defer></script>
 </head>
 <body data-page="proximo-evento" class="next-event-page">
   <header class="header">
@@ -22,19 +24,106 @@
 
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
 
-  <main class="next-event-main">
-    <section class="next-event-waiting" aria-labelledby="next-event-title">
-      <div class="waiting-symbol" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  <main class="event-launch" data-event-page data-event-slug="only-cars-meeting-2026">
+    <section class="event-hero" aria-labelledby="next-event-title">
+      <div class="event-hero-glow" aria-hidden="true"></div>
+      <div class="event-hero-copy">
+        <p class="eyebrow">Only Cars Club apresenta</p>
+        <h1 id="next-event-title">Only Cars<br><em>Meeting.</em></h1>
+        <p class="event-hero-lead">Uma noite de exposição, comunidade automotiva e apresentação de drift no coração de São Paulo.</p>
+        <div class="event-hero-actions">
+          <button class="button primary" type="button" data-event-buy disabled>Vendas em breve</button>
+          <a class="event-text-link" href="#detalhes">Ver todos os detalhes <span>↓</span></a>
+        </div>
+        <p class="event-live-status" data-event-status role="status"><i aria-hidden="true"></i>Preparando a abertura do Lote 1</p>
       </div>
-      <p class="eyebrow">Próximo evento</p>
-      <h1 id="next-event-title">Algo está<br><em>sendo preparado.</em></h1>
-      <p>Assim que a próxima data estiver confirmada, todos os detalhes aparecem aqui.</p>
-      <span class="waiting-status"><i aria-hidden="true"></i>Aguardando nova data</span>
-      <div class="next-event-history">
-        <p class="eyebrow">Enquanto isso...</p>
-        <a class="button primary" href="eventos.html">Conheça nossos outros eventos <span>↗</span></a>
+      <aside class="event-date-card" aria-label="Data do evento">
+        <span>OUT</span>
+        <strong>23</strong>
+        <small>SEXTA • 2026</small>
+      </aside>
+    </section>
+
+    <section class="event-facts" aria-label="Informações principais">
+      <article><span>Horário</span><strong>20h00 — 23h59</strong><small>A confirmar</small></article>
+      <article><span>Local</span><strong>Centro de Esportes Radicais</strong><small>Bom Retiro • São Paulo/SP</small></article>
+      <article><span>Entrada</span><strong>Pedestres grátis</strong><small>Ingresso pago somente para Expo</small></article>
+      <article><span>Capacidade Expo</span><strong data-event-capacity>130 carros</strong><small data-event-remaining>120 vagas públicas planejadas</small></article>
+    </section>
+
+    <section class="event-story" id="detalhes">
+      <div>
+        <p class="eyebrow">Seu carro faz parte</p>
+        <h2>Do original ao extremo,<br>todos vivem a cultura.</h2>
       </div>
+      <div class="event-story-copy">
+        <p>O Only Cars Meeting reúne a comunidade automotiva em uma noite dedicada a carros, cultura e experiências. Teremos uma área de exposição para projetos de diferentes estilos, apresentação de drift e um ambiente preparado para aproximar proprietários, entusiastas, marcas e apaixonados pelo universo automotivo.</p>
+        <p>Não existe seleção prévia de veículos: qualquer projeto poderá participar da exposição mediante a compra do ingresso Expo e disponibilidade de vagas.</p>
+      </div>
+    </section>
+
+    <section class="event-ticket-section" aria-labelledby="ticket-title">
+      <header>
+        <p class="eyebrow">Ingresso Expo</p>
+        <h2 id="ticket-title">Três lotes.<br>Uma experiência.</h2>
+        <p>O ingresso corresponde à entrada de um veículo e será vinculado à placa e ao motorista cadastrados.</p>
+      </header>
+      <div class="event-lots" data-event-lots>
+        <article class="event-lot active"><span>Lote 1</span><strong>R$ 25</strong><small>30 ingressos</small><i>Primeiro lote</i></article>
+        <article class="event-lot"><span>Lote 2</span><strong>R$ 35</strong><small>40 ingressos</small></article>
+        <article class="event-lot"><span>Lote 3</span><strong>R$ 45</strong><small>50 ingressos</small></article>
+      </div>
+      <div class="event-ticket-note">
+        <strong>Não haverá venda na portaria.</strong>
+        <span>As vendas antecipadas encerram em 23/10 às 18h ou quando as vagas esgotarem.</span>
+      </div>
+    </section>
+
+    <section class="event-benefit">
+      <div class="event-benefit-number">10<sup>%</sup></div>
+      <div>
+        <p class="eyebrow">Benefício exclusivo</p>
+        <h2>Seu ingresso também vira desconto na loja.</h2>
+        <p>Após a aprovação do pagamento, você recebe um cupom de 10% para usar em uma compra com retirada no Only Cars Meeting.</p>
+        <small>Uso único • válido até 21/10/2026 às 23h59 • não se aplica a pedidos com frete</small>
+      </div>
+    </section>
+
+    <section class="event-flow" aria-labelledby="event-flow-title">
+      <header><p class="eyebrow">Do site à portaria</p><h2 id="event-flow-title">Seu ingresso, sempre com você.</h2></header>
+      <ol>
+        <li><i>01</i><div><strong>Cadastre o veículo</strong><span>Informe motorista, placa, modelo, ano e cor.</span></div></li>
+        <li><i>02</i><div><strong>Pague com Mercado Pago</strong><span>A confirmação acontece automaticamente.</span></div></li>
+        <li><i>03</i><div><strong>Receba o QR Code</strong><span>O ingresso ficará disponível em Minha conta.</span></div></li>
+        <li><i>04</i><div><strong>Valide na entrada</strong><span>A equipe confere o veículo e ativa sua credencial.</span></div></li>
+      </ol>
+    </section>
+
+    <section class="event-location">
+      <div>
+        <p class="eyebrow">Onde vai acontecer</p>
+        <h2>Centro de Esportes Radicais</h2>
+        <p>Av. Presidente Castelo Branco, 5700<br>Bom Retiro • São Paulo/SP</p>
+        <a class="button secondary" href="https://www.google.com/maps/search/?api=1&query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer">Abrir no mapa <span>↗</span></a>
+      </div>
+      <div class="event-location-mark" aria-hidden="true"><span>SP</span><strong>23.10</strong></div>
+    </section>
+
+    <section class="event-faq">
+      <header><p class="eyebrow">Antes de comprar</p><h2>Perguntas rápidas.</h2></header>
+      <div>
+        <details><summary>Pedestre precisa comprar ingresso?<i></i></summary><p>Não. A entrada de pedestres será gratuita. O ingresso Expo é cobrado somente para o veículo.</p></details>
+        <details><summary>Qualquer carro pode participar?<i></i></summary><p>Sim. Não haverá aprovação prévia do veículo, desde que existam vagas Expo disponíveis.</p></details>
+        <details><summary>Posso sair e entrar novamente?<i></i></summary><p>Sim. Depois da primeira validação, sua credencial de reentrada ficará disponível em Minha conta.</p></details>
+        <details><summary>Posso transferir meu ingresso?<i></i></summary><p>Não. O ingresso será vinculado ao motorista, placa e modelo informados na compra.</p></details>
+      </div>
+    </section>
+
+    <section class="event-final-cta">
+      <p class="eyebrow">Only Cars Meeting • 23.10.2026</p>
+      <h2>Prepare o carro.<br>O encontro está chegando.</h2>
+      <button class="button primary" type="button" data-event-buy disabled>Vendas em breve</button>
+      <small>Dúvidas? <a href="mailto:contato@onlycarsclub.com.br">contato@onlycarsclub.com.br</a></small>
     </section>
   </main>
 </body>
