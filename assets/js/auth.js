@@ -86,6 +86,72 @@
     });
   }
 
+  const exchangeStatusLabels = {
+    received:"Solicitação recebida", under_review:"Em análise", awaiting_return:"Aguardando devolução",
+    return_in_transit:"Devolução em trânsito", received_return:"Produto recebido", exchange_sent:"Troca enviada",
+    refunded:"Reembolso realizado", rejected:"Solicitação não aprovada", cancelled:"Cancelada", completed:"Concluída"
+  };
+
+  function openExchangeModal(order, user) {
+    let modal = qs("[data-exchange-modal]");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.className = "exchange-modal";
+      modal.dataset.exchangeModal = "";
+      modal.innerHTML = '<div class="exchange-modal-dialog" data-exchange-dialog></div>';
+      document.body.appendChild(modal);
+    }
+    const items = Array.isArray(order.order_items) ? order.order_items : [];
+    const dialog = qs("[data-exchange-dialog]", modal);
+    dialog.innerHTML = `
+      <header><div><p class="eyebrow">Atendimento pós-compra</p><h2>Troca ou devolução</h2><span>${escapeHtml(order.order_number)}</span></div><button type="button" data-exchange-close aria-label="Fechar">×</button></header>
+      <form data-exchange-form>
+        <div class="exchange-policy"><strong>Resolva tudo por aqui</strong><p>Arrependimento em até 7 dias do recebimento; troca voluntária de tamanho ou cor em até 30 dias. A primeira troca voluntária tem frete por conta da Only.</p><a href="termos.html" target="_blank" rel="noopener">Ver regras completas</a></div>
+        <label><span>Produto</span><select name="item" required>${items.map((item,index) => `<option value="${index}">${escapeHtml(item.product_name)} · ${escapeHtml(item.color || "Sem cor")}${item.size ? ` · Tam. ${escapeHtml(item.size)}` : ""}</option>`).join("")}</select></label>
+        <div class="exchange-form-grid"><label><span>Motivo</span><select name="request_type" required><option value="size_exchange">Trocar tamanho</option><option value="color_exchange">Trocar cor</option><option value="withdrawal">Desistir da compra</option><option value="defect">Produto com defeito</option><option value="wrong_item">Recebi o item incorreto</option><option value="other">Outro problema</option></select></label><label><span>O que você prefere?</span><select name="requested_solution" required><option value="exchange">Receber uma troca</option><option value="refund">Receber reembolso</option><option value="support">Quero orientação</option></select></label></div>
+        <div class="exchange-form-grid" data-exchange-preferences><label><span>Novo tamanho (se aplicável)</span><input name="new_size" maxlength="20" placeholder="Ex.: G"></label><label><span>Nova cor (se aplicável)</span><input name="new_color" maxlength="40" placeholder="Ex.: Preto"></label></div>
+        <label><span>Conte o que aconteceu</span><textarea name="details" minlength="5" maxlength="1500" required placeholder="Descreva o pedido de troca ou devolução..."></textarea></label>
+        <label class="exchange-files"><span>Fotos do produto <small>(até 3 arquivos de 5 MB)</small></span><input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple><em data-exchange-photo-help>Obrigatórias para defeito ou item incorreto.</em></label>
+        <p data-exchange-feedback role="status"></p>
+        <footer><button type="button" class="secondary" data-exchange-close>Agora não</button><button type="submit">Enviar solicitação</button></footer>
+      </form>`;
+    const form = qs("[data-exchange-form]", dialog);
+    const close = () => { modal.classList.remove("visible"); document.body.classList.remove("modal-open"); };
+    qsa("[data-exchange-close]", dialog).forEach((button) => button.onclick = close);
+    modal.onclick = (event) => { if (event.target === modal) close(); };
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const feedback = qs("[data-exchange-feedback]", form);
+      const files = [...form.photos.files];
+      if (files.length > 3) { feedback.textContent = "Envie no máximo 3 fotos."; return; }
+      if (["defect","wrong_item"].includes(form.request_type.value) && !files.length) { feedback.textContent = "Envie ao menos uma foto para este motivo."; return; }
+      if (files.some((file) => file.size > 5242880 || !["image/jpeg","image/png","image/webp"].includes(file.type))) { feedback.textContent = "Use imagens JPG, PNG ou WebP de até 5 MB."; return; }
+      const button = qs("button[type='submit']", form);
+      button.disabled = true; button.textContent = "Enviando..."; feedback.textContent = "Salvando sua solicitação com segurança...";
+      try {
+        const requestId = crypto.randomUUID();
+        const photoPaths = [];
+        for (let index=0; index<files.length; index+=1) {
+          const extension = files[index].type.split("/")[1].replace("jpeg","jpg");
+          const path = `${user.id}/${requestId}/foto-${index+1}.${extension}`;
+          await client.uploadPrivateFile("exchange-evidence", path, files[index]);
+          photoPaths.push(path);
+        }
+        const item = items[Number(form.item.value)];
+        await client.rest("rpc/customer_create_exchange_request", { method:"POST", body:{
+          p_request_id:requestId, p_order_id:order.id, p_request_type:form.request_type.value,
+          p_requested_solution:form.requested_solution.value,
+          p_items:[{ product_name:item.product_name, size:item.size, color:item.color, quantity:item.quantity, new_size:form.new_size.value.trim() || null, new_color:form.new_color.value.trim() || null }],
+          p_details:form.details.value.trim(), p_photo_paths:photoPaths
+        }});
+        feedback.textContent = "Solicitação enviada. Você poderá acompanhar pelo pedido.";
+        window.setTimeout(() => location.reload(), 700);
+      } catch (error) { feedback.textContent = friendlyError(error); button.disabled=false; button.textContent="Enviar solicitação"; }
+    });
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => modal.classList.add("visible"));
+  }
+
   function setFeedback(form, text, type = "error") {
     const target = qs("[data-form-feedback]", form);
     if (!target) return;
@@ -293,7 +359,7 @@
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at)&order=created_at.desc&limit=20`)
+        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc&limit=20`)
       ]);
       const profile = profiles?.[0] || {};
       savedAddresses = Array.isArray(addresses) ? addresses : [];
@@ -440,6 +506,7 @@
           const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
           const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
           const fiscalDocument = Array.isArray(order.order_fiscal_documents) ? order.order_fiscal_documents[0] : order.order_fiscal_documents;
+          const exchangeRequest = Array.isArray(order.order_exchange_requests) ? [...order.order_exchange_requests].sort((left,right) => new Date(right.created_at)-new Date(left.created_at))[0] : order.order_exchange_requests;
           const isShipping = order.delivery_method === "shipping";
           const fulfillmentSteps = isShipping
             ? [
@@ -466,6 +533,9 @@
             ${fiscalDocument ? `<div class="order-fiscal-actions"><button type="button" data-fiscal-download="${escapeHtml(fiscalDocument.danfe_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-DANFE.pdf">Baixar DANFE</button><button type="button" class="secondary" data-fiscal-download="${escapeHtml(fiscalDocument.xml_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-NFe.xml">Baixar XML</button></div>` : '<i aria-hidden="true">⌛</i>'}
             <p data-fiscal-feedback role="status"></p>
           </section>` : "";
+          const exchangeBox = order.status === "paid" ? `<section class="order-exchange ${exchangeRequest ? "has-request" : ""}">
+            ${exchangeRequest ? `<div><span>Troca ou devolução</span><strong>${escapeHtml(exchangeStatusLabels[exchangeRequest.status] || exchangeRequest.status)}</strong><small>Solicitada em ${new Date(exchangeRequest.created_at).toLocaleString("pt-BR")}</small>${exchangeRequest.customer_message ? `<p>${escapeHtml(exchangeRequest.customer_message)}</p>` : ""}${exchangeRequest.return_tracking_code ? `<p><b>Devolução:</b> ${escapeHtml(exchangeRequest.return_tracking_code)}</p>` : ""}${exchangeRequest.replacement_tracking_code ? `<p><b>Nova entrega:</b> ${escapeHtml(exchangeRequest.replacement_tracking_code)}</p>` : ""}</div>${["received","under_review"].includes(exchangeRequest.status) ? `<button type="button" class="secondary" data-exchange-cancel="${escapeHtml(exchangeRequest.id)}">Cancelar solicitação</button>` : ""}` : `<div><span>Precisa de ajuda com este pedido?</span><strong>Troca ou devolução</strong><small>Abra e acompanhe sua solicitação sem sair do site.</small></div><button type="button" data-exchange-open>Solicitar</button>`}
+          </section>` : "";
           return `
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
@@ -486,6 +556,7 @@
               </details>
               ${fiscalBox}
               ${timeline}
+              ${exchangeBox}
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
@@ -516,6 +587,20 @@
             } finally {
               fiscalButton.disabled = false;
             }
+            return;
+          }
+          const exchangeOpen = event.target.closest("[data-exchange-open]");
+          if (exchangeOpen) {
+            const row = exchangeOpen.closest("[data-order-id]");
+            const order = orders.find((item) => item.id === row?.dataset.orderId);
+            if (order) openExchangeModal(order, user);
+            return;
+          }
+          const exchangeCancel = event.target.closest("[data-exchange-cancel]");
+          if (exchangeCancel) {
+            exchangeCancel.disabled = true;
+            try { await client.rest("rpc/customer_cancel_exchange_request", { method:"POST", body:{ p_request_id:exchangeCancel.dataset.exchangeCancel } }); location.reload(); }
+            catch (error) { exchangeCancel.disabled=false; exchangeCancel.textContent=friendlyError(error); }
             return;
           }
           const button = event.target.closest("[data-order-action]");

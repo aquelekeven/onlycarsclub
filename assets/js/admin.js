@@ -17,6 +17,8 @@
     new: "Pedido confirmado", preparing: "Em produção", ready: "Preparando envio / pronto para retirada", shipped: "Postado",
     completed: "Entregue / retirado", cancelled: "Cancelado"
   };
+  const exchangeStatusLabels = { received:"Recebida",under_review:"Em análise",awaiting_return:"Aguardando devolução",return_in_transit:"Devolução em trânsito",received_return:"Produto recebido",exchange_sent:"Troca enviada",refunded:"Reembolso realizado",rejected:"Não aprovada",cancelled:"Cancelada",completed:"Concluída" };
+  const exchangeTypeLabels = { size_exchange:"Troca de tamanho",color_exchange:"Troca de cor",defect:"Defeito",wrong_item:"Item incorreto",withdrawal:"Arrependimento",other:"Outro" };
 
   function feedback(selector, message, type = "") {
     const element = qs(selector);
@@ -69,6 +71,7 @@
     const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
     const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments;
     const fiscalDocument = Array.isArray(order.order_fiscal_documents) ? order.order_fiscal_documents[0] : order.order_fiscal_documents;
+    const exchangeRequest = Array.isArray(order.order_exchange_requests) ? [...order.order_exchange_requests].sort((left,right) => new Date(right.created_at)-new Date(left.created_at))[0] : order.order_exchange_requests;
     const isShipping = order.delivery_method === "shipping";
     const deliveryLabels = { shipping:"Envio para o endereço", event_pickup:"Retirada no próximo evento", personal_pickup:"Retirada pessoal", customer_courier:"Motoboy do cliente" };
     const steps = isShipping
@@ -87,6 +90,13 @@
         <section class="admin-order-modal-section"><h3>Pagamento</h3><dl><div><dt>Status</dt><dd>${safe(payment?.status || statusLabels[order.status] || order.status)}</dd></div><div><dt>Método</dt><dd>${safe(payment?.payment_method || "—")}</dd></div><div><dt>Parcelas</dt><dd>${safe(payment?.installments || "—")}</dd></div><div><dt>ID Mercado Pago</dt><dd>${safe(payment?.provider_payment_id || "—")}</dd></div><div><dt>Aprovado em</dt><dd>${payment?.approved_at ? dateTime(payment.approved_at) : "—"}</dd></div></dl></section>
         <section class="admin-order-modal-section"><h3>Valores</h3><dl><div><dt>Produtos</dt><dd>${money(order.subtotal_cents)}</dd></div><div><dt>Desconto</dt><dd>${money(order.discount_cents)}</dd></div><div><dt>Frete</dt><dd>${money(order.shipping_cents)}</dd></div><div class="total"><dt>Total</dt><dd>${money(order.total_cents)}</dd></div></dl></section>
       </div>
+      ${exchangeRequest ? `<section class="admin-order-modal-section admin-exchange-control" data-admin-exchange-id="${safe(exchangeRequest.id)}">
+        <div class="admin-exchange-heading"><div><p class="eyebrow">Pós-compra</p><h3>Troca ou devolução</h3><p>${safe(exchangeTypeLabels[exchangeRequest.request_type] || exchangeRequest.request_type)} · aberta em ${dateTime(exchangeRequest.created_at)}</p></div><span>${safe(exchangeStatusLabels[exchangeRequest.status] || exchangeRequest.status)}</span></div>
+        <div class="admin-exchange-summary"><strong>Solicitação do cliente</strong><p>${safe(exchangeRequest.details)}</p>${(exchangeRequest.items || []).map((item) => `<small>${safe(item.product_name)} · ${safe(item.color || "—")} · ${safe(item.size ? `Tam. ${item.size}` : "sem tamanho")}${item.new_size ? ` → Tam. ${safe(item.new_size)}` : ""}${item.new_color ? ` → ${safe(item.new_color)}` : ""}</small>`).join("")}</div>
+        ${exchangeRequest.photo_paths?.length ? `<div class="admin-exchange-photos">${exchangeRequest.photo_paths.map((path,index) => `<button type="button" data-exchange-photo="${safe(path)}">Abrir foto ${index+1}</button>`).join("")}</div>` : ""}
+        <div class="admin-exchange-fields"><label><span>Etapa</span><select data-exchange-status>${Object.entries(exchangeStatusLabels).map(([value,label]) => `<option value="${value}" ${exchangeRequest.status===value?"selected":""}>${label}</option>`).join("")}</select></label><label><span>Mensagem para o cliente</span><textarea data-exchange-customer-message placeholder="Orientações visíveis em Meus pedidos">${safe(exchangeRequest.customer_message || "")}</textarea></label><label><span>Observação interna</span><textarea data-exchange-admin-notes placeholder="Somente administradores">${safe(exchangeRequest.admin_notes || "")}</textarea></label><div><label><span>Rastreio da devolução</span><input data-exchange-return-code value="${safe(exchangeRequest.return_tracking_code || "")}"></label><label><span>Link da devolução</span><input type="url" data-exchange-return-url value="${safe(exchangeRequest.return_tracking_url || "")}"></label></div><div><label><span>Rastreio da nova entrega</span><input data-exchange-replacement-code value="${safe(exchangeRequest.replacement_tracking_code || "")}"></label><label><span>Link da nova entrega</span><input type="url" data-exchange-replacement-url value="${safe(exchangeRequest.replacement_tracking_url || "")}"></label></div></div>
+        <div class="admin-order-modal-footer"><p data-exchange-admin-feedback role="status"></p><button type="button" data-save-exchange>Atualizar solicitação</button></div>
+      </section>` : ""}
       <section class="admin-order-modal-section admin-fiscal-control" data-fiscal-control>
         <div class="admin-fiscal-heading"><div><p class="eyebrow">Documento fiscal</p><h3>Nota fiscal do pedido</h3><p>${fiscalDocument ? `NF-e registrada em ${dateTime(fiscalDocument.issued_at)}` : order.status === "paid" ? "Pagamento aprovado · aguardando emissão manual" : "Disponível após a aprovação do pagamento"}</p></div><span class="admin-fiscal-status" data-ready="${fiscalDocument ? "true" : "false"}">${fiscalDocument ? "NF-e disponível" : "NF-e pendente"}</span></div>
         <div class="admin-fiscal-guide">
@@ -343,7 +353,7 @@
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
     const [products, orders] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc")
+      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc")
     ]);
     state.products = products || [];
     state.orders = orders || [];
@@ -488,6 +498,26 @@
         } finally {
           fiscalDownloadButton.disabled = false;
         }
+        return;
+      }
+      const exchangePhotoButton = event.target.closest("[data-exchange-photo]");
+      if (exchangePhotoButton) {
+        exchangePhotoButton.disabled=true;
+        try { const url=await client.createPrivateDownload("exchange-evidence",exchangePhotoButton.dataset.exchangePhoto,120); window.open(url,"_blank","noopener"); }
+        catch(error){ qs("[data-exchange-admin-feedback]",dialog).textContent=error.message; }
+        finally { exchangePhotoButton.disabled=false; }
+        return;
+      }
+      const saveExchangeButton = event.target.closest("[data-save-exchange]");
+      if (saveExchangeButton) {
+        const section=saveExchangeButton.closest("[data-admin-exchange-id]");
+        const exchangeFeedback=qs("[data-exchange-admin-feedback]",section);
+        saveExchangeButton.disabled=true; saveExchangeButton.textContent="Salvando...";
+        try {
+          await client.rest("rpc/admin_update_exchange_request",{method:"POST",body:{p_request_id:section.dataset.adminExchangeId,p_status:qs("[data-exchange-status]",section).value,p_customer_message:qs("[data-exchange-customer-message]",section).value,p_admin_notes:qs("[data-exchange-admin-notes]",section).value,p_return_tracking_code:qs("[data-exchange-return-code]",section).value,p_return_tracking_url:qs("[data-exchange-return-url]",section).value,p_replacement_tracking_code:qs("[data-exchange-replacement-code]",section).value,p_replacement_tracking_url:qs("[data-exchange-replacement-url]",section).value}});
+          exchangeFeedback.textContent="Solicitação atualizada para o cliente."; await loadData();
+          const refreshed=state.orders.find((item)=>item.id===dialog.dataset.orderId); if(refreshed) openOrderModal(refreshed);
+        } catch(error){ exchangeFeedback.textContent=error.message; saveExchangeButton.disabled=false; saveExchangeButton.textContent="Atualizar solicitação"; }
         return;
       }
       const saveFiscalButton = event.target.closest("[data-save-fiscal]");
