@@ -7,7 +7,7 @@
 
   const status = root.querySelector("[data-event-status]");
   const buyButtons = [...root.querySelectorAll("[data-event-buy]")];
-  const lotsRoot = root.querySelector("[data-event-lots]");
+  const lotPrice = root.querySelector(".event-current-lot strong");
   const remaining = root.querySelector("[data-event-remaining]");
   const money = (cents) => new Intl.NumberFormat("pt-BR", {
     style:"currency", currency:"BRL", maximumFractionDigits:0
@@ -29,27 +29,16 @@
         ? `${event.remaining_public} vagas públicas disponíveis`
         : isSoldOut
           ? "Capacidade Expo esgotada"
-          : "Preparando a abertura do Lote 1"}`;
+          : "Aguardando a liberação segura das vendas"}`;
     }
     if (remaining && Number.isFinite(Number(event?.remaining_public))) {
       remaining.textContent = `${event.remaining_public} vagas públicas disponíveis`;
     }
   }
 
-  function renderLots(lots) {
-    if (!lotsRoot || !Array.isArray(lots) || !lots.length) return;
-    lotsRoot.innerHTML = lots.map((lot) => {
-      const sold = Number(lot.sold_or_reserved || 0);
-      const capacity = Number(lot.capacity || 0);
-      const soldOut = capacity > 0 && sold >= capacity;
-      const classes = ["event-lot", lot.active ? "active" : "", soldOut ? "sold-out" : ""].filter(Boolean).join(" ");
-      return `<article class="${classes}">
-        <span>${String(lot.name || `Lote ${lot.lot_number}`)}</span>
-        <strong>${money(lot.price_cents)}</strong>
-        <small>${soldOut ? "Esgotado" : `${Math.max(capacity - sold, 0)} de ${capacity} disponíveis`}</small>
-        ${lot.active && !soldOut ? "<i>Lote atual</i>" : ""}
-      </article>`;
-    }).join("");
+  function renderCurrentLot(lots) {
+    const current = Array.isArray(lots) ? lots.find((lot) => lot.active) : null;
+    if (current && lotPrice) lotPrice.textContent = money(current.price_cents);
   }
 
   async function loadEvent() {
@@ -61,7 +50,7 @@
       if (!result) return;
       root.dataset.eventId = result.id;
       setSaleState(result);
-      renderLots(result.lots);
+      renderCurrentLot(result.lots);
     } catch (_) {
       // The static launch page remains usable while the event is still a draft
       // or before the database migration is applied.
