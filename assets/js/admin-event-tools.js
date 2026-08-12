@@ -11,9 +11,9 @@
     ["received", "Recebida"], ["under_review", "Em análise"],
     ["awaiting_return", "Aguardando envio"], ["return_in_transit", "Em devolução"],
     ["received_return", "Produto recebido"], ["exchange_sent", "Troca enviada"],
-    ["refunded", "Reembolsada"], ["completed", "Concluída"],
-    ["rejected", "Não aprovada"], ["cancelled", "Cancelada"]
+    ["completed", "Concluída"]
   ];
+  const exchangeEndings = [["refunded", "Reembolsada"], ["rejected", "Não aprovada"], ["cancelled", "Cancelada"]];
   const messageTemplates = {
     under_review:"Recebemos sua solicitação e ela está em análise pela equipe Only.",
     awaiting_return:"Sua solicitação foi aprovada. Envie o produto conforme as orientações informadas.",
@@ -33,7 +33,8 @@
 
     const quick = document.createElement("div");
     quick.className = "admin-exchange-quick";
-    quick.innerHTML = `<div class="admin-exchange-quick-heading"><span>Atualização rápida</span><small>Escolha a etapa e revise a mensagem antes de salvar.</small></div><div class="admin-exchange-step-buttons">${exchangeSteps.map(([value,label]) => `<button type="button" data-exchange-quick-status="${value}" class="${select.value === value ? "active" : ""}"><i></i><span>${label}</span></button>`).join("")}</div>`;
+    const selectedIndex = exchangeSteps.findIndex(([value]) => value === select.value);
+    quick.innerHTML = `<div class="admin-exchange-quick-heading"><span>Atualização rápida</span><small>Arraste para o lado. Ao avançar ou voltar, as demais etapas são ajustadas automaticamente.</small></div><div class="admin-exchange-step-scroll"><div class="admin-exchange-step-buttons">${exchangeSteps.map(([value,label], index) => `<button type="button" data-exchange-quick-status="${value}" class="${selectedIndex >= 0 && index <= selectedIndex ? "done" : ""} ${index === selectedIndex ? "active" : ""}"><i>${index + 1}</i><span>${label}</span></button>`).join("")}</div></div><div class="admin-exchange-ending-buttons"><span>Encerramentos alternativos</span><div>${exchangeEndings.map(([value,label]) => `<button type="button" data-exchange-quick-status="${value}" class="${select.value === value ? "active" : ""}">${label}</button>`).join("")}</div></div>`;
     const fields = qs(".admin-exchange-fields", section);
     fields.before(quick);
     select.closest("label").classList.add("admin-exchange-native-status");
@@ -49,7 +50,13 @@
       event.preventDefault();
       event.stopPropagation();
       select.value = button.dataset.exchangeQuickStatus;
-      qsa("[data-exchange-quick-status]", quick).forEach((item) => item.classList.toggle("active", item === button));
+      const nextIndex = exchangeSteps.findIndex(([value]) => value === select.value);
+      qsa(".admin-exchange-step-buttons [data-exchange-quick-status]", quick).forEach((item, index) => {
+        item.classList.toggle("done", nextIndex >= 0 && index <= nextIndex);
+        item.classList.toggle("active", index === nextIndex);
+      });
+      qsa(".admin-exchange-ending-buttons [data-exchange-quick-status]", quick).forEach((item) => item.classList.toggle("active", item === button));
+      if (nextIndex >= 0) button.scrollIntoView({ behavior:"smooth", block:"nearest", inline:"center" });
       if (!customerMessage.value.trim() && messageTemplates[select.value]) customerMessage.value = messageTemplates[select.value];
     });
     templates.addEventListener("click", (event) => {
