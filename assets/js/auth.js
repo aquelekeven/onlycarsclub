@@ -293,7 +293,7 @@
       const [profiles, addresses, orders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`)
+        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at)&order=created_at.desc&limit=20`)
       ]);
       const profile = profiles?.[0] || {};
       savedAddresses = Array.isArray(addresses) ? addresses : [];
@@ -439,6 +439,7 @@
           }).join("");
           const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
           const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
+          const fiscalDocument = Array.isArray(order.order_fiscal_documents) ? order.order_fiscal_documents[0] : order.order_fiscal_documents;
           const isShipping = order.delivery_method === "shipping";
           const fulfillmentSteps = isShipping
             ? [
@@ -460,6 +461,11 @@
             }).join("")}</ol>
             ${shipment?.tracking_code ? `<div class="order-tracking-code"><span>Código de rastreio</span><strong>${escapeHtml(shipment.tracking_code)}</strong>${shipment.tracking_url ? `<a href="${escapeHtml(shipment.tracking_url)}" target="_blank" rel="noopener">Acompanhar entrega</a>` : ""}</div>` : ""}
           </section>` : "";
+          const fiscalBox = order.status === "paid" && (isShipping || fiscalDocument) ? `<section class="order-fiscal" aria-label="Nota fiscal do pedido">
+            <div><span>Documento fiscal</span><strong>${fiscalDocument ? "Nota fiscal disponível" : "Nota fiscal em processamento"}</strong><small>${fiscalDocument ? `Emitida em ${new Date(fiscalDocument.issued_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}` : "Ela será emitida antes da postagem do pedido."}</small></div>
+            ${fiscalDocument ? `<div class="order-fiscal-actions"><button type="button" data-fiscal-download="${escapeHtml(fiscalDocument.danfe_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-DANFE.pdf">Baixar DANFE</button><button type="button" class="secondary" data-fiscal-download="${escapeHtml(fiscalDocument.xml_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-NFe.xml">Baixar XML</button></div>` : '<i aria-hidden="true">⌛</i>'}
+            <p data-fiscal-feedback role="status"></p>
+          </section>` : "";
           return `
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
@@ -478,6 +484,7 @@
                   </dl>
                 </div>
               </details>
+              ${fiscalBox}
               ${timeline}
               ${pending ? `
                 <div class="order-customer-actions">
@@ -489,6 +496,28 @@
         }).join("");
 
         ordersList.addEventListener("click", async (event) => {
+          const fiscalButton = event.target.closest("[data-fiscal-download]");
+          if (fiscalButton) {
+            const fiscalFeedback = qs("[data-fiscal-feedback]", fiscalButton.closest(".order-fiscal"));
+            fiscalButton.disabled = true;
+            if (fiscalFeedback) fiscalFeedback.textContent = "Preparando download seguro...";
+            try {
+              const url = await client.createPrivateDownload("fiscal-documents", fiscalButton.dataset.fiscalDownload, 120);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = fiscalButton.dataset.fiscalFilename || "nota-fiscal";
+              link.rel = "noopener";
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              if (fiscalFeedback) fiscalFeedback.textContent = "Download iniciado.";
+            } catch (error) {
+              if (fiscalFeedback) fiscalFeedback.textContent = error.message;
+            } finally {
+              fiscalButton.disabled = false;
+            }
+            return;
+          }
           const button = event.target.closest("[data-order-action]");
           const row = button?.closest("[data-order-id]");
           if (!button || !row) return;

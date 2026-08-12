@@ -68,6 +68,7 @@
     const items = order.order_items || [];
     const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
     const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments;
+    const fiscalDocument = Array.isArray(order.order_fiscal_documents) ? order.order_fiscal_documents[0] : order.order_fiscal_documents;
     const isShipping = order.delivery_method === "shipping";
     const deliveryLabels = { shipping:"Envio para o endereço", event_pickup:"Retirada no próximo evento", personal_pickup:"Retirada pessoal", customer_courier:"Motoboy do cliente" };
     const steps = isShipping
@@ -86,6 +87,22 @@
         <section class="admin-order-modal-section"><h3>Pagamento</h3><dl><div><dt>Status</dt><dd>${safe(payment?.status || statusLabels[order.status] || order.status)}</dd></div><div><dt>Método</dt><dd>${safe(payment?.payment_method || "—")}</dd></div><div><dt>Parcelas</dt><dd>${safe(payment?.installments || "—")}</dd></div><div><dt>ID Mercado Pago</dt><dd>${safe(payment?.provider_payment_id || "—")}</dd></div><div><dt>Aprovado em</dt><dd>${payment?.approved_at ? dateTime(payment.approved_at) : "—"}</dd></div></dl></section>
         <section class="admin-order-modal-section"><h3>Valores</h3><dl><div><dt>Produtos</dt><dd>${money(order.subtotal_cents)}</dd></div><div><dt>Desconto</dt><dd>${money(order.discount_cents)}</dd></div><div><dt>Frete</dt><dd>${money(order.shipping_cents)}</dd></div><div class="total"><dt>Total</dt><dd>${money(order.total_cents)}</dd></div></dl></section>
       </div>
+      <section class="admin-order-modal-section admin-fiscal-control" data-fiscal-control>
+        <div class="admin-fiscal-heading"><div><p class="eyebrow">Documento fiscal</p><h3>Nota fiscal do pedido</h3><p>${fiscalDocument ? `NF-e registrada em ${dateTime(fiscalDocument.issued_at)}` : order.status === "paid" ? "Pagamento aprovado · aguardando emissão manual" : "Disponível após a aprovação do pagamento"}</p></div><span class="admin-fiscal-status" data-ready="${fiscalDocument ? "true" : "false"}">${fiscalDocument ? "NF-e disponível" : "NF-e pendente"}</span></div>
+        <div class="admin-fiscal-guide">
+          <strong>Emissão pelo Nota Fiscal Fácil</strong>
+          <ol><li>Copie os dados do pedido.</li><li>Emita a NF-e no aplicativo NFF.</li><li>Exporte o DANFE em PDF e o XML.</li><li>Anexe os dois arquivos abaixo.</li></ol>
+          <button type="button" data-copy-fiscal-data>Copiar dados para emissão</button>
+        </div>
+        <div class="admin-fiscal-fields">
+          <label><span>Chave de acesso da NF-e</span><input inputmode="numeric" maxlength="54" data-fiscal-access-key value="${safe(fiscalDocument?.access_key || "")}" placeholder="44 números"></label>
+          <label><span>Data e hora da emissão</span><input type="datetime-local" data-fiscal-issued-at value="${fiscalDocument?.issued_at ? new Date(new Date(fiscalDocument.issued_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16) : ""}"></label>
+          <label class="admin-fiscal-file"><span>DANFE em PDF</span><input type="file" accept="application/pdf,.pdf" data-fiscal-danfe><small>${fiscalDocument ? "Selecione apenas se quiser substituir o PDF atual." : "Obrigatório · máximo de 5 MB"}</small></label>
+          <label class="admin-fiscal-file"><span>XML autorizado</span><input type="file" accept="application/xml,text/xml,.xml" data-fiscal-xml><small>${fiscalDocument ? "Selecione apenas se quiser substituir o XML atual." : "Obrigatório · máximo de 5 MB"}</small></label>
+        </div>
+        ${fiscalDocument ? `<div class="admin-fiscal-downloads"><button type="button" data-admin-fiscal-download="${safe(fiscalDocument.danfe_path)}">Baixar DANFE atual</button><button type="button" data-admin-fiscal-download="${safe(fiscalDocument.xml_path)}">Baixar XML atual</button></div>` : ""}
+        <div class="admin-order-modal-footer"><p data-fiscal-feedback role="status"></p><button type="button" data-save-fiscal ${order.status !== "paid" ? "disabled" : ""}>Salvar NF-e</button></div>
+      </section>
       <section class="admin-order-modal-section admin-fulfillment-control"><div><h3>Processos do pedido</h3><p>Clique em uma etapa. As anteriores serão preenchidas automaticamente.</p></div><div class="admin-fulfillment-steps">${steps.map(([key,label], index) => `<button type="button" data-fulfillment-step="${key}" class="${index <= currentIndex ? "active" : ""}"><i>${index + 1}</i><span>${safe(label)}</span></button>`).join("")}</div>
         ${isShipping ? `<div class="admin-tracking-fields"><label><span>Código de rastreio</span><input data-tracking-code value="${safe(shipment?.tracking_code || "")}" placeholder="Ex.: ME123456789BR"></label><label><span>Link público</span><input type="url" data-tracking-url value="${safe(shipment?.tracking_url || "")}" placeholder="https://..."></label></div>` : ""}
         <div class="admin-order-modal-footer"><p data-modal-feedback role="status"></p><button type="button" data-save-order>Salvar acompanhamento</button></div>
@@ -326,7 +343,7 @@
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
     const [products, orders] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at)&order=created_at.desc")
+      client.rest("orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc")
     ]);
     state.products = products || [];
     state.orders = orders || [];
@@ -427,6 +444,91 @@
         const buttons = qsa("[data-fulfillment-step]", dialog);
         const selectedIndex = buttons.indexOf(step);
         buttons.forEach((item, index) => item.classList.toggle("active", index <= selectedIndex));
+        return;
+      }
+      const copyFiscalButton = event.target.closest("[data-copy-fiscal-data]");
+      if (copyFiscalButton) {
+        const order = state.orders.find((item) => item.id === dialog.dataset.orderId);
+        if (!order) return;
+        const items = (order.order_items || []).map((item) => `${item.quantity}x ${item.product_name} | SKU ${item.sku || "—"} | ${item.color || "sem cor"}${item.size ? ` | Tam. ${item.size}` : ""} | Unitário ${money(item.unit_price_cents)} | Total ${money(item.line_total_cents)}`).join("\n");
+        const fiscalText = [
+          `Pedido: ${order.order_number}`,
+          `Cliente: ${order.customer_name}`,
+          `CPF/CNPJ: ${order.customer_tax_id || "não informado"}`,
+          `E-mail: ${order.customer_email}`,
+          `Telefone: ${order.customer_phone}`,
+          `Entrega: ${order.delivery_method === "shipping" ? "Envio para o endereço" : "Retirada no próximo evento"}`,
+          order.delivery_method === "shipping" ? `Endereço: ${addressText(order.shipping_address).replaceAll("<br>", " | ")}` : "",
+          "",
+          "Produtos:", items,
+          "",
+          `Subtotal: ${money(order.subtotal_cents)}`,
+          `Desconto: ${money(order.discount_cents)}`,
+          `Frete: ${money(order.shipping_cents)}`,
+          `Total: ${money(order.total_cents)}`
+        ].filter((line) => line !== "").join("\n").replaceAll("&amp;", "&");
+        await navigator.clipboard.writeText(fiscalText);
+        const fiscalFeedback = qs("[data-fiscal-feedback]", dialog);
+        fiscalFeedback.textContent = "Dados do pedido copiados.";
+        return;
+      }
+      const fiscalDownloadButton = event.target.closest("[data-admin-fiscal-download]");
+      if (fiscalDownloadButton) {
+        fiscalDownloadButton.disabled = true;
+        try {
+          const url = await client.createPrivateDownload("fiscal-documents", fiscalDownloadButton.dataset.adminFiscalDownload, 120);
+          const link = document.createElement("a");
+          link.href = url;
+          link.rel = "noopener";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } catch (error) {
+          qs("[data-fiscal-feedback]", dialog).textContent = error.message;
+        } finally {
+          fiscalDownloadButton.disabled = false;
+        }
+        return;
+      }
+      const saveFiscalButton = event.target.closest("[data-save-fiscal]");
+      if (saveFiscalButton) {
+        const order = state.orders.find((item) => item.id === dialog.dataset.orderId);
+        const existing = Array.isArray(order?.order_fiscal_documents) ? order.order_fiscal_documents[0] : order?.order_fiscal_documents;
+        const accessKey = qs("[data-fiscal-access-key]", dialog)?.value.replace(/\D/g, "") || "";
+        const issuedAt = qs("[data-fiscal-issued-at]", dialog)?.value;
+        const danfe = qs("[data-fiscal-danfe]", dialog)?.files?.[0];
+        const xml = qs("[data-fiscal-xml]", dialog)?.files?.[0];
+        const fiscalFeedback = qs("[data-fiscal-feedback]", dialog);
+        if (accessKey.length !== 44) { fiscalFeedback.textContent = "Informe os 44 números da chave de acesso."; return; }
+        if (!issuedAt) { fiscalFeedback.textContent = "Informe a data e a hora da emissão."; return; }
+        if (!existing && (!danfe || !xml)) { fiscalFeedback.textContent = "Anexe o DANFE em PDF e o XML autorizado."; return; }
+        if (danfe && (danfe.type !== "application/pdf" || danfe.size > 5242880)) { fiscalFeedback.textContent = "O DANFE deve ser um PDF de até 5 MB."; return; }
+        if (xml && (!/\.xml$/i.test(xml.name) || xml.size > 5242880)) { fiscalFeedback.textContent = "O XML deve ter extensão .xml e até 5 MB."; return; }
+        saveFiscalButton.disabled = true;
+        saveFiscalButton.textContent = "Enviando...";
+        try {
+          const danfePath = `${order.id}/danfe.pdf`;
+          const xmlPath = `${order.id}/nfe.xml`;
+          if (danfe) await client.uploadPrivateFile("fiscal-documents", danfePath, danfe);
+          if (xml) await client.uploadPrivateFile("fiscal-documents", xmlPath, xml);
+          await client.rest("rpc/admin_save_order_fiscal_document", { method:"POST", body:{
+            target_order_id:order.id,
+            new_access_key:accessKey,
+            new_danfe_path:danfePath,
+            new_xml_path:xmlPath,
+            new_issued_at:new Date(issuedAt).toISOString()
+          }});
+          fiscalFeedback.textContent = "NF-e salva e liberada para o cliente.";
+          feedback("[data-orders-feedback]", `NF-e do pedido ${order.order_number} atualizada.`, "success");
+          await loadData();
+          const refreshed = state.orders.find((item) => item.id === order.id);
+          if (refreshed) openOrderModal(refreshed);
+        } catch (error) {
+          fiscalFeedback.textContent = error.message;
+        } finally {
+          saveFiscalButton.disabled = false;
+          saveFiscalButton.textContent = "Salvar NF-e";
+        }
         return;
       }
       const button = event.target.closest("[data-save-order]");

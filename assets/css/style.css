@@ -830,6 +830,49 @@ body[data-page="conta"]>.bottom-nav { display:none; }
 .account-main .order-tracking li i { border-color:#fff; background:#ccc; }
 .account-main .order-tracking li.done,.account-main .order-tracking li.current { color:#4d4d47; }
 .account-main .order-tracking-code { background:#f2f2ed; }
+
+.order-fiscal { margin-top:12px; padding:16px; display:flex; align-items:center; gap:18px; border:1px solid #e4e4dd; border-radius:16px; background:#fff; }
+.order-fiscal>div:first-child { display:grid; gap:4px; }
+.order-fiscal>div:first-child span { color:#85857d; font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.order-fiscal>div:first-child strong { color:#171714; font-size:.95rem; }
+.order-fiscal>div:first-child small { color:#74746d; font-size:.78rem; }
+.order-fiscal>i { margin-left:auto; width:42px; height:42px; display:grid; place-items:center; border-radius:50%; background:#fff5bc; font-style:normal; }
+.order-fiscal-actions { margin-left:auto; display:flex; gap:8px; }
+.order-fiscal-actions button { min-height:40px; padding:0 15px; border:0; border-radius:999px; background:var(--yellow); color:#111; font:800 .72rem Montserrat,sans-serif; cursor:pointer; }
+.order-fiscal-actions button.secondary { border:1px solid #dadad3; background:#f4f4ef; }
+.order-fiscal-actions button:disabled { opacity:.55; cursor:wait; }
+.order-fiscal>p { margin:0; color:#777; font-size:.72rem; }
+
+.admin-fiscal-control { display:grid; gap:16px; }
+.admin-fiscal-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.admin-fiscal-heading h3 { margin:3px 0; }
+.admin-fiscal-heading p:not(.eyebrow) { margin:0; color:#74746d; font-size:.78rem; }
+.admin-fiscal-status { padding:8px 12px; border-radius:999px; background:#fff1bd; color:#806700; font-size:.7rem; font-weight:900; white-space:nowrap; }
+.admin-fiscal-status[data-ready="true"] { background:#dff6e8; color:#17733d; }
+.admin-fiscal-guide { padding:15px; display:grid; grid-template-columns:1fr auto; gap:10px 20px; border:1px solid #e0e0d9; border-radius:15px; background:#f7f7f3; }
+.admin-fiscal-guide strong { align-self:center; }
+.admin-fiscal-guide ol { grid-column:1; margin:0; padding-left:18px; display:grid; gap:4px; color:#686861; font-size:.75rem; line-height:1.45; }
+.admin-fiscal-guide button { grid-column:2; grid-row:1 / span 2; align-self:center; min-height:42px; padding:0 15px; border:0; border-radius:999px; background:#171714; color:#fff; font:800 .7rem Montserrat,sans-serif; cursor:pointer; }
+.admin-fiscal-fields { display:grid; grid-template-columns:1.5fr 1fr; gap:12px; }
+.admin-fiscal-fields label { display:grid; align-content:start; gap:7px; color:#65655f; font-size:.75rem; font-weight:700; }
+.admin-fiscal-fields input { min-height:44px; padding:10px 12px; border:1px solid #dcdcd5; border-radius:11px; background:#fff; color:#171714; font:inherit; }
+.admin-fiscal-file { padding:13px; border:1px dashed #d0d0c8; border-radius:12px; background:#fafaf7; }
+.admin-fiscal-file input { min-height:0; padding:0; border:0; background:transparent; font-size:.72rem; }
+.admin-fiscal-file small { color:#8a8a82; font-weight:500; }
+.admin-fiscal-downloads { display:flex; gap:8px; }
+.admin-fiscal-downloads button { padding:10px 13px; border:1px solid #d8d8d0; border-radius:999px; background:#fff; color:#171714; font:800 .68rem Montserrat,sans-serif; cursor:pointer; }
+
+@media (max-width:700px) {
+  .order-fiscal { align-items:flex-start; flex-wrap:wrap; }
+  .order-fiscal-actions { width:100%; margin:0; }
+  .order-fiscal-actions button { flex:1; }
+  .order-fiscal>p { width:100%; }
+  .admin-fiscal-heading { display:grid; }
+  .admin-fiscal-status { width:max-content; }
+  .admin-fiscal-guide { grid-template-columns:1fr; }
+  .admin-fiscal-guide ol,.admin-fiscal-guide button { grid-column:1; grid-row:auto; }
+  .admin-fiscal-fields { grid-template-columns:1fr; }
+}
 .account-main .account-empty { border-color:#d8d8d1; color:#85857d; }
 .account-main .account-empty strong { color:#171714; }
 .account-security-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
