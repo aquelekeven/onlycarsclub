@@ -11,6 +11,7 @@
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-fiscal-v125" defer></script>
   <script src="assets/js/admin.js?v=20260812-admin-exchanges-v128" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260812-event-tools-v1" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -38,6 +39,7 @@
           <button type="button" data-admin-tab="exchanges"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a6 6 0 0 0-6 6v1"/><path d="m8 11-3 3-3-3M4 18h9a6 6 0 0 0 6-6v-1"/><path d="m16 14 3-3 3 3"/></svg></i><span>Trocas</span><b class="admin-nav-badge" data-exchange-nav-badge hidden>0</b></button>
           <button type="button" data-admin-tab="inventory"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></svg></i><span>Estoque</span></button>
           <button type="button" data-admin-tab="reports"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></i><span>Relatórios</span></button>
+          <button type="button" data-admin-tab="tickets"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 6v12M12 10h4M12 14h3"/></svg></i><span>Ingressos</span></button>
           <a href="loja.html"><i>↗</i>Ver loja</a>
         </nav>
 
@@ -126,6 +128,32 @@
             <section class="admin-card-panel"><div class="admin-section-heading"><div><p class="eyebrow">Entrega</p><h2>Modalidades escolhidas</h2></div></div><div class="admin-delivery-breakdown" data-delivery-breakdown></div></section>
           </div>
           <section class="admin-card-panel admin-report-chart-panel"><div class="admin-section-heading"><div><p class="eyebrow">Histórico</p><h2 data-report-chart-title>Vendas do período</h2></div><span data-report-chart-total>R$ 0,00</span></div><div class="admin-bar-chart admin-report-chart" data-report-chart></div></section>
+        </section>
+
+        <section class="admin-panel admin-ticket-panel" data-admin-panel="tickets" hidden>
+          <div class="admin-section-heading"><div><p class="eyebrow">Portaria do evento</p><h2>Leitor de ingressos</h2><p>Consulte o ingresso e confirme entrada, saída ou reentrada em tempo real.</p></div><button type="button" data-ticket-refresh>Atualizar</button></div>
+          <div class="admin-ticket-stats">
+            <article><span>Ingressos ativos</span><strong data-ticket-stat-active>0</strong><small>aptos para o evento</small></article>
+            <article><span>Dentro do evento</span><strong data-ticket-stat-inside>0</strong><small>entrada já registrada</small></article>
+            <article><span>Check-ins hoje</span><strong data-ticket-stat-today>0</strong><small>movimentações registradas</small></article>
+          </div>
+          <div class="admin-ticket-layout">
+            <section class="admin-scanner-card">
+              <header><div><span>Leitor seguro</span><strong>Aponte para o QR Code</strong></div><i data-scanner-indicator></i></header>
+              <div class="admin-scanner-viewport" data-scanner-viewport>
+                <video data-scanner-video playsinline muted></video>
+                <div class="admin-scanner-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                <div class="admin-scanner-placeholder" data-scanner-placeholder><strong>Câmera desligada</strong><span>Toque abaixo para iniciar a leitura.</span></div>
+              </div>
+              <div class="admin-scanner-actions"><button class="primary" type="button" data-scanner-start>Iniciar câmera</button><button type="button" data-scanner-stop disabled>Parar</button></div>
+              <div class="admin-scanner-manual"><span>Leitura manual</span><div><input type="text" data-scanner-input autocomplete="off" placeholder="Cole o conteúdo completo do QR"><button type="button" data-scanner-search>Consultar</button></div></div>
+              <p class="admin-scanner-feedback" data-scanner-feedback role="status"></p>
+            </section>
+            <section class="admin-ticket-result" data-ticket-result>
+              <div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>
+            </section>
+          </div>
+          <section class="admin-ticket-activity"><header><div><p class="eyebrow">Movimentações</p><h3>Atividade recente da portaria</h3></div></header><div data-ticket-activity></div></section>
         </section>
       </div>
     </div>

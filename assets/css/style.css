@@ -3987,3 +3987,139 @@ body[data-page="conta"] .account-back-home svg { width:18px; height:18px; flex:0
   .admin-stat-grid,.admin-report-grid { grid-template-columns:1fr; }
   .admin-stat,.admin-report-card { min-height:108px; }
 }
+
+/* v13.3 — operação moderna de trocas e portaria do evento */
+.admin-exchange-control { display:grid; gap:16px; }
+.admin-exchange-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.admin-exchange-heading h3 { margin:3px 0!important; font-size:19px!important; letter-spacing:-.025em!important; text-transform:none!important; }
+.admin-exchange-heading p { margin:0; color:#77776f; font-size:10px; }
+.admin-exchange-heading>span { padding:8px 11px; border-radius:999px; background:#fff1b4; color:#7b6200; font-size:9px; font-weight:900; white-space:nowrap; }
+.admin-exchange-summary { padding:15px; display:grid; gap:7px; border:1px solid #e8e8e1; border-radius:14px; background:#f7f7f3; }
+.admin-exchange-summary strong { font-size:11px; }
+.admin-exchange-summary p { margin:0; color:#55554f; font-size:11px; line-height:1.55; }
+.admin-exchange-summary small { color:#907400; font-weight:750; }
+.admin-exchange-photos { display:flex; flex-wrap:wrap; gap:7px; }
+.admin-exchange-photos button { min-height:38px; padding:0 12px; border:1px solid #dcdcd5; border-radius:11px; background:#fff; color:#171714; font:inherit; font-size:9px; font-weight:850; cursor:pointer; }
+.admin-exchange-quick { padding:15px; border:1px solid #e5d477; border-radius:16px; background:#fffae2; }
+.admin-exchange-quick-heading { margin-bottom:12px; display:grid; gap:3px; }
+.admin-exchange-quick-heading span { color:#171714; font-size:11px; font-weight:900; }
+.admin-exchange-quick-heading small { color:#857b49; }
+.admin-exchange-step-buttons { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.admin-exchange-step-buttons button { min-height:62px; padding:7px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:1px solid #e1dba9; border-radius:12px; background:#fffdf3; color:#777266; font:inherit; font-size:8px; font-weight:800; cursor:pointer; text-align:center; }
+.admin-exchange-step-buttons button i { width:13px; height:13px; border:3px solid #e2dfcf; border-radius:50%; background:#fff; }
+.admin-exchange-step-buttons button.active { border-color:#171714; background:#171714; color:#fff; box-shadow:0 7px 18px #1112; }
+.admin-exchange-step-buttons button.active i { border-color:#f4cf16; background:#f4cf16; }
+.admin-exchange-native-status { display:none!important; }
+.admin-exchange-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.admin-exchange-fields>label,.admin-exchange-fields>div label { display:grid; gap:6px; }
+.admin-exchange-fields>label { grid-column:1/-1; }
+.admin-exchange-fields>div { display:grid; gap:10px; }
+.admin-exchange-fields span,.admin-exchange-templates>span { color:#77776f; font-size:9px; font-weight:850; text-transform:uppercase; letter-spacing:.05em; }
+.admin-exchange-fields input,.admin-exchange-fields textarea,.admin-exchange-fields select { width:100%; min-height:45px; padding:11px 12px; border:1px solid #dcdcd5; border-radius:12px; background:#fff; color:#171714; font:inherit; font-size:11px; outline:none; }
+.admin-exchange-fields textarea { min-height:92px; resize:vertical; line-height:1.5; }
+.admin-exchange-fields input:focus,.admin-exchange-fields textarea:focus { border-color:#b79500; box-shadow:0 0 0 3px #f4cf1626; }
+.admin-exchange-templates { grid-column:1/-1; display:grid; gap:7px; }
+.admin-exchange-templates>div { display:flex; flex-wrap:wrap; gap:6px; }
+.admin-exchange-templates button { min-height:34px; padding:0 11px; border:1px solid #deded7; border-radius:999px; background:#f5f5f1; color:#4e4e48; font:inherit; font-size:8px; font-weight:850; cursor:pointer; }
+.admin-exchange-templates button:hover { border-color:#c7a800; background:#fff8d5; }
+
+.admin-ticket-stats { margin-bottom:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.admin-ticket-stats article { min-height:118px; padding:17px; display:grid; align-content:space-between; gap:5px; border:1px solid #e3e3dd; border-radius:18px; background:#fff; box-shadow:0 8px 22px #11111107; }
+.admin-ticket-stats article:nth-child(2) { border-color:#171714; background:#171714; color:#fff; }
+.admin-ticket-stats span,.admin-ticket-stats small { color:#85857d; font-size:10px; }
+.admin-ticket-stats strong { font-size:28px; }
+.admin-ticket-stats article:nth-child(2) strong { color:#f4cf16; }
+.admin-ticket-layout { display:grid; grid-template-columns:minmax(320px,.8fr) minmax(0,1.2fr); gap:12px; }
+.admin-scanner-card,.admin-ticket-result,.admin-ticket-activity { padding:18px; border:1px solid #e2e2dc; border-radius:19px; background:#fff; box-shadow:0 8px 22px #11111107; }
+.admin-scanner-card>header { margin-bottom:13px; display:flex; align-items:center; justify-content:space-between; }
+.admin-scanner-card>header>div { display:grid; gap:2px; }
+.admin-scanner-card>header span { color:#9a7b00; font-size:9px; font-weight:900; text-transform:uppercase; }
+.admin-scanner-card>header strong { font-size:14px; }
+.admin-scanner-card>header>i { width:9px; height:9px; border-radius:50%; background:#bbb; box-shadow:0 0 0 6px #eee; }
+.admin-scanner-viewport { position:relative; aspect-ratio:4/3; overflow:hidden; border-radius:16px; background:#111; }
+.admin-scanner-viewport video { width:100%; height:100%; display:none; object-fit:cover; }
+.admin-scanner-viewport.active video { display:block; }
+.admin-scanner-placeholder { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:5px; color:#777; text-align:center; }
+.admin-scanner-placeholder strong { color:#eee; font-size:13px; }
+.admin-scanner-placeholder span { font-size:9px; }
+.admin-scanner-viewport.active .admin-scanner-placeholder { display:none; }
+.admin-scanner-frame { position:absolute; inset:19%; pointer-events:none; }
+.admin-scanner-frame i { position:absolute; width:29px; height:29px; border-color:#f4cf16; border-style:solid; }
+.admin-scanner-frame i:nth-child(1) { left:0; top:0; border-width:3px 0 0 3px; border-radius:8px 0 0; }
+.admin-scanner-frame i:nth-child(2) { right:0; top:0; border-width:3px 3px 0 0; border-radius:0 8px 0 0; }
+.admin-scanner-frame i:nth-child(3) { left:0; bottom:0; border-width:0 0 3px 3px; border-radius:0 0 0 8px; }
+.admin-scanner-frame i:nth-child(4) { right:0; bottom:0; border-width:0 3px 3px 0; border-radius:0 0 8px; }
+.admin-scanner-actions { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.admin-scanner-actions button,.admin-scanner-manual button,.admin-ticket-checkin-actions button { min-height:43px; border:1px solid #dcdcd6; border-radius:12px; background:#f4f4f0; color:#171714; font:inherit; font-size:9px; font-weight:900; cursor:pointer; }
+.admin-scanner-actions button.primary,.admin-scanner-manual button,.admin-ticket-checkin-actions button.primary { border-color:#171714; background:#171714; color:#fff; }
+.admin-scanner-actions button:disabled,.admin-ticket-checkin-actions button:disabled { opacity:.38; cursor:not-allowed; }
+.admin-scanner-manual { margin-top:15px; display:grid; gap:6px; }
+.admin-scanner-manual>span { color:#77776f; font-size:9px; font-weight:850; text-transform:uppercase; }
+.admin-scanner-manual>div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; }
+.admin-scanner-manual input { min-width:0; min-height:44px; padding:10px 12px; border:1px solid #dcdcd6; border-radius:12px; background:#fff; color:#171714; font:inherit; font-size:10px; }
+.admin-scanner-manual button { padding:0 13px; }
+.admin-scanner-feedback { min-height:18px; margin:10px 0 0; color:#77776f; font-size:9px; }
+.admin-scanner-feedback[data-type="success"] { color:#14744b; }
+.admin-scanner-feedback[data-type="error"] { color:#ad3933; }
+.admin-scanner-feedback[data-type="warning"] { color:#907300; }
+.admin-ticket-result { min-height:100%; }
+.admin-ticket-empty { min-height:420px; display:grid; place-content:center; justify-items:center; gap:7px; color:#85857d; text-align:center; }
+.admin-ticket-empty i { width:52px; height:52px; display:grid; place-items:center; border-radius:16px; background:#fff2ad; color:#886c00; font-size:24px; font-style:normal; }
+.admin-ticket-empty strong { margin-top:5px; color:#171714; font-size:15px; }
+.admin-ticket-empty span { max-width:330px; font-size:10px; line-height:1.5; }
+.admin-ticket-detail { display:grid; gap:15px; }
+.admin-ticket-detail>header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.admin-ticket-detail>header>div { display:grid; gap:3px; }
+.admin-ticket-detail>header span { color:#85857d; font-size:9px; text-transform:uppercase; }
+.admin-ticket-detail>header strong { font-size:22px; }
+.admin-ticket-detail>header b { padding:8px 11px; border-radius:999px; background:#dff4e8; color:#14744b; font-size:9px; }
+.admin-ticket-detail[data-status="cancelled"]>header b,.admin-ticket-detail[data-status="refunded"]>header b,.admin-ticket-detail[data-status="blocked"]>header b { background:#ffe2de; color:#a5342e; }
+.admin-ticket-driver { padding:14px; display:grid; grid-template-columns:48px minmax(0,1fr); align-items:center; gap:12px; border-radius:15px; background:#f5f5f1; }
+.admin-ticket-driver>i { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; background:#171714; color:#f4cf16; font-size:18px; font-style:normal; font-weight:900; }
+.admin-ticket-driver>div { min-width:0; display:grid; gap:2px; }
+.admin-ticket-driver span,.admin-ticket-driver small { color:#85857d; font-size:9px; }
+.admin-ticket-driver strong { overflow:hidden; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ticket-detail dl { margin:0; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.admin-ticket-detail dl>div { min-width:0; padding:12px; display:grid; gap:4px; border:1px solid #e7e7e1; border-radius:13px; }
+.admin-ticket-detail dt { color:#85857d; font-size:8px; font-weight:800; text-transform:uppercase; }
+.admin-ticket-detail dd { margin:0; overflow:hidden; font-size:11px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ticket-detail dd.plate { color:#947600; font-size:16px; letter-spacing:.08em; }
+.admin-ticket-checkin-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.admin-ticket-detail>[data-ticket-action-feedback] { min-height:18px; margin:0; color:#14744b; font-size:9px; }
+.admin-ticket-activity { margin-top:12px; }
+.admin-ticket-activity>header { margin-bottom:12px; }
+.admin-ticket-activity h3 { margin:3px 0 0; font-size:17px; }
+.admin-ticket-activity [data-ticket-activity] { display:grid; gap:5px; }
+.admin-ticket-activity article { min-height:55px; padding:8px 10px; display:grid; grid-template-columns:10px minmax(0,1fr) auto; align-items:center; gap:10px; border-bottom:1px solid #ededE7; }
+.admin-ticket-activity article>i { width:9px; height:9px; border-radius:50%; background:#3b9c70; }
+.admin-ticket-activity article>i[data-action="exit"] { background:#e2b600; }
+.admin-ticket-activity article>div { min-width:0; display:grid; gap:2px; }
+.admin-ticket-activity article strong,.admin-ticket-activity article span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ticket-activity article strong { font-size:10px; }
+.admin-ticket-activity article span,.admin-ticket-activity time { color:#85857d; font-size:9px; }
+.admin-ticket-activity-empty { padding:32px; color:#85857d; font-size:10px; text-align:center; }
+
+@media(max-width:820px) {
+  .admin-tabs { grid-template-columns:repeat(6,minmax(0,1fr)); }
+  .admin-exchange-heading { flex-direction:column; }
+  .admin-exchange-step-buttons { display:flex; padding-bottom:4px; overflow-x:auto; }
+  .admin-exchange-step-buttons button { min-width:105px; }
+  .admin-exchange-fields { grid-template-columns:1fr; }
+  .admin-exchange-fields>label,.admin-exchange-templates { grid-column:auto; }
+  .admin-ticket-stats { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .admin-ticket-stats article { min-height:105px; padding:12px 9px; }
+  .admin-ticket-stats span,.admin-ticket-stats small { font-size:8px; }
+  .admin-ticket-stats strong { font-size:22px; }
+  .admin-ticket-layout { grid-template-columns:1fr; }
+  .admin-scanner-card,.admin-ticket-result,.admin-ticket-activity { padding:13px; }
+  .admin-ticket-empty { min-height:260px; }
+  .admin-ticket-result { min-height:300px; }
+}
+
+@media(max-width:410px) {
+  .admin-tabs button,.admin-tabs button:not(.active),.admin-tabs button.active { font-size:6.5px!important; }
+  .admin-tabs button i svg { width:19px; height:19px; }
+  .admin-ticket-stats { grid-template-columns:1fr; }
+  .admin-ticket-stats article { min-height:90px; }
+  .admin-ticket-detail dl,.admin-ticket-checkin-actions { grid-template-columns:1fr; }
+}
