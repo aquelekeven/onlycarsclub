@@ -6,13 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co https://viacep.com.br; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260812-exchanges-v126">
-  <script src="assets/js/main.js?v=20260810-account-home-text-v128" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260812-fiscal-v125" defer></script>
-  <script src="assets/js/auth.js?v=20260812-exchanges-v127" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260812-account-mobile-v130">
+  <script src="assets/js/main.js?v=20260812-account-mobile-v130" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260807-v93" defer></script>
+  <script src="assets/js/auth.js?v=20260812-account-mobile-v130" defer></script>
 </head>
 <body data-page="conta" data-account-page>
-  <header class="header"><a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
+  <header class="header">
+    <a class="account-shortcut account-back-home" href="index.html" aria-label="Voltar ao início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>
+      <span>Voltar ao início</span>
+    </a>
+    <a href="index.html" class="brand"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a>
+  </header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
   <main class="account-page"><div class="account-wrap">
     <section class="account-state" data-account-loading><strong>Carregando sua conta...</strong><span>Aguarde só um instante.</span></section>
@@ -21,11 +27,11 @@
       <aside class="account-sidebar">
         <div class="account-profile-summary"><span class="account-avatar" data-account-initial>O</span><strong data-account-name>cliente</strong><small data-account-email></small><span class="account-role" data-account-role>Cliente</span></div>
         <nav class="account-menu" aria-label="Menu da conta">
-          <button class="active" type="button" data-account-tab="overview"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg></i><span>Visão geral</span></button>
-          <button type="button" data-account-tab="orders"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"/><path d="M4 7.5V17l8 4 8-4V7.5M12 12v9"/></svg></i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
-          <button type="button" data-account-tab="profile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4 3-6 7-6s6.5 2 7 6"/></svg></i><span>Meus dados</span></button>
-          <button type="button" data-account-tab="address"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></i><span>Endereço</span></button>
-          <button type="button" data-account-tab="security"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></i><span>Segurança</span></button>
+          <button class="active" type="button" data-account-tab="overview"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg></i><span>Visão geral</span></button>
+          <button type="button" data-account-tab="orders"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></svg></i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
+          <button type="button" data-account-tab="profile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.5 3.1-7 7.5-7s6.9 2.5 7.5 7"/></svg></i><span>Meus dados</span></button>
+          <button type="button" data-account-tab="address"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></i><span>Endereço</span></button>
+          <button type="button" data-account-tab="security"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></i><span>Segurança</span></button>
         </nav>
         <div class="account-sidebar-footer"><a class="account-admin-link" href="admin.html" data-admin-link hidden>Abrir painel administrativo</a><button class="account-logout" type="button" data-logout><i>↗</i> Sair da conta</button></div>
       </aside>
@@ -49,18 +55,7 @@
 
         <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
 
-        <section class="account-view" data-account-view="address" hidden>
-          <header class="account-view-heading account-address-heading"><div><p class="eyebrow">Entrega</p><h1>Meus endereços</h1><p>Salve até três endereços e escolha qual será usado como principal.</p></div><button type="button" data-address-add>+ Novo endereço</button></header>
-          <div class="account-address-list" data-address-list></div>
-          <section class="account-card account-address-editor" data-address-editor hidden>
-            <form class="account-form" data-address-form>
-              <input type="hidden" name="address_id">
-              <div class="account-fields"><div class="field"><label for="address_label">Nome do endereço</label><input id="address_label" name="label" maxlength="30" placeholder="Casa, trabalho..." required></div><div class="field"><label for="recipient_name">Nome do destinatário</label><input id="recipient_name" name="recipient_name" autocomplete="name" required></div><div class="field"><label for="postal_code">CEP</label><input id="postal_code" name="postal_code" inputmode="numeric" autocomplete="postal-code" data-mask="cep" required></div><div class="field"><label for="state">Estado</label><input id="state" name="state" maxlength="2" autocomplete="address-level1" required></div><div class="field full"><label for="street">Rua</label><input id="street" name="street" autocomplete="address-line1" required></div><div class="field"><label for="number">Número</label><input id="number" name="number" required><label class="account-no-number"><input type="checkbox" name="no_number"> Endereço sem número</label></div><div class="field"><label for="complement">Complemento</label><input id="complement" name="complement" autocomplete="address-line2"></div><div class="field"><label for="neighborhood">Bairro</label><input id="neighborhood" name="neighborhood" required></div><div class="field"><label for="city">Cidade</label><input id="city" name="city" autocomplete="address-level2" required></div></div>
-              <label class="account-default-option"><input type="checkbox" name="is_default"><span>Definir como endereço principal</span></label>
-              <p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="button" data-address-editor-cancel>Cancelar</button><button class="auth-submit" type="submit">Salvar endereço</button></div>
-            </form>
-          </section>
-        </section>
+        <section class="account-view" data-account-view="address" hidden><header class="account-view-heading"><div><p class="eyebrow">Entrega</p><h1>Endereço principal</h1><p>O CEP preenche rua, bairro e cidade automaticamente.</p></div></header><section class="account-card"><form class="account-form" data-address-form><div class="field"><label for="recipient_name">Nome do destinatário</label><input id="recipient_name" name="recipient_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="postal_code">CEP</label><input id="postal_code" name="postal_code" inputmode="numeric" autocomplete="postal-code" data-mask="cep" required></div><div class="field"><label for="state">Estado</label><input id="state" name="state" maxlength="2" autocomplete="address-level1" required></div><div class="field full"><label for="street">Rua</label><input id="street" name="street" autocomplete="address-line1" required></div><div class="field"><label for="number">Número</label><input id="number" name="number" required><label class="account-no-number"><input type="checkbox" name="no_number"> Endereço sem número</label></div><div class="field"><label for="complement">Complemento</label><input id="complement" name="complement" autocomplete="address-line2"></div><div class="field"><label for="neighborhood">Bairro</label><input id="neighborhood" name="neighborhood" required></div><div class="field"><label for="city">Cidade</label><input id="city" name="city" autocomplete="address-level2" required></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar endereço</button></div></form></section></section>
 
         <section class="account-view" data-account-view="security" hidden><header class="account-view-heading"><div><p class="eyebrow">Acesso</p><h1>Segurança</h1><p>Controle o acesso à sua conta Only.</p></div></header><div class="account-security-grid"><article><i>@</i><div><span>E-mail da conta</span><strong data-security-email></strong><small>Este é o e-mail usado para entrar.</small></div></article><article><i>••</i><div><span>Senha</span><strong>Proteja sua conta</strong><small>Enviaremos um link seguro para criar uma nova senha.</small></div><a href="recuperar-senha.html">Redefinir senha</a></article><article class="wide"><i>✓</i><div><span>Pagamentos protegidos</span><strong>Checkout Mercado Pago</strong><small>A Only não armazena números de cartão ou códigos de segurança.</small></div></article></div></section>
       </div>

@@ -3702,3 +3702,118 @@ body[data-page="admin"]>.bottom-nav { display:none; }
   .event-faq { gap:25px; }
   .event-final-cta { padding:85px 18px 125px; }
 }
+
+/* v13.1 — Minha conta mobile: header e navegação inferior */
+body[data-page="conta"] .account-back-home {
+  width:auto;
+  height:42px;
+  padding:0 15px 0 11px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  border-radius:13px;
+  color:#fff;
+  font-size:11px;
+  font-weight:850;
+  line-height:1;
+  text-decoration:none;
+  white-space:nowrap;
+}
+body[data-page="conta"] .account-back-home svg { width:18px; height:18px; flex:0 0 auto; }
+.account-menu button i svg {
+  width:21px;
+  height:21px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+@media(max-width:820px) {
+  body[data-page="conta"] { padding-bottom:calc(86px + env(safe-area-inset-bottom)); }
+  body[data-page="conta"] .header {
+    position:fixed;
+    inset:0 0 auto;
+    z-index:100;
+    height:68px;
+    padding:0 14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  body[data-page="conta"] .header .brand {
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+  }
+  body[data-page="conta"] .header .brand-logo { height:48px; }
+  body[data-page="conta"] .account-back-home {
+    position:absolute;
+    left:10px;
+    top:50%;
+    z-index:2;
+    width:auto;
+    max-width:none;
+    transform:translateY(-50%);
+    background:#ffffff0c;
+  }
+  body[data-page="conta"] .account-back-home:hover,
+  body[data-page="conta"] .account-back-home.active { border-color:#ffffff20; background:#ffffff0c; color:#fff; }
+  .account-page { padding:80px 8px 16px; }
+  .account-center { padding:7px; display:block; border-radius:19px; }
+  .account-sidebar {
+    position:fixed;
+    left:8px;
+    right:8px;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    top:auto;
+    z-index:110;
+    padding:6px;
+    display:block;
+    border:1px solid #ffffff1c;
+    border-radius:20px;
+    background:#171714f5;
+    box-shadow:0 16px 45px #0007;
+    backdrop-filter:blur(18px);
+  }
+  .account-profile-summary,.account-sidebar-footer { display:none; }
+  .account-menu {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:3px;
+    overflow:visible;
+  }
+  .account-menu button,
+  .account-menu button.active {
+    width:100%;
+    min-width:0;
+    min-height:58px;
+    padding:6px 2px 5px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    border-radius:15px;
+    font-size:9px!important;
+    line-height:1.05;
+    text-align:center;
+  }
+  .account-menu button i { width:auto; height:22px; display:grid; place-items:center; }
+  .account-menu button i svg { width:20px; height:20px; }
+  .account-menu button span,
+  .account-menu button.active span { display:block; max-width:100%; white-space:nowrap; }
+  .account-menu button b { display:none; }
+  .account-main { padding:18px 12px 22px; }
+  .account-view-heading h1 { font-size:clamp(32px,10vw,46px); }
+}
+
+@media(max-width:390px) {
+  body[data-page="conta"] .account-back-home { padding:0 9px; font-size:10px; }
+  body[data-page="conta"] .account-back-home svg { width:15px; }
+  body[data-page="conta"] .header .brand-logo { height:42px; }
+  .account-menu button,.account-menu button.active { font-size:8px!important; }
+}
