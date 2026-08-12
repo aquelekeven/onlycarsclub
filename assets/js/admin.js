@@ -4,7 +4,7 @@
   const client = window.OnlySupabase;
   const qs = (selector, scope = document) => scope.querySelector(selector);
   const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-  const state = { products: [], orders: [], orderPage:1, orderPageSize:8, orderSearch:"", reportMode:"month", reportMonth:"", reportYear:new Date().getFullYear() };
+  const state = { products: [], orders: [], exchanges:[], exchangeFilter:"all", orderPage:1, orderPageSize:8, orderSearch:"", reportMode:"month", reportMonth:"", reportYear:new Date().getFullYear() };
 
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dateTime = (value) => new Date(value).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
@@ -148,6 +148,36 @@
       <span>Página ${state.orderPage} de ${totalPages} · ${filtered.length} pedidos</span>
       <button type="button" data-page="${state.orderPage + 1}" ${state.orderPage === totalPages ? "disabled" : ""}>Próxima →</button>` : `<span>${filtered.length} ${filtered.length === 1 ? "pedido" : "pedidos"}</span>`;
     renderAttention();
+  }
+
+  function renderExchanges() {
+    const terminal = ["refunded","rejected","cancelled","completed"];
+    const attention = ["received","under_review"];
+    const newCount = state.exchanges.filter((request) => request.status === "received").length;
+    const activeCount = state.exchanges.filter((request) => !terminal.includes(request.status)).length;
+    const doneCount = state.exchanges.filter((request) => terminal.includes(request.status)).length;
+    qs("[data-exchange-stat-new]").textContent = newCount;
+    qs("[data-exchange-stat-active]").textContent = activeCount;
+    qs("[data-exchange-stat-done]").textContent = doneCount;
+    const badge = qs("[data-exchange-nav-badge]");
+    badge.textContent = attention.length ? state.exchanges.filter((request) => attention.includes(request.status)).length : 0;
+    badge.hidden = Number(badge.textContent) === 0;
+    let requests = state.exchanges;
+    if (state.exchangeFilter === "attention") requests = requests.filter((request) => attention.includes(request.status));
+    if (state.exchangeFilter === "active") requests = requests.filter((request) => !terminal.includes(request.status));
+    if (state.exchangeFilter === "done") requests = requests.filter((request) => terminal.includes(request.status));
+    const list = qs("[data-admin-exchanges]");
+    list.innerHTML = requests.length ? requests.map((request) => {
+      const order = state.orders.find((item) => item.id === request.order_id);
+      const item = request.items?.[0] || {};
+      return `<article class="admin-exchange-row" data-exchange-request-id="${safe(request.id)}" data-exchange-order-id="${safe(request.order_id)}">
+        <div class="admin-exchange-row-mark" data-status="${safe(request.status)}">↺</div>
+        <div class="admin-exchange-row-main"><span>${safe(exchangeTypeLabels[request.request_type] || request.request_type)}</span><strong>${safe(item.product_name || "Produto do pedido")}</strong><small>${safe(order?.order_number || "Pedido")} · ${safe(order?.customer_name || "Cliente")} · ${dateTime(request.created_at)}</small></div>
+        <div class="admin-exchange-row-status"><span>${safe(exchangeStatusLabels[request.status] || request.status)}</span><small>${request.photo_paths?.length || 0} foto(s)</small></div>
+        <button type="button" data-open-exchange>Ver e atualizar</button>
+      </article>`;
+    }).join("") : '<div class="admin-exchange-empty"><i>↺</i><strong>Nada por aqui</strong><span>Nenhuma solicitação corresponde a este filtro.</span></div>';
+    feedback("[data-exchanges-feedback]", `${requests.length} solicitação(ões) exibida(s).`, "success");
   }
 
   function ordersNeedingAttention() {
@@ -353,13 +383,19 @@
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
     const ordersWithExchange = "orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc";
     const ordersWithoutExchange = "orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc";
-    const [products, orders] = await Promise.all([
+    const [products, orders, exchanges] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange))
+      client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange)),
+      client.rest("order_exchange_requests?select=id,order_id,user_id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at&order=created_at.desc")
     ]);
     state.products = products || [];
     state.orders = orders || [];
+    state.exchanges = exchanges || [];
+    state.orders.forEach((order) => {
+      order.order_exchange_requests = state.exchanges.filter((request) => request.order_id === order.id);
+    });
     renderOrders();
+    renderExchanges();
     renderInventory();
     renderStats();
     feedback("[data-orders-feedback]", `${state.orders.length} pedido(s) carregado(s).`, "success");
@@ -372,6 +408,11 @@
     state.reportYear = now.getFullYear();
     qsa("[data-admin-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.adminTab)));
     qsa("[data-open-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.openTab)));
+    qsa("[data-exchange-filter]").forEach((button) => button.addEventListener("click", () => {
+      state.exchangeFilter = button.dataset.exchangeFilter;
+      qsa("[data-exchange-filter]").forEach((item) => item.classList.toggle("active", item === button));
+      renderExchanges();
+    }));
     qsa("[data-admin-refresh]").forEach((button) => button.addEventListener("click", async () => {
       button.disabled = true;
       await loadData().catch((error) => feedback("[data-orders-feedback]", error.message, "error"));
@@ -422,6 +463,13 @@
       const card = button?.closest("[data-order-id]");
       if (!button || !card) return;
       const order = state.orders.find((item) => item.id === card.dataset.orderId);
+      if (order) openOrderModal(order);
+    });
+    qs("[data-admin-exchanges]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-open-exchange]");
+      const row = button?.closest("[data-exchange-order-id]");
+      if (!button || !row) return;
+      const order = state.orders.find((item) => item.id === row.dataset.exchangeOrderId);
       if (order) openOrderModal(order);
     });
     qs("[data-attention-orders]")?.addEventListener("click", (event) => {
