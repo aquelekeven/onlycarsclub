@@ -817,6 +817,31 @@ body[data-page="conta"]>.bottom-nav { display:none; }
 .account-security-grid span,.account-security-grid small { color:#85857d; font-size:9px; }
 .account-security-grid strong { overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .account-security-grid a { grid-column:2; width:max-content; padding:9px 12px; border-radius:999px; background:#1a1a17; color:#fff; font-size:8px; font-weight:850; text-transform:uppercase; }
+.account-tickets { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.account-ticket-card { overflow:hidden; border:1px solid #e2e2dc; border-radius:20px; background:#fafaf7; box-shadow:0 10px 28px #11111108; }
+.account-ticket-card.is-active { border-color:#d5bd3c; background:#fffdf2; }
+.account-ticket-card>header { padding:17px 18px; display:flex; align-items:center; justify-content:space-between; gap:15px; border-bottom:1px solid #e8e8e2; }
+.account-ticket-card>header>div { display:grid; gap:4px; }
+.account-ticket-card>header span { color:#85857d; font-size:9px; }
+.account-ticket-card>header strong { font-size:15px; letter-spacing:.04em; }
+.account-ticket-card>header b { padding:7px 9px; border-radius:999px; background:#ecece7; color:#66665f; font-size:8px; text-transform:uppercase; }
+.account-ticket-card.is-active>header b { background:#f4cf16; color:#171714; }
+.account-ticket-body { padding:18px; }
+.account-ticket-car { padding:14px; display:flex; align-items:center; gap:13px; border-radius:15px; background:#1a1a17; color:#fff; }
+.account-ticket-car>i { width:48px; height:38px; display:grid; place-items:center; border-radius:12px; background:#f4cf16; color:#171714; }
+.account-ticket-car svg { width:36px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.account-ticket-car>div { display:grid; gap:4px; }
+.account-ticket-car strong { font-size:12px; }
+.account-ticket-car span { color:#aaa; font-size:9px; }
+.account-ticket-card dl { margin:15px 0 0; display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.account-ticket-card dl div { display:grid; gap:3px; }
+.account-ticket-card dt,.account-ticket-card dd { margin:0; }
+.account-ticket-card dt { color:#85857d; font-size:8px; text-transform:uppercase; }
+.account-ticket-card dd { overflow:hidden; font-size:10px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.account-ticket-card>footer { padding:14px 18px; border-top:1px solid #e8e8e2; background:#fff; }
+.account-ticket-card>footer div { display:grid; gap:4px; }
+.account-ticket-card>footer strong { color:#6e5a00; font-size:10px; }
+.account-ticket-card>footer span { color:#85857d; font-size:9px; line-height:1.45; }
 @media(max-width:820px) {
   body[data-page="conta"] .header .brand-logo { height:50px; }
   .account-page { padding:82px 8px 14px; }
@@ -831,7 +856,7 @@ body[data-page="conta"]>.bottom-nav { display:none; }
   .account-main { padding:18px 13px; border-radius:16px; }
   .account-overview-stats { grid-template-columns:1fr 1fr; }
   .account-overview-stats article.featured { grid-column:1/-1; }
-  .account-overview-grid,.account-security-grid { grid-template-columns:1fr; }
+  .account-overview-grid,.account-security-grid,.account-tickets { grid-template-columns:1fr; }
   .account-security-grid article.wide { grid-column:auto; }
   .account-tip { grid-template-columns:34px 1fr; }
   .account-tip button { grid-column:1/-1; }
@@ -3859,9 +3884,10 @@ body[data-page="conta"] .account-back-home svg { width:18px; height:18px; flex:0
   .account-profile-summary,.account-sidebar-footer { display:none; }
   .account-menu {
     display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
+    grid-template-columns:repeat(6,minmax(64px,1fr));
     gap:3px;
-    overflow:visible;
+    overflow-x:auto;
+    scrollbar-width:none;
   }
   .account-menu button,
   .account-menu button.active {

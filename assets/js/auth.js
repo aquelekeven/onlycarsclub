@@ -86,72 +86,6 @@
     });
   }
 
-  const exchangeStatusLabels = {
-    received:"Solicitação recebida", under_review:"Em análise", awaiting_return:"Aguardando devolução",
-    return_in_transit:"Devolução em trânsito", received_return:"Produto recebido", exchange_sent:"Troca enviada",
-    refunded:"Reembolso realizado", rejected:"Solicitação não aprovada", cancelled:"Cancelada", completed:"Concluída"
-  };
-
-  function openExchangeModal(order, user) {
-    let modal = qs("[data-exchange-modal]");
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.className = "exchange-modal";
-      modal.dataset.exchangeModal = "";
-      modal.innerHTML = '<div class="exchange-modal-dialog" data-exchange-dialog></div>';
-      document.body.appendChild(modal);
-    }
-    const items = Array.isArray(order.order_items) ? order.order_items : [];
-    const dialog = qs("[data-exchange-dialog]", modal);
-    dialog.innerHTML = `
-      <header><div><p class="eyebrow">Atendimento pós-compra</p><h2>Troca ou devolução</h2><span>${escapeHtml(order.order_number)}</span></div><button type="button" data-exchange-close aria-label="Fechar">×</button></header>
-      <form data-exchange-form>
-        <div class="exchange-policy"><strong>Resolva tudo por aqui</strong><p>Arrependimento em até 7 dias do recebimento; troca voluntária de tamanho ou cor em até 30 dias. A primeira troca voluntária tem frete por conta da Only.</p><a href="termos.html" target="_blank" rel="noopener">Ver regras completas</a></div>
-        <label><span>Produto</span><select name="item" required>${items.map((item,index) => `<option value="${index}">${escapeHtml(item.product_name)} · ${escapeHtml(item.color || "Sem cor")}${item.size ? ` · Tam. ${escapeHtml(item.size)}` : ""}</option>`).join("")}</select></label>
-        <div class="exchange-form-grid"><label><span>Motivo</span><select name="request_type" required><option value="size_exchange">Trocar tamanho</option><option value="color_exchange">Trocar cor</option><option value="withdrawal">Desistir da compra</option><option value="defect">Produto com defeito</option><option value="wrong_item">Recebi o item incorreto</option><option value="other">Outro problema</option></select></label><label><span>O que você prefere?</span><select name="requested_solution" required><option value="exchange">Receber uma troca</option><option value="refund">Receber reembolso</option><option value="support">Quero orientação</option></select></label></div>
-        <div class="exchange-form-grid" data-exchange-preferences><label><span>Novo tamanho (se aplicável)</span><input name="new_size" maxlength="20" placeholder="Ex.: G"></label><label><span>Nova cor (se aplicável)</span><input name="new_color" maxlength="40" placeholder="Ex.: Preto"></label></div>
-        <label><span>Conte o que aconteceu</span><textarea name="details" minlength="5" maxlength="1500" required placeholder="Descreva o pedido de troca ou devolução..."></textarea></label>
-        <label class="exchange-files"><span>Fotos do produto <small>(até 3 arquivos de 5 MB)</small></span><input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple><em data-exchange-photo-help>Obrigatórias para defeito ou item incorreto.</em></label>
-        <p data-exchange-feedback role="status"></p>
-        <footer><button type="button" class="secondary" data-exchange-close>Agora não</button><button type="submit">Enviar solicitação</button></footer>
-      </form>`;
-    const form = qs("[data-exchange-form]", dialog);
-    const close = () => { modal.classList.remove("visible"); document.body.classList.remove("modal-open"); };
-    qsa("[data-exchange-close]", dialog).forEach((button) => button.onclick = close);
-    modal.onclick = (event) => { if (event.target === modal) close(); };
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const feedback = qs("[data-exchange-feedback]", form);
-      const files = [...form.photos.files];
-      if (files.length > 3) { feedback.textContent = "Envie no máximo 3 fotos."; return; }
-      if (["defect","wrong_item"].includes(form.request_type.value) && !files.length) { feedback.textContent = "Envie ao menos uma foto para este motivo."; return; }
-      if (files.some((file) => file.size > 5242880 || !["image/jpeg","image/png","image/webp"].includes(file.type))) { feedback.textContent = "Use imagens JPG, PNG ou WebP de até 5 MB."; return; }
-      const button = qs("button[type='submit']", form);
-      button.disabled = true; button.textContent = "Enviando..."; feedback.textContent = "Salvando sua solicitação com segurança...";
-      try {
-        const requestId = crypto.randomUUID();
-        const photoPaths = [];
-        for (let index=0; index<files.length; index+=1) {
-          const extension = files[index].type.split("/")[1].replace("jpeg","jpg");
-          const path = `${user.id}/${requestId}/foto-${index+1}.${extension}`;
-          await client.uploadPrivateFile("exchange-evidence", path, files[index]);
-          photoPaths.push(path);
-        }
-        const item = items[Number(form.item.value)];
-        await client.rest("rpc/customer_create_exchange_request", { method:"POST", body:{
-          p_request_id:requestId, p_order_id:order.id, p_request_type:form.request_type.value,
-          p_requested_solution:form.requested_solution.value,
-          p_items:[{ product_name:item.product_name, size:item.size, color:item.color, quantity:item.quantity, new_size:form.new_size.value.trim() || null, new_color:form.new_color.value.trim() || null }],
-          p_details:form.details.value.trim(), p_photo_paths:photoPaths
-        }});
-        feedback.textContent = "Solicitação enviada. Você poderá acompanhar pelo pedido.";
-        window.setTimeout(() => location.reload(), 700);
-      } catch (error) { feedback.textContent = friendlyError(error); button.disabled=false; button.textContent="Enviar solicitação"; }
-    });
-    document.body.classList.add("modal-open");
-    requestAnimationFrame(() => modal.classList.add("visible"));
-  }
-
   function setFeedback(form, text, type = "error") {
     const target = qs("[data-form-feedback]", form);
     if (!target) return;
@@ -337,9 +271,7 @@
     const profileForm = qs("[data-profile-form]");
     const addressForm = qs("[data-address-form]");
     const ordersList = qs("[data-orders-list]");
-    const addressList = qs("[data-address-list]");
-    const addressEditor = qs("[data-address-editor]");
-    let savedAddresses = [];
+    let addressId = null;
     const orderStatusLabels = {
       pending_payment: "Aguardando pagamento",
       paid: "Pago",
@@ -356,16 +288,15 @@
 
     try {
       await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
-      const ordersWithExchange = `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc&limit=20`;
-      const ordersWithoutExchange = `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at)&order=created_at.desc&limit=20`;
-      const [profiles, addresses, orders] = await Promise.all([
+      const [profiles, addresses, orders, ticketOrders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
-        client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange))
+        client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
+        client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20"),
+        client.rest("ticket_orders?select=id,status,payment_status,total_cents,created_at,events(name,starts_at,venue_name),event_lots(name),tickets(id,ticket_code,status,driver_name,vehicle_plate,vehicle_make,vehicle_model,instagram_handle)&order=created_at.desc&limit=20").catch(() => [])
       ]);
       const profile = profiles?.[0] || {};
-      savedAddresses = Array.isArray(addresses) ? addresses : [];
-      const address = savedAddresses.find((item) => item.is_default) || savedAddresses[0] || null;
+      const address = addresses?.[0] || null;
+      addressId = address?.id || null;
 
       const displayName = profile.display_name || user.email.split("@")[0];
       qsa("[data-account-name]").forEach((element) => element.textContent = displayName);
@@ -382,7 +313,13 @@
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
 
+      if (address) {
+        Object.entries(address).forEach(([key, value]) => {
+          if (addressForm.elements[key]) addressForm.elements[key].value = value || "";
+        });
+      }
       qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
+      qsa("input", addressForm).forEach((input) => input.defaultValue = input.value);
       const postalCodeInput = addressForm.postal_code;
       const numberInput = addressForm.number;
       const noNumberInput = addressForm.no_number;
@@ -416,65 +353,28 @@
         }, 250);
       });
 
-      const resetAddressEditor = (addressToEdit = null) => {
-        addressForm.reset();
-        addressForm.elements.address_id.value = addressToEdit?.id || "";
-        if (addressToEdit) Object.entries(addressToEdit).forEach(([key, value]) => {
-          if (addressForm.elements[key]) addressForm.elements[key].value = value ?? "";
-        });
-        addressForm.elements.is_default.checked = Boolean(addressToEdit?.is_default || !savedAddresses.length);
-        noNumberInput.checked = String(addressToEdit?.number || "").toUpperCase() === "S/N";
-        applyNoNumber();
-        addressEditor.hidden = false;
-        addressEditor.scrollIntoView({ behavior:"smooth", block:"nearest" });
-      };
-      const renderAddressList = () => {
-        if (!addressList) return;
-        addressList.innerHTML = savedAddresses.length ? savedAddresses.map((item) => `
-          <article class="account-address-card ${item.is_default ? "is-default" : ""}" data-address-id="${escapeHtml(item.id)}">
-            <header><span>${escapeHtml(item.label || "Endereço")}</span>${item.is_default ? "<b>Principal</b>" : ""}</header>
-            <strong>${escapeHtml(item.street)}, ${escapeHtml(item.number || "S/N")}</strong>
-            <p>${escapeHtml(item.neighborhood)} · ${escapeHtml(item.city)}/${escapeHtml(item.state)} · CEP ${escapeHtml(String(item.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</p>
-            <footer><button type="button" data-address-edit>Editar</button>${item.is_default ? "" : '<button type="button" data-address-default>Tornar principal</button>'}<button type="button" class="danger" data-address-delete>Excluir</button></footer>
-          </article>`).join("") : '<div class="account-address-empty"><strong>Nenhum endereço salvo</strong><span>Cadastre o primeiro endereço para agilizar suas compras.</span></div>';
-        const addButton = qs("[data-address-add]");
-        if (addButton) {
-          addButton.disabled = savedAddresses.length >= 3;
-          addButton.textContent = savedAddresses.length >= 3 ? "Limite de 3 atingido" : "+ Novo endereço";
-        }
-      };
-      renderAddressList();
-      qs("[data-address-add]")?.addEventListener("click", () => resetAddressEditor());
-      qs("[data-address-editor-cancel]")?.addEventListener("click", () => { addressEditor.hidden = true; addressForm.reset(); });
-      addressList?.addEventListener("click", async (event) => {
-        const card = event.target.closest("[data-address-id]");
-        const item = savedAddresses.find((entry) => entry.id === card?.dataset.addressId);
-        if (!item) return;
-        if (event.target.closest("[data-address-edit]")) return resetAddressEditor(item);
-        if (event.target.closest("[data-address-default]")) {
-          await client.rest("rpc/set_default_customer_address", { method:"POST", body:{ p_address_id:item.id } });
-          location.reload();
-          return;
-        }
-        const deleteButton = event.target.closest("[data-address-delete]");
-        if (deleteButton) {
-          if (deleteButton.dataset.confirm !== "true") {
-            deleteButton.dataset.confirm = "true";
-            deleteButton.textContent = "Confirmar exclusão";
-            window.setTimeout(() => { deleteButton.dataset.confirm = ""; deleteButton.textContent = "Excluir"; }, 3500);
-            return;
-          }
-          await client.rest("rpc/delete_customer_address", { method:"POST", body:{ p_address_id:item.id } });
-          location.reload();
-        }
-      });
-
       const paidAndActive = (orders || []).filter((order) => order.status === "paid" && !["completed", "cancelled"].includes(order.fulfillment_status));
       const pendingOrders = (orders || []).filter((order) => order.status === "pending_payment");
       qs("[data-account-total-orders]").textContent = (orders || []).length;
       qs("[data-account-active-orders]").textContent = paidAndActive.length;
       qs("[data-account-pending-orders]").textContent = pendingOrders.length;
       qs("[data-account-order-badge]").textContent = (orders || []).length;
+      const tickets = (ticketOrders || []).flatMap((order) => (order.tickets || []).map((ticket) => ({ ...ticket, order })));
+      const ticketBadge = qs("[data-account-ticket-badge]");
+      if (ticketBadge) ticketBadge.textContent = tickets.length;
+      const ticketsRoot = qs("[data-account-tickets]");
+      const ticketStatusLabels = { reserved:"Aguardando pagamento", active:"Ingresso confirmado", checked_in:"Entrada validada", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
+      if (ticketsRoot) ticketsRoot.innerHTML = tickets.length ? tickets.map((ticket) => {
+        const paid = ticket.order.status === "paid" && ticket.status === "active";
+        const event = ticket.order.events || {};
+        const lot = ticket.order.event_lots || {};
+        return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
+          <header><div><span>${escapeHtml(event.name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.status] || ticket.status)}</b></header>
+          <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(ticket.vehicle_make)} ${escapeHtml(ticket.vehicle_model)}</strong><span>${escapeHtml(ticket.vehicle_plate)} · ${escapeHtml(ticket.driver_name)}</span></div></div>
+          <dl><div><dt>Lote</dt><dd>${escapeHtml(lot.name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.order.total_cents)}</dd></div><div><dt>Data</dt><dd>${event.starts_at ? new Date(event.starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(event.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
+          <footer>${paid ? `<div><strong>Pagamento aprovado</strong><span>O QR Code e o envio da foto serão liberados na próxima atualização desta área.</span></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
+        </article>`;
+      }).join("") : '<div class="account-empty"><strong>Nenhum ingresso ainda.</strong><span>Quando você comprar um ingresso Expo, ele aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
       const addressPreview = qs("[data-account-address-preview]");
       if (addressPreview && address) addressPreview.innerHTML = `<strong>${escapeHtml(address.street)}, ${escapeHtml(address.number || "S/N")}</strong><span>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · CEP ${escapeHtml(String(address.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</span>`;
       const recentOrders = qs("[data-account-recent-orders]");
@@ -507,8 +407,6 @@
           }).join("");
           const shippingService = order.shipping_quote?.service_name ? ` · ${escapeHtml(order.shipping_quote.service_name)}` : "";
           const shipment = Array.isArray(order.shipments) ? order.shipments[0] : order.shipments;
-          const fiscalDocument = Array.isArray(order.order_fiscal_documents) ? order.order_fiscal_documents[0] : order.order_fiscal_documents;
-          const exchangeRequest = Array.isArray(order.order_exchange_requests) ? [...order.order_exchange_requests].sort((left,right) => new Date(right.created_at)-new Date(left.created_at))[0] : order.order_exchange_requests;
           const isShipping = order.delivery_method === "shipping";
           const fulfillmentSteps = isShipping
             ? [
@@ -530,14 +428,6 @@
             }).join("")}</ol>
             ${shipment?.tracking_code ? `<div class="order-tracking-code"><span>Código de rastreio</span><strong>${escapeHtml(shipment.tracking_code)}</strong>${shipment.tracking_url ? `<a href="${escapeHtml(shipment.tracking_url)}" target="_blank" rel="noopener">Acompanhar entrega</a>` : ""}</div>` : ""}
           </section>` : "";
-          const fiscalBox = order.status === "paid" && (isShipping || fiscalDocument) ? `<section class="order-fiscal" aria-label="Nota fiscal do pedido">
-            <div><span>Documento fiscal</span><strong>${fiscalDocument ? "Nota fiscal disponível" : "Nota fiscal em processamento"}</strong><small>${fiscalDocument ? `Emitida em ${new Date(fiscalDocument.issued_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}` : "Ela será emitida antes da postagem do pedido."}</small></div>
-            ${fiscalDocument ? `<div class="order-fiscal-actions"><button type="button" data-fiscal-download="${escapeHtml(fiscalDocument.danfe_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-DANFE.pdf">Baixar DANFE</button><button type="button" class="secondary" data-fiscal-download="${escapeHtml(fiscalDocument.xml_path)}" data-fiscal-filename="${escapeHtml(order.order_number)}-NFe.xml">Baixar XML</button></div>` : '<i aria-hidden="true">⌛</i>'}
-            <p data-fiscal-feedback role="status"></p>
-          </section>` : "";
-          const exchangeBox = order.status === "paid" ? `<section class="order-exchange ${exchangeRequest ? "has-request" : ""}">
-            ${exchangeRequest ? `<div><span>Troca ou devolução</span><strong>${escapeHtml(exchangeStatusLabels[exchangeRequest.status] || exchangeRequest.status)}</strong><small>Solicitada em ${new Date(exchangeRequest.created_at).toLocaleString("pt-BR")}</small>${exchangeRequest.customer_message ? `<p>${escapeHtml(exchangeRequest.customer_message)}</p>` : ""}${exchangeRequest.return_tracking_code ? `<p><b>Devolução:</b> ${escapeHtml(exchangeRequest.return_tracking_code)}</p>` : ""}${exchangeRequest.replacement_tracking_code ? `<p><b>Nova entrega:</b> ${escapeHtml(exchangeRequest.replacement_tracking_code)}</p>` : ""}</div>${["received","under_review"].includes(exchangeRequest.status) ? `<button type="button" class="secondary" data-exchange-cancel="${escapeHtml(exchangeRequest.id)}">Cancelar solicitação</button>` : ""}` : `<div><span>Precisa de ajuda com este pedido?</span><strong>Troca ou devolução</strong><small>Abra e acompanhe sua solicitação sem sair do site.</small></div><button type="button" data-exchange-open>Solicitar</button>`}
-          </section>` : "";
           return `
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
@@ -556,9 +446,7 @@
                   </dl>
                 </div>
               </details>
-              ${fiscalBox}
               ${timeline}
-              ${exchangeBox}
               ${pending ? `
                 <div class="order-customer-actions">
                   ${expired ? "" : '<button type="button" data-order-action="resume">Voltar para pagamento</button>'}
@@ -569,42 +457,6 @@
         }).join("");
 
         ordersList.addEventListener("click", async (event) => {
-          const fiscalButton = event.target.closest("[data-fiscal-download]");
-          if (fiscalButton) {
-            const fiscalFeedback = qs("[data-fiscal-feedback]", fiscalButton.closest(".order-fiscal"));
-            fiscalButton.disabled = true;
-            if (fiscalFeedback) fiscalFeedback.textContent = "Preparando download seguro...";
-            try {
-              const url = await client.createPrivateDownload("fiscal-documents", fiscalButton.dataset.fiscalDownload, 120);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = fiscalButton.dataset.fiscalFilename || "nota-fiscal";
-              link.rel = "noopener";
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-              if (fiscalFeedback) fiscalFeedback.textContent = "Download iniciado.";
-            } catch (error) {
-              if (fiscalFeedback) fiscalFeedback.textContent = error.message;
-            } finally {
-              fiscalButton.disabled = false;
-            }
-            return;
-          }
-          const exchangeOpen = event.target.closest("[data-exchange-open]");
-          if (exchangeOpen) {
-            const row = exchangeOpen.closest("[data-order-id]");
-            const order = orders.find((item) => item.id === row?.dataset.orderId);
-            if (order) openExchangeModal(order, user);
-            return;
-          }
-          const exchangeCancel = event.target.closest("[data-exchange-cancel]");
-          if (exchangeCancel) {
-            exchangeCancel.disabled = true;
-            try { await client.rest("rpc/customer_cancel_exchange_request", { method:"POST", body:{ p_request_id:exchangeCancel.dataset.exchangeCancel } }); location.reload(); }
-            catch (error) { exchangeCancel.disabled=false; exchangeCancel.textContent=friendlyError(error); }
-            return;
-          }
           const button = event.target.closest("[data-order-action]");
           const row = button?.closest("[data-order-id]");
           if (!button || !row) return;
@@ -678,17 +530,31 @@
         if (!/^[A-Za-z]{2}$/.test(addressForm.state.value.trim())) return setFeedback(addressForm, "Digite a sigla do estado com 2 letras.");
         setSubmitting(addressForm, true, "Salvando...");
         setFeedback(addressForm, "");
+        const payload = {
+          user_id: user.id,
+          label: "Principal",
+          recipient_name: addressForm.recipient_name.value.trim(),
+          postal_code: addressForm.postal_code.value.replace(/\D/g, ""),
+          street: addressForm.street.value.trim(),
+          number: addressForm.number.value.trim(),
+          complement: addressForm.complement.value.trim() || null,
+          neighborhood: addressForm.neighborhood.value.trim(),
+          city: addressForm.city.value.trim(),
+          state: addressForm.state.value.trim().toUpperCase(),
+          is_default: true
+        };
         try {
-          await client.rest("rpc/save_customer_address", { method:"POST", body:{
-            p_address_id:addressForm.elements.address_id.value || null,
-            p_label:addressForm.elements.label.value.trim(), p_recipient_name:addressForm.recipient_name.value.trim(),
-            p_postal_code:addressForm.postal_code.value.replace(/\D/g, ""), p_street:addressForm.street.value.trim(),
-            p_number:addressForm.number.value.trim(), p_complement:addressForm.complement.value.trim() || null,
-            p_neighborhood:addressForm.neighborhood.value.trim(), p_city:addressForm.city.value.trim(),
-            p_state:addressForm.state.value.trim().toUpperCase(), p_is_default:addressForm.elements.is_default.checked
-          }});
+          if (addressId) {
+            await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
+              method: "PATCH", headers: { Prefer: "return=minimal" }, body: payload
+            });
+          } else {
+            const created = await client.rest("addresses", {
+              method: "POST", headers: { Prefer: "return=representation" }, body: payload
+            });
+            addressId = created?.[0]?.id || null;
+          }
           setFeedback(addressForm, "Endereço salvo.", "success");
-          window.setTimeout(() => location.reload(), 450);
         } catch (error) {
           setFeedback(addressForm, friendlyError(error));
         } finally {
