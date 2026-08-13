@@ -1,5 +1,8 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const escapeMarkup = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
+})[character]);
 const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
@@ -2094,10 +2097,20 @@ function setupCheckoutFlow() {
       button.textContent = "Abrindo Mercado Pago...";
       error.textContent = "";
       try {
+        let checkoutCustomer = {};
+        try { checkoutCustomer = JSON.parse(sessionStorage.getItem("onlyCarsCheckoutCustomer") || "{}"); } catch (_) {}
         const response = await window.OnlySupabase.invokeFunction("mercado-pago-checkout", {
           checkout_key:checkoutKey,
           delivery_method:deliveryMethod,
           shipping_quote:shippingQuote ? { service_id:shippingQuote.serviceId } : null,
+          address_id:checkoutCustomer.address_id || null,
+          shipping_address:deliveryMethod === "shipping" ? {
+            recipient_name:checkoutCustomer.recipient_name || "",
+            postal_code:String(checkoutCustomer.postal_code || "").replace(/\D/g, ""),
+            street:checkoutCustomer.street || "", number:checkoutCustomer.number || "",
+            complement:checkoutCustomer.complement || null, neighborhood:checkoutCustomer.neighborhood || "",
+            city:checkoutCustomer.city || "", state:checkoutCustomer.state || ""
+          } : null,
           items:cart.map((item) => ({
             product_slug:item.id,
             size:item.size || "",
@@ -2378,11 +2391,16 @@ function setupOnlyCarsAppMetadata() {
 function setupAccountShortcut() {
   const header = qs(".header");
   if (!header || qs(".account-shortcut", header)) return;
+  const isAccountPage = document.body.dataset.page === "conta";
   const link = document.createElement("a");
   link.className = "account-shortcut";
-  link.href = "minha-conta.html";
-  link.setAttribute("aria-label", "Minha conta");
-  link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
+  if (isAccountPage) link.classList.add("account-home-link");
+  link.href = isAccountPage ? "index.html" : "minha-conta.html";
+  link.setAttribute("aria-label", isAccountPage ? "Voltar ao início" : "Minha conta");
+  link.title = isAccountPage ? "Voltar ao início" : "Minha conta";
+  link.innerHTML = isAccountPage
+    ? "<span>Voltar ao início</span>"
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
   header.appendChild(link);
 }
 
