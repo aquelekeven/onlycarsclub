@@ -30,7 +30,8 @@ body[data-page="admin"] .admin-section-heading p:not(.eyebrow) { max-width:650px
 body[data-page="admin"] .admin-section-heading>button,body[data-page="admin"] [data-admin-refresh] { min-height:38px; padding:0 14px; border:1px solid #d9d8d1; border-radius:999px; background:#fff; color:var(--adm-ink); font:inherit; font-size:8px; font-weight:900; cursor:pointer; }
 body[data-page="admin"] .admin-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px; }
 body[data-page="admin"] .admin-stat { min-height:145px; padding:20px; display:flex; flex-direction:column; align-items:flex-start; border:1px solid var(--adm-line); border-radius:21px; background:#fafaf7; color:var(--adm-ink); text-align:left; box-shadow:none; }
-body[data-page="admin"] .admin-stat-featured { border-color:#e5c30e; background:linear-gradient(145deg,#fffbea,#f5d51d); }
+body[data-page="admin"] .admin-stat-featured { border-color:#e5c30e; background:linear-gradient(145deg,#fffbea,#f5d51d); color:var(--adm-ink)!important; }
+body[data-page="admin"] .admin-stat-featured span,body[data-page="admin"] .admin-stat-featured strong,body[data-page="admin"] .admin-stat-featured small { color:var(--adm-ink)!important; }
 body[data-page="admin"] .admin-stat-alert { background:#1b1b18; color:#fff; }
 body[data-page="admin"] .admin-stat span { color:inherit; opacity:.64; font-size:8px; font-weight:900; text-transform:uppercase; }
 body[data-page="admin"] .admin-stat strong { margin:auto 0 5px; font-size:clamp(23px,2.5vw,35px); letter-spacing:-.05em; }
@@ -51,7 +52,7 @@ body[data-page="admin"] .admin-exchange-stats span,body[data-page="admin"] .admi
 body[data-page="admin"] .admin-exchange-stats small,body[data-page="admin"] .admin-report-card small,body[data-page="admin"] .admin-ticket-stats small { color:var(--adm-muted); font-size:8px; }
 body[data-page="admin"] .admin-exchange-toolbar,body[data-page="admin"] .admin-report-switch { padding:5px; display:flex; gap:5px; overflow-x:auto; border:1px solid var(--adm-line); border-radius:15px; background:#efeee9; }
 body[data-page="admin"] .admin-exchange-toolbar button,body[data-page="admin"] .admin-report-switch button { min-height:36px; padding:0 13px; flex:0 0 auto; border:0; border-radius:10px; background:transparent; font:inherit; font-size:8px; font-weight:850; cursor:pointer; }
-body[data-page="admin"] .admin-exchange-toolbar button.active,body[data-page="admin"] .admin-report-switch button.active { background:#fff; box-shadow:0 4px 12px #1111; }
+body[data-page="admin"] .admin-exchange-toolbar button.active,body[data-page="admin"] .admin-report-switch button.active { background:var(--adm-ink)!important; color:#fff!important; box-shadow:0 5px 14px #1112; }
 body[data-page="admin"] .admin-report-toolbar { margin-bottom:13px; padding:10px; display:flex; align-items:center; gap:9px; border:1px solid var(--adm-line); border-radius:18px; background:#f7f6f2; }
 body[data-page="admin"] .admin-period-picker { min-height:46px; display:flex; align-items:center; border:1px solid var(--adm-line); border-radius:13px; background:#fff; }
 body[data-page="admin"] .admin-period-picker button { width:38px; align-self:stretch; border:0; background:transparent; cursor:pointer; }
