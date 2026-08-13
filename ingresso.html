@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="theme-color" content="#080808">
+  <title>Ingresso Expo — Only Cars Meeting</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260812-ticket-v1">
+  <script src="assets/js/main.js?v=20260730-v68" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
+  <script src="assets/js/ticket-checkout.js?v=20260812-ticket-v1" defer></script>
+</head>
+<body data-page="proximo-evento" class="ticket-checkout-page">
+  <header class="header"><a href="proximo-evento.html" class="brand" aria-label="Voltar ao evento"><img class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
+  <nav class="bottom-nav" aria-label="Navegação principal"></nav>
+  <main class="ticket-checkout" data-ticket-checkout data-event-slug="only-cars-meeting-2026">
+    <header class="ticket-checkout-head"><div><p class="eyebrow">Only Cars Meeting • 23.10.2026</p><h1>Garanta seu<br>Ingresso Expo.</h1></div><p>Cadastre o carro que participará da exposição. O ingresso é individual por veículo e não poderá ser transferido.</p></header>
+    <ol class="ticket-steps" aria-label="Etapas da compra"><li class="active"><i>1</i><span>Ingresso</span></li><li class="active"><i>2</i><span>Cadastro</span></li><li><i>3</i><span>Pagamento</span></li><li><i>4</i><span>Foto do carro</span></li></ol>
+    <div class="ticket-buy-grid">
+      <form class="ticket-form-card" data-ticket-form>
+        <h2>Dados do participante</h2><p>Usaremos estes dados para identificar o responsável pelo veículo na portaria.</p>
+        <fieldset class="ticket-fieldset"><legend>Motorista</legend><div class="ticket-fields">
+          <label class="ticket-field full">Nome completo<input name="driver_name" autocomplete="name" required maxlength="120"></label>
+          <label class="ticket-field">CPF<input name="driver_tax_id" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14"></label>
+          <label class="ticket-field">WhatsApp<input name="driver_phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" required maxlength="16"></label>
+        </div></fieldset>
+        <div class="ticket-divider"></div>
+        <fieldset class="ticket-fieldset"><legend>Veículo Expo</legend><div class="ticket-fields">
+          <label class="ticket-field">Placa<input name="vehicle_plate" autocomplete="off" placeholder="ABC1D23" required maxlength="8"></label>
+          <label class="ticket-field">Marca<input name="vehicle_make" autocomplete="organization" placeholder="Ex.: Volkswagen" required maxlength="60"></label>
+          <label class="ticket-field">Modelo<input name="vehicle_model" placeholder="Ex.: Golf GTI" required maxlength="80"></label>
+          <label class="ticket-field">Ano<input name="vehicle_year" type="number" inputmode="numeric" min="1900" max="2100" placeholder="2020"></label>
+          <label class="ticket-field">Cor<input name="vehicle_color" placeholder="Ex.: Preto" required maxlength="40"></label>
+          <label class="ticket-field">Instagram do carro <span>(opcional)</span><input name="instagram_handle" placeholder="@seuprojeto" maxlength="40"></label>
+        </div></fieldset>
+        <div class="ticket-rules">Ao continuar, você confirma que os dados do veículo estão corretos e aceita as <a href="proximo-evento.html#detalhes" target="_blank" rel="noopener">condições informadas para o evento</a>. Cancelamentos poderão ser solicitados até 5 horas antes do início.</div>
+        <button class="ticket-submit" type="submit" disabled data-ticket-submit>Continuar para o Mercado Pago</button>
+        <p class="ticket-error" data-ticket-error role="alert"></p>
+      </form>
+      <aside class="ticket-order-card"><p class="eyebrow">Resumo</p><h2>Ingresso Expo</h2><p>Entrada de um veículo na área de exposição.</p><div class="ticket-lot-line"><span data-ticket-lot>Lote 1</span><strong data-ticket-price>R$ 25</strong></div><ul class="ticket-includes"><li>Entrada do veículo Expo</li><li>Motorista e pedestres com entrada gratuita</li><li>QR Code para entrada e reentrada</li><li>Cupom de 10% para retirada no evento</li></ul><div class="ticket-photo-note"><strong>Foto do carro após o pagamento</strong><span>Quando o ingresso for aprovado, o envio da foto será liberado em Minha conta para o post de confirmado.</span></div><div class="ticket-total-line"><span>Total</span><strong data-ticket-total>R$ 25,00</strong></div></aside>
+    </div>
+  </main>
+</body>
+</html>
