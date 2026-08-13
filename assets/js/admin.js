@@ -118,7 +118,18 @@
         <div class="admin-order-modal-footer"><p data-modal-feedback role="status"></p><button type="button" data-save-order>Salvar acompanhamento</button></div>
       </section>
       <section class="admin-order-modal-section admin-technical-details"><details><summary>Dados técnicos e histórico</summary><dl><div><dt>ID interno</dt><dd>${safe(order.id)}</dd></div><div><dt>Criado</dt><dd>${dateTime(order.created_at)}</dd></div><div><dt>Atualizado</dt><dd>${dateTime(order.updated_at)}</dd></div><div><dt>Pago</dt><dd>${order.paid_at ? dateTime(order.paid_at) : "—"}</dd></div><div><dt>Expiração</dt><dd>${order.expires_at ? dateTime(order.expires_at) : "—"}</dd></div><div><dt>Preferência MP</dt><dd>${safe(payment?.provider_preference_id || "—")}</dd></div><div><dt>Detalhe MP</dt><dd>${safe(payment?.raw_status_detail || "—")}</dd></div><div><dt>Status do envio</dt><dd>${safe(shipment?.status || "—")}</dd></div><div><dt>ID Melhor Envio</dt><dd>${safe(shipment?.provider_order_id || "—")}</dd></div><div><dt>Observações</dt><dd>${safe(order.notes || "—")}</dd></div></dl></details></section>
-      ${isShipping ? `<section class="admin-label-box"><div><strong>Etiqueta do Melhor Envio</strong><span>${shipment?.provider_order_id ? `Envio ${safe(shipment.provider_order_id)}` : "Ainda não gerada"}</span></div>${shipment?.label_url ? `<a href="${safe(shipment.label_url)}" target="_blank" rel="noopener">Abrir etiqueta</a>` : '<button type="button" disabled title="Cadastre remetente e documentação fiscal antes de gerar etiquetas">Gerar etiqueta Sandbox</button>'}</section>` : ""}`;
+      ${isShipping ? `<section class="admin-label-box admin-label-workflow" data-label-workflow>
+        <div class="admin-label-summary"><div><strong>Etiqueta do Melhor Envio</strong><span>${shipment?.generated_at ? "Comprada e gerada" : shipment?.cart_item_id ? "Preparada · aguardando confirmação da compra" : "Aguardando preparação"}</span></div><span class="admin-label-environment">${safe(shipment?.provider_payload?.environment || "Ambiente configurado nos Secrets")}</span></div>
+        <div class="admin-label-details">
+          <span><small>Serviço</small><strong>${safe(shipment?.service_name || order.shipping_quote?.service_name || "—")}</strong></span>
+          <span><small>Valor da etiqueta</small><strong>${money(shipment?.price_cents ?? order.shipping_cents)}</strong></span>
+          <span><small>NF-e</small><strong>${fiscalDocument ? "Registrada" : "Pendente"}</strong></span>
+          <span><small>Validade</small><strong>${shipment?.label_expires_at ? dateTime(shipment.label_expires_at) : "—"}</strong></span>
+        </div>
+        ${shipment?.label_url ? `<div class="admin-label-actions"><a href="${safe(shipment.label_url)}" target="_blank" rel="noopener">Abrir e imprimir etiqueta</a>${shipment.tracking_code ? `<span>Rastreio: ${safe(shipment.tracking_code)}</span>` : ""}</div>` : shipment?.cart_item_id ? `<div class="admin-label-purchase-warning"><strong>Esta ação gera cobrança real</strong><p>Confira endereço, serviço, valor e NF-e. Ao confirmar, o saldo da carteira do Melhor Envio será utilizado.</p><button type="button" data-purchase-label ${!fiscalDocument || order.status !== "paid" ? "disabled" : ""}>Confirmar e comprar etiqueta</button></div>` : `<div class="admin-label-actions"><p>Preparar não gera cobrança. O envio será apenas colocado no carrinho do Melhor Envio para conferência.</p><button type="button" data-prepare-label ${!fiscalDocument || order.status !== "paid" ? "disabled" : ""}>Preparar etiqueta</button></div>`}
+        ${shipment?.last_error ? `<p class="admin-label-error">${safe(shipment.last_error)}</p>` : ""}
+        <p data-label-feedback role="status"></p>
+      </section>` : ""}`;
     modal.hidden = false;
     document.body.classList.add("modal-open");
     requestAnimationFrame(() => modal.classList.add("visible"));
@@ -130,6 +141,26 @@
     modal.classList.remove("visible");
     document.body.classList.remove("modal-open");
     window.setTimeout(() => { modal.hidden = true; }, 180);
+  }
+
+  function confirmLabelPurchase(order, shipment) {
+    return new Promise((resolve) => {
+      const modal = document.createElement("div");
+      modal.className = "confirm-modal order-cancel-modal admin-label-confirm visible";
+      modal.innerHTML = `<div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="label-confirm-title">
+        <span class="confirm-modal-icon" aria-hidden="true">R$</span>
+        <h2 id="label-confirm-title">Comprar etiqueta?</h2>
+        <p>O Melhor Envio cobrará <strong>${money(shipment?.price_cents ?? order.shipping_cents)}</strong> da carteira. Esta ação não deve ser repetida.</p>
+        <div class="confirm-modal-actions"><button type="button" class="confirm-modal-cancel" data-label-cancel>Voltar e conferir</button><button type="button" class="confirm-modal-delete" data-label-confirm>Confirmar cobrança</button></div>
+      </div>`;
+      const finish = (answer) => { modal.remove(); resolve(answer); };
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal || event.target.closest("[data-label-cancel]")) finish(false);
+        if (event.target.closest("[data-label-confirm]")) finish(true);
+      });
+      document.body.appendChild(modal);
+      qs("[data-label-cancel]", modal)?.focus();
+    });
   }
 
   function renderOrders() {
@@ -381,8 +412,9 @@
   async function loadData() {
     feedback("[data-orders-feedback]", "Atualizando pedidos...");
     feedback("[data-inventory-feedback]", "Atualizando estoque...");
-    const ordersWithExchange = "orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc";
-    const ordersWithoutExchange = "orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(provider_order_id,service_name,carrier_name,status,tracking_code,tracking_url,label_url,posted_at,delivered_at,updated_at),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc";
+    const shipmentFields = "provider_order_id,cart_item_id,service_name,carrier_name,status,price_cents,tracking_code,tracking_url,label_url,checkout_completed_at,generated_at,label_expires_at,last_error,provider_payload,posted_at,delivered_at,updated_at";
+    const ordersWithExchange = `orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(${shipmentFields}),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc`;
+    const ordersWithoutExchange = `orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(${shipmentFields}),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc`;
     const [products, orders, exchanges] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
       client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange)),
@@ -608,6 +640,45 @@
         } finally {
           saveFiscalButton.disabled = false;
           saveFiscalButton.textContent = "Salvar NF-e";
+        }
+        return;
+      }
+      const prepareLabelButton = event.target.closest("[data-prepare-label]");
+      if (prepareLabelButton) {
+        const labelFeedback = qs("[data-label-feedback]", dialog);
+        prepareLabelButton.disabled = true;
+        prepareLabelButton.textContent = "Preparando...";
+        try {
+          await client.invokeFunction("melhor-envio-etiqueta", { action:"prepare", order_id:dialog.dataset.orderId });
+          labelFeedback.textContent = "Etiqueta preparada sem cobrança. Confira o valor antes da compra.";
+          await loadData();
+          const refreshed = state.orders.find((item) => item.id === dialog.dataset.orderId);
+          if (refreshed) openOrderModal(refreshed);
+        } catch (error) {
+          labelFeedback.textContent = error.message;
+          prepareLabelButton.disabled = false;
+          prepareLabelButton.textContent = "Preparar etiqueta";
+        }
+        return;
+      }
+      const purchaseLabelButton = event.target.closest("[data-purchase-label]");
+      if (purchaseLabelButton) {
+        const order = state.orders.find((item) => item.id === dialog.dataset.orderId);
+        const shipment = Array.isArray(order?.shipments) ? order.shipments[0] : order?.shipments;
+        if (!order || !(await confirmLabelPurchase(order, shipment))) return;
+        const labelFeedback = qs("[data-label-feedback]", dialog);
+        purchaseLabelButton.disabled = true;
+        purchaseLabelButton.textContent = "Comprando e gerando...";
+        try {
+          await client.invokeFunction("melhor-envio-etiqueta", { action:"purchase", order_id:dialog.dataset.orderId, confirm_charge:true });
+          labelFeedback.textContent = "Etiqueta comprada, gerada e pronta para impressão.";
+          await loadData();
+          const refreshed = state.orders.find((item) => item.id === dialog.dataset.orderId);
+          if (refreshed) openOrderModal(refreshed);
+        } catch (error) {
+          labelFeedback.textContent = `${error.message} Se a cobrança tiver sido concluída, use o mesmo botão novamente: o fluxo retomará sem recriar o envio.`;
+          purchaseLabelButton.disabled = false;
+          purchaseLabelButton.textContent = "Retomar geração da etiqueta";
         }
         return;
       }
