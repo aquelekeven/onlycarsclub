@@ -141,16 +141,21 @@
       try {
         let rawValue = "";
         if (detector) {
-          const codes = await detector.detect(video);
-          rawValue = codes[0]?.rawValue || "";
-        } else if (window.jsQR && fallbackContext && video.videoWidth && video.videoHeight) {
-          const maxWidth = 720;
+          try {
+            const codes = await detector.detect(video);
+            rawValue = codes[0]?.rawValue || "";
+          } catch (_) {
+            detector = null;
+          }
+        }
+        if (!rawValue && window.jsQR && fallbackContext && video.videoWidth && video.videoHeight) {
+          const maxWidth = 1280;
           const scale = Math.min(1, maxWidth / video.videoWidth);
           fallbackCanvas.width = Math.max(1, Math.round(video.videoWidth * scale));
           fallbackCanvas.height = Math.max(1, Math.round(video.videoHeight * scale));
           fallbackContext.drawImage(video, 0, 0, fallbackCanvas.width, fallbackCanvas.height);
           const image = fallbackContext.getImageData(0, 0, fallbackCanvas.width, fallbackCanvas.height);
-          rawValue = window.jsQR(image.data, image.width, image.height, { inversionAttempts:"dontInvert" })?.data || "";
+          rawValue = window.jsQR(image.data, image.width, image.height, { inversionAttempts:"attemptBoth" })?.data || "";
         }
         if (rawValue) { await inspectToken(rawValue); return; }
       } catch (error) {
@@ -171,10 +176,15 @@
         try { detector = new BarcodeDetector({ formats:["qr_code"] }); } catch (_) { detector = null; }
       }
       if (!detector && !window.jsQR) throw new Error("Leitor de QR indisponível.");
-      stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" }, width:{ ideal:1280 }, height:{ ideal:720 } }, audio:false });
+      stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" }, width:{ ideal:1920 }, height:{ ideal:1080 } }, audio:false });
       const video = qs("[data-scanner-video]");
       video.srcObject = stream;
       await video.play();
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track?.getCapabilities?.() || {};
+      if (capabilities.focusMode?.includes?.("continuous")) {
+        await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] }).catch(() => null);
+      }
       scanning = true;
       qs("[data-scanner-viewport]").classList.add("active");
       qs("[data-scanner-start]").disabled = true;

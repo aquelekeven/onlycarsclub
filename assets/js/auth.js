@@ -370,12 +370,22 @@
           <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(ticket.vehicle_make)} ${escapeHtml(ticket.vehicle_model)}</strong><span>${escapeHtml(ticket.vehicle_plate)} · ${escapeHtml(ticket.driver_name)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
+          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
         </article>`;
       }).join("") : '<div class="account-empty"><strong>Nenhum ingresso ainda.</strong><span>Quando você comprar um ingresso Expo, ele aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
       if (window.OnlyQRCode) {
-        qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:150, margin:1, color:{ dark:"#171714", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
+        qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:260, margin:3, errorCorrectionLevel:"L", color:{ dark:"#000000", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
       }
+      ticketsRoot?.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-copy-ticket-token]");
+        if (!button) return;
+        try {
+          await navigator.clipboard.writeText(button.dataset.copyTicketToken);
+          button.textContent = "Credencial copiada";
+        } catch (_) {
+          button.textContent = "Não foi possível copiar";
+        }
+      });
       const addressPreview = qs("[data-account-address-preview]");
       if (addressPreview && address) addressPreview.innerHTML = `<strong>${escapeHtml(address.street)}, ${escapeHtml(address.number || "S/N")}</strong><span>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · CEP ${escapeHtml(String(address.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</span>`;
       const recentOrders = qs("[data-account-recent-orders]");
