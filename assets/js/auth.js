@@ -377,7 +377,7 @@
         const vehicleName = titleCase([ticket.vehicle_make, ticket.vehicle_model].filter(Boolean).join(" "));
         const driverName = titleCase(ticket.driver_name);
         return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
-          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
+          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
           <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto horizontal ou vertical do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
@@ -497,7 +497,7 @@
       });
       const recentOrders = qs("[data-account-recent-orders]");
       if (recentOrders) recentOrders.innerHTML = (orders || []).length
-        ? orders.slice(0, 3).map((order) => `<button type="button" data-account-go="orders"><span><strong>${escapeHtml(order.order_number)}</strong><small>${new Date(order.created_at).toLocaleDateString("pt-BR")}</small></span><b>${escapeHtml(orderStatusLabels[order.status] || order.status)}</b><i>→</i></button>`).join("")
+        ? orders.slice(0, 3).map((order) => `<button type="button" data-account-go="orders"><span><strong>${escapeHtml(order.order_number)}</strong><small>${new Date(order.created_at).toLocaleDateString("pt-BR")}</small></span><b data-status="${escapeHtml(order.status)}">${escapeHtml(orderStatusLabels[order.status] || order.status)}</b><i>→</i></button>`).join("")
         : '<div class="account-overview-empty"><strong>Nada por aqui ainda</strong><span>Seu primeiro pedido vai aparecer neste espaço.</span></div>';
 
       if (!orders?.length) {
@@ -550,7 +550,7 @@
             <article class="order-row" data-order-id="${order.id}">
               <header class="order-row-header">
                 <div class="order-row-main"><strong>${escapeHtml(order.order_number)}</strong><span>${new Date(order.created_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" })}</span></div>
-                <span class="order-status" data-order-status>${escapeHtml(statusLabel)}</span>
+                <span class="order-status" data-order-status data-status="${escapeHtml(expired ? "cancelled" : order.status)}">${escapeHtml(statusLabel)}</span>
               </header>
               <details class="order-details">
                 <summary><span>Ver resumo do pedido</span><i aria-hidden="true"></i></summary>
