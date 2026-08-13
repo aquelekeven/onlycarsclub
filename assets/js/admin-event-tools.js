@@ -81,6 +81,7 @@
   let detector = null;
   let scanFrame = 0;
   let scanning = false;
+  let scanProcessing = false;
   let lastToken = "";
   let currentTicket = null;
   const fallbackCanvas = document.createElement("canvas");
@@ -157,9 +158,20 @@
           const image = fallbackContext.getImageData(0, 0, fallbackCanvas.width, fallbackCanvas.height);
           rawValue = window.jsQR(image.data, image.width, image.height, { inversionAttempts:"attemptBoth" })?.data || "";
         }
-        if (rawValue) { await inspectToken(rawValue); return; }
+        if (rawValue && !scanProcessing) {
+          scanProcessing = true;
+          try {
+            await inspectToken(rawValue);
+          } catch (error) {
+            stopScanner();
+            setScannerFeedback(error?.message || "Não foi possível consultar este ingresso.", "error");
+          } finally {
+            scanProcessing = false;
+          }
+          return;
+        }
       } catch (error) {
-        if (scanning) setScannerFeedback("Mantenha o QR centralizado e com boa iluminação.");
+        if (scanning && !scanProcessing) setScannerFeedback("Mantenha o QR centralizado e com boa iluminação.");
       }
     }
     scanFrame = requestAnimationFrame(scanLoop);
@@ -198,6 +210,7 @@
 
   function stopScanner() {
     scanning = false;
+    scanProcessing = false;
     cancelAnimationFrame(scanFrame);
     stream?.getTracks().forEach((track) => track.stop());
     stream = null;
