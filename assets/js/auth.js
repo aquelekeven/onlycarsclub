@@ -292,7 +292,7 @@
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
         client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
         client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20"),
-        client.rest("ticket_orders?select=id,status,payment_status,total_cents,created_at,events(name,starts_at,venue_name),event_lots(name),tickets(id,ticket_code,status,driver_name,vehicle_plate,vehicle_make,vehicle_model,instagram_handle)&order=created_at.desc&limit=20").catch(() => [])
+        client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => [])
       ]);
       const profile = profiles?.[0] || {};
       const address = addresses?.[0] || null;
@@ -359,22 +359,23 @@
       qs("[data-account-active-orders]").textContent = paidAndActive.length;
       qs("[data-account-pending-orders]").textContent = pendingOrders.length;
       qs("[data-account-order-badge]").textContent = (orders || []).length;
-      const tickets = (ticketOrders || []).flatMap((order) => (order.tickets || []).map((ticket) => ({ ...ticket, order })));
+      const tickets = Array.isArray(ticketOrders) ? ticketOrders : [];
       const ticketBadge = qs("[data-account-ticket-badge]");
       if (ticketBadge) ticketBadge.textContent = tickets.length;
       const ticketsRoot = qs("[data-account-tickets]");
       const ticketStatusLabels = { reserved:"Aguardando pagamento", active:"Ingresso confirmado", checked_in:"Entrada validada", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
       if (ticketsRoot) ticketsRoot.innerHTML = tickets.length ? tickets.map((ticket) => {
-        const paid = ticket.order.status === "paid" && ticket.status === "active";
-        const event = ticket.order.events || {};
-        const lot = ticket.order.event_lots || {};
+        const paid = ticket.order_status === "paid" && ["active", "checked_in"].includes(ticket.ticket_status);
         return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
-          <header><div><span>${escapeHtml(event.name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.status] || ticket.status)}</b></header>
+          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(ticket.vehicle_make)} ${escapeHtml(ticket.vehicle_model)}</strong><span>${escapeHtml(ticket.vehicle_plate)} · ${escapeHtml(ticket.driver_name)}</span></div></div>
-          <dl><div><dt>Lote</dt><dd>${escapeHtml(lot.name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.order.total_cents)}</dd></div><div><dt>Data</dt><dd>${event.starts_at ? new Date(event.starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(event.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid ? `<div><strong>Pagamento aprovado</strong><span>O QR Code e o envio da foto serão liberados na próxima atualização desta área.</span></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
+          <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
+          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
         </article>`;
       }).join("") : '<div class="account-empty"><strong>Nenhum ingresso ainda.</strong><span>Quando você comprar um ingresso Expo, ele aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
+      if (window.OnlyQRCode) {
+        qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:150, margin:1, color:{ dark:"#171714", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
+      }
       const addressPreview = qs("[data-account-address-preview]");
       if (addressPreview && address) addressPreview.innerHTML = `<strong>${escapeHtml(address.street)}, ${escapeHtml(address.number || "S/N")}</strong><span>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · CEP ${escapeHtml(String(address.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</span>`;
       const recentOrders = qs("[data-account-recent-orders]");
