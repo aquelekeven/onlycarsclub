@@ -84,6 +84,7 @@
   let scanProcessing = false;
   let lastToken = "";
   let currentTicket = null;
+  let selectedEventId = null;
   const fallbackCanvas = document.createElement("canvas");
   const fallbackContext = fallbackCanvas.getContext("2d", { willReadFrequently:true });
 
@@ -104,6 +105,7 @@
   }
 
   function renderTicket(ticket) {
+    if (selectedEventId && ticket.event_id !== selectedEventId) throw new Error("Este ingresso pertence a outro evento. Abra o evento correto antes de validar.");
     currentTicket = ticket;
     const result = qs("[data-ticket-result]");
     const statusLabels = { reserved:"Reservado", active:"Ativo", checked_in:"Dentro do evento", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
@@ -222,8 +224,9 @@
   }
 
   async function loadTicketStats() {
+    if (!selectedEventId) return;
     try {
-      const data = await client.rest("rpc/admin_event_gate_summary", { method:"POST", body:{} });
+      const data = await client.rest("rpc/admin_event_gate_summary_for_event", { method:"POST", body:{ p_event_id:selectedEventId } });
       qs("[data-ticket-stat-active]").textContent = data.active_tickets || 0;
       qs("[data-ticket-stat-inside]").textContent = data.inside_event || 0;
       qs("[data-ticket-stat-today]").textContent = data.movements_today || 0;
@@ -231,6 +234,30 @@
       activity.innerHTML = data.recent_activity?.length ? data.recent_activity.map((item) => `<article><i data-action="${escapeHtml(item.action)}"></i><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.action_label)}</span></div><time>${dateTime(item.created_at)}</time></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma movimentação registrada ainda.</div>';
     } catch (error) {
       setScannerFeedback("Execute a migração do leitor de ingressos para ativar esta área.", "warning");
+    }
+  }
+
+  async function loadGateEvents() {
+    const root = qs("[data-admin-event-selector]");
+    const gate = qs("[data-admin-event-gate]");
+    if (!root || !gate) return;
+    try {
+      const events = await client.rest("rpc/admin_event_gate_events", { method:"POST", body:{} });
+      root.innerHTML = events?.length ? events.map((event) => `<button type="button" data-gate-event="${escapeHtml(event.id)}"><span>${new Date(event.starts_at).toLocaleDateString("pt-BR")}</span><strong>${escapeHtml(event.name)}</strong><small>${escapeHtml(event.venue_name || "Local a confirmar")} · ${Number(event.ticket_count || 0)} ingressos</small><i>→</i></button>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum evento cadastrado.</div>';
+      root.onclick = async (clickEvent) => {
+        const button = clickEvent.target.closest("[data-gate-event]");
+        if (!button) return;
+        selectedEventId = button.dataset.gateEvent;
+        qsa("[data-gate-event]", root).forEach((item) => item.classList.toggle("active", item === button));
+        gate.hidden = false;
+        stopScanner();
+        qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
+        setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
+        await loadTicketStats();
+        gate.scrollIntoView({ behavior:"smooth", block:"start" });
+      };
+    } catch (error) {
+      root.innerHTML = `<div class="admin-ticket-activity-empty">${escapeHtml(error.message || "Não foi possível carregar os eventos.")}</div>`;
     }
   }
 
@@ -255,7 +282,7 @@
       } catch (error) { feedback.textContent = error.message; button.disabled = false; }
     });
     document.addEventListener("visibilitychange", () => { if (document.hidden) stopScanner(); });
-    loadTicketStats();
+    loadGateEvents();
   }
 
   document.addEventListener("DOMContentLoaded", () => {

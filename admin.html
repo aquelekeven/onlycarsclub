@@ -7,12 +7,12 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260812-ticket-scanner-v138">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260813-account-events-v139">
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-fiscal-v125" defer></script>
   <script src="assets/js/admin.js?v=20260812-admin-exchanges-v128" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
-  <script src="assets/js/admin-event-tools.js?v=20260812-event-tools-v4" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260813-event-tools-v5" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -132,7 +132,9 @@
         </section>
 
         <section class="admin-panel admin-ticket-panel" data-admin-panel="tickets" hidden>
-          <div class="admin-section-heading"><div><p class="eyebrow">Portaria do evento</p><h2>Leitor de ingressos</h2><p>Consulte o ingresso e confirme entrada, saída ou reentrada em tempo real.</p></div><button type="button" data-ticket-refresh>Atualizar</button></div>
+          <div class="admin-section-heading"><div><p class="eyebrow">Eventos e portaria</p><h2>Ingressos por evento</h2><p>Escolha um evento para abrir o leitor, os números e a atividade daquela edição.</p></div><button type="button" data-ticket-refresh>Atualizar</button></div>
+          <div class="admin-event-selector" data-admin-event-selector></div>
+          <div data-admin-event-gate hidden>
           <div class="admin-ticket-stats">
             <article><span>Ingressos ativos</span><strong data-ticket-stat-active>0</strong><small>aptos para o evento</small></article>
             <article><span>Dentro do evento</span><strong data-ticket-stat-inside>0</strong><small>entrada já registrada</small></article>
@@ -155,6 +157,7 @@
             </section>
           </div>
           <section class="admin-ticket-activity"><header><div><p class="eyebrow">Movimentações</p><h3>Atividade recente da portaria</h3></div></header><div data-ticket-activity></div></section>
+          </div>
         </section>
       </div>
     </div>

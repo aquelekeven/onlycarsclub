@@ -6,11 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co https://viacep.com.br; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260812-ticket-scanner-v138">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260813-account-events-v139">
   <script src="assets/js/main.js?v=20260812-account-mobile-v130" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260807-v93" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260813-upload-v94" defer></script>
   <script src="assets/js/qrcode.min.js?v=20260812-v1" defer></script>
-  <script src="assets/js/auth.js?v=20260812-account-ticket-qr-v137" defer></script>
+  <script src="assets/js/auth.js?v=20260813-account-events-v138" defer></script>
 </head>
 <body data-page="conta" data-account-page>
   <header class="header">
@@ -31,7 +31,7 @@
         <nav class="account-menu" aria-label="Menu da conta">
           <button class="active" type="button" data-account-tab="overview"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg></i><span>Visão geral</span></button>
           <button type="button" data-account-tab="orders"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></svg></i><span>Meus pedidos</span><b data-account-order-badge>0</b></button>
-          <button type="button" data-account-tab="tickets"><i><svg viewBox="0 0 28 20" aria-hidden="true"><path d="M2 14h2l2-5h13l4 5h3v2h-2"/><path d="M8 9l3-4h6l3 4M9 16h10"/><circle cx="6.5" cy="16" r="2"/><circle cx="22" cy="16" r="2"/></svg></i><span>Ingressos</span><b data-account-ticket-badge>0</b></button>
+          <button type="button" data-account-tab="tickets"><i><svg viewBox="0 0 28 20" aria-hidden="true"><path d="M2 14h2l2-5h13l4 5h3v2h-2"/><path d="M8 9l3-4h6l3 4M9 16h10"/><circle cx="6.5" cy="16" r="2"/><circle cx="22" cy="16" r="2"/></svg></i><span>Eventos</span><b data-account-ticket-badge>0</b></button>
           <button type="button" data-account-tab="profile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.5 3.1-7 7.5-7s6.9 2.5 7.5 7"/></svg></i><span>Meus dados</span></button>
           <button type="button" data-account-tab="address"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></i><span>Endereço</span></button>
           <button type="button" data-account-tab="security"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></i><span>Segurança</span></button>
@@ -56,7 +56,7 @@
 
         <section class="account-view" data-account-view="orders" hidden><header class="account-view-heading"><div><p class="eyebrow">Histórico</p><h1>Meus pedidos</h1><p>Acompanhe pagamentos, produção, postagem e entrega.</p></div></header><div class="orders-list" data-orders-list></div></section>
 
-        <section class="account-view" data-account-view="tickets" hidden><header class="account-view-heading"><div><p class="eyebrow">Only Cars Meeting</p><h1>Meus ingressos</h1><p>Acompanhe o pagamento, os dados do carro e a liberação da sua credencial.</p></div></header><div class="account-tickets" data-account-tickets></div></section>
+        <section class="account-view" data-account-view="tickets" hidden><header class="account-view-heading"><div><p class="eyebrow">Agenda Only</p><h1>Meus eventos</h1><p>Escolha um evento para abrir seus ingressos, credenciais e fotos de confirmação.</p></div></header><div class="account-tickets" data-account-tickets></div></section>
 
         <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
 

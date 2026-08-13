@@ -254,6 +254,15 @@
       : digits.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
   }
 
+  function titleCase(value) {
+    const keepLower = new Set(["da", "das", "de", "do", "dos", "e"]);
+    return String(value || "").trim().toLocaleLowerCase("pt-BR").split(/\s+/).map((part, index) => {
+      if (!part) return "";
+      if (index > 0 && keepLower.has(part)) return part;
+      return part.charAt(0).toLocaleUpperCase("pt-BR") + part.slice(1);
+    }).join(" ");
+  }
+
   function showAccountView(name) {
     qsa("[data-account-tab]").forEach((button) => button.classList.toggle("active", button.dataset.accountTab === name));
     qsa("[data-account-view]").forEach((view) => {
@@ -272,6 +281,7 @@
     const addressForm = qs("[data-address-form]");
     const ordersList = qs("[data-orders-list]");
     let addressId = null;
+    let savedAddresses = [];
     const orderStatusLabels = {
       pending_payment: "Aguardando pagamento",
       paid: "Pago",
@@ -290,12 +300,13 @@
       await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
       const [profiles, addresses, orders, ticketOrders] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
-        client.rest("addresses?select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default&order=is_default.desc,created_at.asc&limit=1"),
-        client.rest("orders?select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20"),
+        client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
+        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
         client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => [])
       ]);
       const profile = profiles?.[0] || {};
-      const address = addresses?.[0] || null;
+      savedAddresses = Array.isArray(addresses) ? addresses : [];
+      const address = savedAddresses.find((item) => item.is_default) || savedAddresses[0] || null;
       addressId = address?.id || null;
 
       const displayName = profile.display_name || user.email.split("@")[0];
@@ -308,18 +319,15 @@
       role.textContent = profile.role === "admin" ? "Administrador" : "Cliente";
       role.dataset.role = profile.role || "customer";
       const adminLink = qs("[data-admin-link]");
-      if (adminLink) adminLink.hidden = profile.role !== "admin";
+      if (adminLink) {
+        if (profile.role === "admin") adminLink.hidden = false;
+        else adminLink.remove();
+      }
       profileForm.display_name.value = profile.display_name || "";
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
 
-      if (address) {
-        Object.entries(address).forEach(([key, value]) => {
-          if (addressForm.elements[key]) addressForm.elements[key].value = value || "";
-        });
-      }
       qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
-      qsa("input", addressForm).forEach((input) => input.defaultValue = input.value);
       const postalCodeInput = addressForm.postal_code;
       const numberInput = addressForm.number;
       const noNumberInput = addressForm.no_number;
@@ -364,19 +372,39 @@
       if (ticketBadge) ticketBadge.textContent = tickets.length;
       const ticketsRoot = qs("[data-account-tickets]");
       const ticketStatusLabels = { reserved:"Aguardando pagamento", active:"Ingresso confirmado", checked_in:"Entrada validada", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
-      if (ticketsRoot) ticketsRoot.innerHTML = tickets.length ? tickets.map((ticket) => {
+      const ticketCard = (ticket) => {
         const paid = ticket.order_status === "paid" && ["active", "checked_in"].includes(ticket.ticket_status);
+        const vehicleName = titleCase([ticket.vehicle_make, ticket.vehicle_model].filter(Boolean).join(" "));
+        const driverName = titleCase(ticket.driver_name);
         return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
           <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
-          <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(ticket.vehicle_make)} ${escapeHtml(ticket.vehicle_model)}</strong><span>${escapeHtml(ticket.vehicle_plate)} · ${escapeHtml(ticket.driver_name)}</span></div></div>
+          <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
+          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto horizontal ou vertical do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
         </article>`;
-      }).join("") : '<div class="account-empty"><strong>Nenhum ingresso ainda.</strong><span>Quando você comprar um ingresso Expo, ele aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
+      };
+      if (ticketsRoot) {
+        const grouped = tickets.reduce((result, ticket) => {
+          const key = ticket.event_id || ticket.event_name || "evento";
+          (result[key] ||= []).push(ticket);
+          return result;
+        }, {});
+        ticketsRoot.innerHTML = tickets.length ? Object.values(grouped).map((eventTickets, index) => {
+          const event = eventTickets[0];
+          return `<article class="account-event-card"><button type="button" data-account-event-toggle="event-${index}"><div><span>Evento</span><strong>${escapeHtml(event.event_name || "Only Cars Meeting")}</strong><small>${event.event_starts_at ? new Date(event.event_starts_at).toLocaleDateString("pt-BR") : "Data a confirmar"} · ${escapeHtml(event.venue_name || "Local a confirmar")}</small></div><b>${eventTickets.length} ${eventTickets.length === 1 ? "ingresso" : "ingressos"}</b><i>→</i></button><div class="account-event-tickets" data-account-event="event-${index}" hidden>${eventTickets.map(ticketCard).join("")}</div></article>`;
+        }).join("") : '<div class="account-empty"><strong>Nenhum evento na sua conta.</strong><span>Quando você comprar um ingresso Expo, o evento aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
+      }
       if (window.OnlyQRCode) {
         qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:260, margin:3, errorCorrectionLevel:"L", color:{ dark:"#000000", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
       }
       ticketsRoot?.addEventListener("click", async (event) => {
+        const toggle = event.target.closest("[data-account-event-toggle]");
+        if (toggle) {
+          const panel = qs(`[data-account-event="${toggle.dataset.accountEventToggle}"]`, ticketsRoot);
+          if (panel) panel.hidden = !panel.hidden;
+          toggle.classList.toggle("active", panel && !panel.hidden);
+          return;
+        }
         const button = event.target.closest("[data-copy-ticket-token]");
         if (!button) return;
         try {
@@ -386,8 +414,87 @@
           button.textContent = "Não foi possível copiar";
         }
       });
+
+      ticketsRoot?.addEventListener("submit", async (event) => {
+        const form = event.target.closest("[data-ticket-photo-form]");
+        if (!form) return;
+        event.preventDefault();
+        const file = form.photo.files?.[0];
+        const feedback = qs("[data-ticket-photo-feedback]", form);
+        if (!file || !form.consent.checked) return;
+        if (file.size > 8 * 1024 * 1024) { feedback.textContent = "A foto deve ter no máximo 8 MB."; return; }
+        const submit = qs("button[type='submit']", form);
+        submit.disabled = true;
+        feedback.textContent = "Enviando foto...";
+        try {
+          const extension = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const path = `${user.id}/${form.dataset.ticketId}/${crypto.randomUUID()}.${extension}`;
+          await client.upload("ticket-confirmations", path, file);
+          await client.rest("ticket_media?on_conflict=ticket_id", { method:"POST", headers:{ Prefer:"resolution=merge-duplicates,return=minimal" }, body:{ ticket_id:form.dataset.ticketId, owner_user_id:user.id, storage_path:path, publication_consent:true, publication_consent_at:new Date().toISOString(), status:"pending" } });
+          feedback.textContent = "Foto enviada para revisão da equipe Only.";
+          form.photo.value = "";
+        } catch (error) { feedback.textContent = friendlyError(error); }
+        finally { submit.disabled = false; }
+      });
       const addressPreview = qs("[data-account-address-preview]");
       if (addressPreview && address) addressPreview.innerHTML = `<strong>${escapeHtml(address.street)}, ${escapeHtml(address.number || "S/N")}</strong><span>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · CEP ${escapeHtml(String(address.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</span>`;
+      const addressList = qs("[data-address-list]");
+      const addressEditor = qs("[data-address-editor]");
+      const addressAdd = qs("[data-address-add]");
+      const renderAddresses = () => {
+        if (!addressList) return;
+        addressList.innerHTML = savedAddresses.length ? savedAddresses.map((item) => `<article class="account-address-card ${item.is_default ? "is-default" : ""}" data-address-id="${escapeHtml(item.id)}"><header><span>${escapeHtml(item.label || "Endereço")}</span>${item.is_default ? "<b>Principal</b>" : ""}</header><strong>${escapeHtml(item.street)}, ${escapeHtml(item.number || "S/N")}</strong><p>${escapeHtml(item.neighborhood)} · ${escapeHtml(item.city)}/${escapeHtml(item.state)}<br>CEP ${escapeHtml(String(item.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</p><footer><button type="button" data-address-action="edit">Editar</button>${item.is_default ? "" : '<button type="button" data-address-action="default">Tornar principal</button>'}<button type="button" class="danger" data-address-action="delete">Excluir</button></footer></article>`).join("") : '<div class="account-address-empty"><strong>Nenhum endereço cadastrado</strong><span>Adicione seu primeiro endereço para agilizar o checkout.</span></div>';
+        if (addressAdd) addressAdd.disabled = savedAddresses.length >= 3;
+      };
+      const openAddressEditor = (item = null) => {
+        addressId = item?.id || null;
+        addressForm.reset();
+        addressForm.address_id.value = addressId || "";
+        if (item) Object.entries(item).forEach(([key, value]) => {
+          if (addressForm.elements[key]) addressForm.elements[key].value = value ?? "";
+        });
+        addressForm.is_default.checked = item ? Boolean(item.is_default) : savedAddresses.length === 0;
+        if (item?.number?.toUpperCase() === "S/N") addressForm.no_number.checked = true;
+        applyNoNumber();
+        addressEditor.hidden = false;
+        addressEditor.scrollIntoView({ behavior:"smooth", block:"start" });
+      };
+      renderAddresses();
+      addressAdd?.addEventListener("click", () => {
+        if (savedAddresses.length >= 3) return;
+        openAddressEditor();
+      });
+      qs("[data-address-editor-cancel]")?.addEventListener("click", () => {
+        addressEditor.hidden = true;
+        addressId = null;
+        addressForm.reset();
+      });
+      addressList?.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-address-action]");
+        const card = button?.closest("[data-address-id]");
+        if (!button || !card) return;
+        const item = savedAddresses.find((entry) => entry.id === card.dataset.addressId);
+        if (!item) return;
+        if (button.dataset.addressAction === "edit") return openAddressEditor(item);
+        button.disabled = true;
+        try {
+          if (button.dataset.addressAction === "default") {
+            await client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&is_default=eq.true`, { method:"PATCH", headers:{ Prefer:"return=minimal" }, body:{ is_default:false } });
+            await client.rest(`addresses?id=eq.${encodeURIComponent(item.id)}&user_id=eq.${encodeURIComponent(user.id)}`, { method:"PATCH", headers:{ Prefer:"return=minimal" }, body:{ is_default:true } });
+            savedAddresses = savedAddresses.map((entry) => ({ ...entry, is_default:entry.id === item.id }));
+          } else if (button.dataset.addressAction === "delete") {
+            if (!window.confirm(`Excluir o endereço “${item.label || "Endereço"}”?`)) { button.disabled = false; return; }
+            await client.rest(`addresses?id=eq.${encodeURIComponent(item.id)}&user_id=eq.${encodeURIComponent(user.id)}`, { method:"DELETE", headers:{ Prefer:"return=minimal" } });
+            savedAddresses = savedAddresses.filter((entry) => entry.id !== item.id);
+            if (item.is_default && savedAddresses[0]) {
+              await client.rest(`addresses?id=eq.${encodeURIComponent(savedAddresses[0].id)}&user_id=eq.${encodeURIComponent(user.id)}`, { method:"PATCH", headers:{ Prefer:"return=minimal" }, body:{ is_default:true } });
+              savedAddresses[0].is_default = true;
+            }
+          }
+          renderAddresses();
+          location.reload();
+        } catch (error) { window.alert(friendlyError(error)); button.disabled = false; }
+      });
       const recentOrders = qs("[data-account-recent-orders]");
       if (recentOrders) recentOrders.innerHTML = (orders || []).length
         ? orders.slice(0, 3).map((order) => `<button type="button" data-account-go="orders"><span><strong>${escapeHtml(order.order_number)}</strong><small>${new Date(order.created_at).toLocaleDateString("pt-BR")}</small></span><b>${escapeHtml(orderStatusLabels[order.status] || order.status)}</b><i>→</i></button>`).join("")
@@ -543,7 +650,7 @@
         setFeedback(addressForm, "");
         const payload = {
           user_id: user.id,
-          label: "Principal",
+          label: addressForm.label.value.trim() || "Endereço",
           recipient_name: addressForm.recipient_name.value.trim(),
           postal_code: addressForm.postal_code.value.replace(/\D/g, ""),
           street: addressForm.street.value.trim(),
@@ -552,20 +659,25 @@
           neighborhood: addressForm.neighborhood.value.trim(),
           city: addressForm.city.value.trim(),
           state: addressForm.state.value.trim().toUpperCase(),
-          is_default: true
+          is_default: addressForm.is_default.checked || savedAddresses.length === 0
         };
         try {
+          if (payload.is_default) {
+            await client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&is_default=eq.true`, { method:"PATCH", headers:{ Prefer:"return=minimal" }, body:{ is_default:false } });
+          }
           if (addressId) {
-            await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
+            await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}&user_id=eq.${encodeURIComponent(user.id)}`, {
               method: "PATCH", headers: { Prefer: "return=minimal" }, body: payload
             });
           } else {
+            if (savedAddresses.length >= 3) throw new Error("Você já possui o limite de três endereços salvos.");
             const created = await client.rest("addresses", {
               method: "POST", headers: { Prefer: "return=representation" }, body: payload
             });
             addressId = created?.[0]?.id || null;
           }
           setFeedback(addressForm, "Endereço salvo.", "success");
+          window.setTimeout(() => location.reload(), 500);
         } catch (error) {
           setFeedback(addressForm, friendlyError(error));
         } finally {
