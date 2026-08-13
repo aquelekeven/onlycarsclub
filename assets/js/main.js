@@ -1,5 +1,8 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
+})[character]);
 const escapeMarkup = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
 })[character]);
