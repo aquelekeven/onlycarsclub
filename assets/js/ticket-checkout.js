@@ -10,6 +10,28 @@
   let activeLot = null;
   const money = (cents) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(cents || 0) / 100);
   const digits = (value) => String(value || "").replace(/\D/g, "");
+  const cpfInput = form.elements.driver_tax_id;
+  const phoneInput = form.elements.driver_phone;
+
+  function formatCpf(value) {
+    const number = digits(value).slice(0, 11);
+    return number
+      .replace(/^(\d{3})(\d)/, "$1.$2")
+      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+  }
+
+  function formatPhone(value) {
+    const number = digits(value).slice(0, 11);
+    if (!number) return "";
+    if (number.length <= 2) return `(${number}`;
+    if (number.length <= 6) return `(${number.slice(0, 2)}) ${number.slice(2)}`;
+    if (number.length <= 10) return `(${number.slice(0, 2)}) ${number.slice(2, 6)}-${number.slice(6)}`;
+    return `(${number.slice(0, 2)}) ${number.slice(2, 7)}-${number.slice(7)}`;
+  }
+
+  cpfInput?.addEventListener("input", () => { cpfInput.value = formatCpf(cpfInput.value); });
+  phoneInput?.addEventListener("input", () => { phoneInput.value = formatPhone(phoneInput.value); });
 
   async function initialize() {
     const user = await client.getUser().catch(() => null);
