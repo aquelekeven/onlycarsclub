@@ -240,15 +240,20 @@
   async function loadGateEvents() {
     const root = qs("[data-admin-event-selector]");
     const gate = qs("[data-admin-event-gate]");
+    const panel = qs("[data-admin-panel='tickets']");
     if (!root || !gate) return;
     try {
       const events = await client.rest("rpc/admin_event_gate_events", { method:"POST", body:{} });
-      root.innerHTML = events?.length ? events.map((event) => `<button type="button" data-gate-event="${escapeHtml(event.id)}"><span>${new Date(event.starts_at).toLocaleDateString("pt-BR")}</span><strong>${escapeHtml(event.name)}</strong><small>${escapeHtml(event.venue_name || "Local a confirmar")} · ${Number(event.ticket_count || 0)} ingressos</small><i>→</i></button>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum evento cadastrado.</div>';
+      root.innerHTML = events?.length ? events.map((event) => `<button type="button" data-gate-event="${escapeHtml(event.id)}" data-gate-event-name="${escapeHtml(event.name)}" data-gate-event-date="${escapeHtml(new Date(event.starts_at).toLocaleDateString("pt-BR"))}"><span>${new Date(event.starts_at).toLocaleDateString("pt-BR")}</span><strong>${escapeHtml(event.name)}</strong><small>${escapeHtml(event.venue_name || "Local a confirmar")} · ${Number(event.ticket_count || 0)} ${Number(event.ticket_count || 0) === 1 ? "ingresso" : "ingressos"}</small><i>→</i></button>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum evento cadastrado.</div>';
       root.onclick = async (clickEvent) => {
         const button = clickEvent.target.closest("[data-gate-event]");
         if (!button) return;
         selectedEventId = button.dataset.gateEvent;
         qsa("[data-gate-event]", root).forEach((item) => item.classList.toggle("active", item === button));
+        panel?.classList.add("is-event-open");
+        qs("[data-admin-events-title]").textContent = button.dataset.gateEventName || "Operação do evento";
+        qs("[data-admin-events-description]").textContent = `${button.dataset.gateEventDate || ""} · Leitor, indicadores e movimentações da portaria.`;
+        qs("[data-admin-event-back]").hidden = false;
         gate.hidden = false;
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
@@ -267,7 +272,19 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", loadTicketStats);
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? loadTicketStats() : loadGateEvents());
+    qs("[data-admin-event-back]")?.addEventListener("click", () => {
+      stopScanner();
+      selectedEventId = null;
+      currentTicket = null;
+      lastToken = "";
+      qs("[data-admin-event-gate]").hidden = true;
+      qs("[data-admin-panel='tickets']")?.classList.remove("is-event-open");
+      qs("[data-admin-events-title]").textContent = "Seus eventos";
+      qs("[data-admin-events-description]").textContent = "Escolha um evento para abrir o leitor, os números e a atividade daquela edição.";
+      qs("[data-admin-event-back]").hidden = true;
+      qsa("[data-gate-event]").forEach((item) => item.classList.remove("active"));
+    });
     qs("[data-ticket-result]").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-ticket-action]");
       if (!button || !lastToken || !currentTicket) return;
