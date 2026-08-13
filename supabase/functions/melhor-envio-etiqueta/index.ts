@@ -77,14 +77,24 @@ Deno.serve(async (request) => {
     if (order.status !== "paid") return respond(request, { error: "A etiqueta só pode ser preparada após a aprovação do pagamento." }, 409);
     if (order.delivery_method !== "shipping") return respond(request, { error: "Este pedido não utiliza envio para endereço." }, 409);
 
-    const { data: fiscal } = await adminClient.from("order_fiscal_documents")
-      .select("access_key").eq("order_id", orderId).maybeSingle();
-    const invoiceKey = digits(fiscal?.access_key);
-    if (!INVOICE_KEY.test(invoiceKey)) return respond(request, { error: "Registre uma NF-e válida antes de preparar a etiqueta." }, 409);
-
     let { data: shipment } = await adminClient.from("shipments").select("*").eq("order_id", orderId).maybeSingle();
     const baseUrl = requiredEnv("MELHOR_ENVIO_BASE_URL").replace(/\/+$/, "");
     const environment = baseUrl.includes("sandbox") ? "Sandbox" : "Produção";
+    const { data: fiscal } = await adminClient.from("order_fiscal_documents")
+      .select("access_key").eq("order_id", orderId).maybeSingle();
+    const fiscalInvoiceKey = digits(fiscal?.access_key);
+    const sandboxInvoiceKey = environment === "Sandbox"
+      ? digits(Deno.env.get("MELHOR_ENVIO_SANDBOX_INVOICE_KEY"))
+      : "";
+    const sandboxTestMode = !INVOICE_KEY.test(fiscalInvoiceKey) && environment === "Sandbox";
+    const invoiceKey = sandboxTestMode ? sandboxInvoiceKey : fiscalInvoiceKey;
+    if (!INVOICE_KEY.test(invoiceKey)) {
+      return respond(request, {
+        error: environment === "Sandbox"
+          ? "Configure uma chave válida de NF-e modelo 55 no secret MELHOR_ENVIO_SANDBOX_INVOICE_KEY para o teste de homologação."
+          : "Registre a NF-e real da Only antes de preparar a etiqueta.",
+      }, 409);
+    }
     const clientId = requiredEnv("MELHOR_ENVIO_CLIENT_ID");
     const clientSecret = requiredEnv("MELHOR_ENVIO_CLIENT_SECRET");
     const redirectUri = requiredEnv("MELHOR_ENVIO_REDIRECT_URI");
@@ -175,7 +185,7 @@ Deno.serve(async (request) => {
       const cartId = String(cart?.id || "");
       if (!cartId) throw new Error("O Melhor Envio não retornou o identificador da etiqueta.");
       const actualPriceCents = Math.round(Number(cart?.price || cart?.custom_price || order.shipping_cents / 100) * 100);
-      const saved = await saveShipment({ cart_item_id: cartId, provider_order_id: cartId, status: "waiting_label", price_cents: actualPriceCents, last_error: null, provider_payload: { environment, cart: { id: cartId, price: actualPriceCents, status: cart?.status || null } } });
+      const saved = await saveShipment({ cart_item_id: cartId, provider_order_id: cartId, status: "waiting_label", price_cents: actualPriceCents, last_error: null, provider_payload: { environment, sandbox_test: sandboxTestMode, cart: { id: cartId, price: actualPriceCents, status: cart?.status || null } } });
       await audit("shipment.label.prepare", { cart_item_id: cartId, price_cents: actualPriceCents });
       return respond(request, { prepared: true, shipment: saved });
     }
