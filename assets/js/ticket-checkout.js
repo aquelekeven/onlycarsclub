@@ -47,7 +47,7 @@
         event_slug:root.dataset.eventSlug, lot_id:activeLot.id,
         driver_name:String(data.get("driver_name") || "").trim(), driver_tax_id:cpf, driver_phone:phone,
         vehicle_plate:plate, vehicle_make:String(data.get("vehicle_make") || "").trim(), vehicle_model:String(data.get("vehicle_model") || "").trim(),
-        vehicle_year:Number(data.get("vehicle_year") || 0) || null, vehicle_color:String(data.get("vehicle_color") || "").trim(), instagram_handle:String(data.get("instagram_handle") || "").trim()
+        instagram_handle:String(data.get("instagram_handle") || "").trim()
       });
       if (!response?.checkout_url) throw new Error("O Mercado Pago não retornou o link de pagamento.");
       location.assign(response.checkout_url);

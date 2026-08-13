@@ -37,14 +37,14 @@ Deno.serve(async (request) => {
     const { data:existingPlate } = await admin.from("tickets").select("id").eq("event_id", event.id).eq("vehicle_plate", plate).in("status", ["reserved","active","checked_in"]).maybeSingle();
     if (existingPlate) throw new Error("Esta placa já possui um ingresso ativo para o evento.");
     const driverName = clean(body.driver_name);
-    const make = clean(body.vehicle_make, 60), model = clean(body.vehicle_model, 80), color = clean(body.vehicle_color, 40);
-    if (!driverName || !make || !model || !color) throw new Error("Preencha todos os dados obrigatórios.");
+    const make = clean(body.vehicle_make, 60), model = clean(body.vehicle_model, 80);
+    if (!driverName || !make || !model) throw new Error("Preencha todos os dados obrigatórios.");
     const { data:order, error:orderError } = await admin.from("ticket_orders").insert({ event_id:event.id, lot_id:lot.id, user_id:user.id, customer_name:driverName, customer_email:user.email, customer_phone:phone, customer_tax_id:cpf, quantity:1, unit_price_cents:lot.price_cents, expires_at:new Date(Date.now()+30*60*1000).toISOString(), regulation_version:event.regulation_version, regulation_accepted_at:new Date().toISOString(), metadata:{ vehicle_plate:plate } }).select("id").single();
     if (orderError || !order) throw new Error(orderError?.message || "Não foi possível reservar o ingresso.");
     orderId = order.id;
     const token = crypto.randomUUID() + crypto.randomUUID();
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)))).map((byte)=>byte.toString(16).padStart(2,"0")).join("");
-    const { error:ticketError } = await admin.from("tickets").insert({ order_id:order.id, event_id:event.id, owner_user_id:user.id, qr_token_hash:hash, status:"reserved", driver_name:driverName, driver_tax_id:cpf, driver_phone:phone, vehicle_plate:plate, vehicle_make:make, vehicle_model:model, vehicle_year:Number(body.vehicle_year)||null, vehicle_color:color, instagram_handle:clean(body.instagram_handle,40)||null });
+    const { error:ticketError } = await admin.from("tickets").insert({ order_id:order.id, event_id:event.id, owner_user_id:user.id, qr_token_hash:hash, status:"reserved", driver_name:driverName, driver_tax_id:cpf, driver_phone:phone, vehicle_plate:plate, vehicle_make:make, vehicle_model:model, vehicle_year:null, vehicle_color:"Não informado", instagram_handle:clean(body.instagram_handle,40)||null });
     if (ticketError) throw new Error(ticketError.message);
     const preferenceResponse = await fetch("https://api.mercadopago.com/checkout/preferences", { method:"POST", headers:{ Authorization:`Bearer ${mpToken}`, "Content-Type":"application/json", "X-Idempotency-Key":order.id }, body:JSON.stringify({ items:[{ id:`ticket-${lot.id}`, title:`${event.name} — ${lot.name}`, quantity:1, currency_id:"BRL", unit_price:Number((lot.price_cents/100).toFixed(2)) }], payer:{ email:user.email, name:driverName, identification:{ type:"CPF", number:cpf } }, external_reference:`ticket:${order.id}`, notification_url:`${supabaseUrl}/functions/v1/mercado-pago-ingresso-webhook`, back_urls:{ success:`${SITE_URL}/ingresso-retorno.html?status=success&order=${order.id}`, pending:`${SITE_URL}/ingresso-retorno.html?status=pending&order=${order.id}`, failure:`${SITE_URL}/ingresso-retorno.html?status=failure&order=${order.id}` }, auto_return:"approved", statement_descriptor:"ONLY CARS" }) });
     const preference = await preferenceResponse.json();
