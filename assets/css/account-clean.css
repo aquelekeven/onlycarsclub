@@ -96,15 +96,15 @@ body[data-page="conta"] .account-address-card { padding:20px; border-radius:20px
 body[data-page="conta"] .account-address-card.is-default { border-color:#e2bd00; background:#fffceb; }
 
 @media(max-width:900px) {
-  body[data-page="conta"] .account-page { padding:20px 14px 100px; }
+  body[data-page="conta"] .account-page { padding:20px 14px calc(104px + env(safe-area-inset-bottom)); }
   body[data-page="conta"] .account-center { display:block; }
-  body[data-page="conta"] .account-sidebar { position:sticky; top:76px; z-index:30; min-height:0; margin-bottom:14px; padding:9px; border-radius:20px; box-shadow:0 14px 35px #0005,inset 0 1px 0 #ffffff12; }
+  body[data-page="conta"] .account-sidebar { position:fixed; left:8px; right:8px; bottom:calc(8px + env(safe-area-inset-bottom)); top:auto; z-index:120; min-height:0; margin:0; padding:7px; border-radius:20px; box-shadow:0 16px 45px #0008,inset 0 1px 0 #ffffff12; }
   body[data-page="conta"] .account-profile-summary,body[data-page="conta"] .account-sidebar-footer { display:none; }
-  body[data-page="conta"] .account-menu { padding:0; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+  body[data-page="conta"] .account-menu { padding:0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; overflow:visible; }
   body[data-page="conta"] .account-menu::-webkit-scrollbar { display:none; }
-  body[data-page="conta"] .account-menu button { min-width:94px; min-height:58px; padding:7px 9px; display:flex; flex-direction:column; justify-content:center; gap:4px; color:#c8c7c1; text-align:center; white-space:nowrap; }
+  body[data-page="conta"] .account-menu button { width:100%; min-width:0; min-height:60px; padding:6px 1px 5px; display:flex; flex-direction:column; justify-content:center; gap:4px; color:#c8c7c1; font-size:7px; line-height:1; text-align:center; white-space:nowrap; }
   body[data-page="conta"] .account-menu button i { width:25px; height:25px; }
-  body[data-page="conta"] .account-menu b { position:absolute; margin:-28px 0 0 37px; }
+  body[data-page="conta"] .account-menu b { display:none; }
   body[data-page="conta"] .account-main { padding:26px 18px; border-radius:24px; }
 }
 @media(max-width:650px) {
