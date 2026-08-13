@@ -1,8 +1,5 @@
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-const escapeMarkup = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
-  "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
-})[character]);
 const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
@@ -1531,21 +1528,20 @@ async function setupCheckoutCustomer(deliveryForm) {
     return null;
   }
   if (email) email.textContent = user.email || "";
-  let addresses = [];
-  let selectedAddressId = null;
-  try {
-    const [profiles, savedAddresses] = await Promise.all([
-      client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,display_name,phone,tax_id`),
-      client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`)
-    ]);
-    const profile = profiles?.[0] || {};
-    addresses = Array.isArray(savedAddresses) ? savedAddresses : [];
-    const address = addresses.find((item) => item.is_default) || addresses[0] || {};
-    selectedAddressId = address.id || null;
+  let addressId = null;
+  let savedAddresses = [];
+  const cardsRoot = qs("[data-checkout-address-cards]", section);
+  const countLabel = qs("[data-checkout-address-count]", section);
+  const addButton = qs("[data-checkout-address-add]", section);
+  const editor = qs("[data-checkout-address-editor]", section);
+  const editorTitle = qs("[data-checkout-address-editor-title]", section);
+  const cancelButton = qs("[data-checkout-address-cancel]", section);
+  const addressFields = ["postal_code", "street", "number", "complement", "neighborhood", "city", "state"];
+  const fillAddress = (address = {}) => {
+    addressId = address.id || null;
     const values = {
-      recipient_name:address.recipient_name || profile.display_name || "",
-      phone:profile.phone || "",
-      tax_id:profile.tax_id || "",
+      address_label:address.label || (address.is_default ? "Principal" : ""),
+      recipient_name:address.recipient_name || deliveryForm.elements.recipient_name?.value || "",
       postal_code:address.postal_code || "",
       street:address.street || "",
       number:address.number || "",
@@ -1558,81 +1554,72 @@ async function setupCheckoutCustomer(deliveryForm) {
       const input = deliveryForm.elements[name];
       if (input) input.value = String(value);
     });
+    if (deliveryForm.elements.is_default) deliveryForm.elements.is_default.checked = Boolean(address.is_default);
     const postalCode = deliveryForm.elements.postal_code;
     if (postalCode?.value) {
       const digits = postalCode.value.replace(/\D/g, "").slice(0, 8);
       postalCode.value = digits.replace(/(\d{5})(\d)/, "$1-$2");
     }
-    const cards = qs("[data-checkout-address-cards]", section);
-    const count = qs("[data-checkout-address-count]", section);
-    const saveOptions = qs("[data-checkout-address-save-options]", section);
-    const saveDefault = qs("[data-checkout-save-default]", section);
-    const addressEditor = qs("[data-checkout-address-editor]", section);
-    const otherAddressButton = qs("[data-checkout-other-address]", section);
-    const setAddressEditorOpen = (open) => {
-      if (addressEditor) addressEditor.hidden = !open;
-      if (otherAddressButton) {
-        otherAddressButton.textContent = addresses.length
-          ? (open ? "Cancelar novo endereço" : "+ Usar outro endereço")
-          : (open ? "Cancelar cadastro" : "Cadastrar endereço");
-        otherAddressButton.setAttribute("aria-expanded", String(open));
-      }
-      if (!open && saveOptions) saveOptions.hidden = true;
-    };
-    const fillAddress = (item) => {
-      ["recipient_name","postal_code","street","number","complement","neighborhood","city","state"].forEach((name) => {
-        if (deliveryForm.elements[name]) deliveryForm.elements[name].value = item?.[name] || (name === "recipient_name" ? profile.display_name || "" : "");
-      });
-      const postal = deliveryForm.elements.postal_code;
-      if (postal?.value) postal.value = postal.value.replace(/^(\d{5})(\d{3})$/, "$1-$2");
-      selectedAddressId = item?.id || null;
-      ["postal_code","street","number","complement","neighborhood","city","state"].forEach((name) => {
-        if (deliveryForm.elements[name]) deliveryForm.elements[name].readOnly = Boolean(selectedAddressId);
-      });
-      qsa("[data-checkout-address-id]", section).forEach((card) => card.classList.toggle("selected", card.dataset.checkoutAddressId === selectedAddressId));
-      if (saveOptions) saveOptions.hidden = Boolean(selectedAddressId) || addresses.length >= 3;
-      if (deliveryForm.elements.save_address) deliveryForm.elements.save_address.checked = false;
-      if (deliveryForm.elements.save_as_default) deliveryForm.elements.save_as_default.checked = false;
-      if (saveDefault) saveDefault.hidden = true;
-      setAddressEditorOpen(false);
-      sessionStorage.removeItem("onlyCarsShippingQuote");
-      qsa('input[name="delivery"]', deliveryForm).forEach((input) => { input.checked = false; });
-      qs("[data-shipping-results]", deliveryForm)?.replaceChildren();
-    };
-    if (count) count.textContent = `${addresses.length} de 3`;
-    if (cards) cards.innerHTML = addresses.length ? addresses.map((item) => `
-      <button type="button" class="checkout-address-card ${item.is_default ? "is-default" : ""} ${item.id === selectedAddressId ? "selected" : ""}" data-checkout-address-id="${escapeMarkup(item.id)}">
-        <span>${escapeMarkup(item.label || "Endereço")}${item.is_default ? " · Principal" : ""}</span>
-        <strong>${escapeMarkup(item.street)}, ${escapeMarkup(item.number || "S/N")}</strong>
-        <small>${escapeMarkup(item.neighborhood)} · ${escapeMarkup(item.city)}/${escapeMarkup(item.state)} · ${escapeMarkup(String(item.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</small>
-      </button>`).join("") : '<p class="checkout-address-empty">Nenhum endereço cadastrado ainda.</p>';
-    cards?.addEventListener("click", (event) => {
-      const card = event.target.closest("[data-checkout-address-id]");
-      const item = addresses.find((entry) => entry.id === card?.dataset.checkoutAddressId);
-      if (item) fillAddress(item);
-    });
-    otherAddressButton?.addEventListener("click", () => {
-      if (addressEditor && !addressEditor.hidden) {
-        const selected = addresses.find((entry) => entry.id === selectedAddressId);
-        fillAddress(selected || address);
-        setStatus(selectedAddressId ? "Endereço cadastrado selecionado." : "Cadastre um endereço para calcular o frete.", "success");
-        return;
-      }
-      fillAddress({ recipient_name:profile.display_name || "" });
-      setAddressEditorOpen(true);
-      if (saveOptions) saveOptions.hidden = addresses.length >= 3;
-      deliveryForm.elements.postal_code?.focus();
-      setStatus(addresses.length >= 3 ? "Este endereço será usado somente nesta compra; você já possui 3 endereços salvos." : "Digite um CEP para usar um endereço diferente nesta compra.", "success");
-    });
-    deliveryForm.elements.save_address?.addEventListener("change", () => {
-      if (saveDefault) saveDefault.hidden = !deliveryForm.elements.save_address.checked || addresses.length >= 3;
+  };
+  const selectAddress = (address, { openEditor = false } = {}) => {
+    fillAddress(address);
+    qsa("[data-checkout-address-id]", cardsRoot).forEach((card) => card.classList.toggle("selected", card.dataset.checkoutAddressId === address.id));
+    if (editor) editor.hidden = !openEditor;
+    if (editorTitle) editorTitle.textContent = openEditor ? "Editar endereço" : "Endereço selecionado";
+    setStatus(openEditor ? "Atualize os dados e salve novamente." : "Endereço selecionado para esta entrega.", "success");
+  };
+  const renderAddressCards = () => {
+    if (countLabel) countLabel.textContent = `${savedAddresses.length} de 3`;
+    if (addButton) addButton.hidden = savedAddresses.length >= 3;
+    if (!cardsRoot) return;
+    cardsRoot.innerHTML = savedAddresses.map((address) => `<article class="checkout-address-card ${address.id === addressId ? "selected" : ""}" data-checkout-address-id="${escapeHtml(address.id)}"><button type="button" data-checkout-address-select="${escapeHtml(address.id)}"><header><span>${escapeHtml(address.label || "Endereço")}</span>${address.is_default ? "<b>Principal</b>" : ""}</header><strong>${escapeHtml(address.recipient_name || "Destinatário")}</strong><p>${escapeHtml(address.street)}, ${escapeHtml(address.number)}${address.complement ? ` · ${escapeHtml(address.complement)}` : ""}<br>${escapeHtml(address.neighborhood)} · ${escapeHtml(address.city)}/${escapeHtml(address.state)} · ${escapeHtml(String(address.postal_code).replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</p></button><button type="button" class="checkout-address-edit" data-checkout-address-edit="${escapeHtml(address.id)}">Editar</button></article>`).join("");
+    qsa("[data-checkout-address-select]", cardsRoot).forEach((button) => button.addEventListener("click", () => {
+      const address = savedAddresses.find((item) => item.id === button.dataset.checkoutAddressSelect);
+      if (address) selectAddress(address);
+    }));
+    qsa("[data-checkout-address-edit]", cardsRoot).forEach((button) => button.addEventListener("click", () => {
+      const address = savedAddresses.find((item) => item.id === button.dataset.checkoutAddressEdit);
+      if (address) selectAddress(address, { openEditor:true });
+    }));
+  };
+  try {
+    const [profiles, addresses] = await Promise.all([
+      client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,display_name,phone,tax_id`),
+      client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`)
+    ]);
+    const profile = profiles?.[0] || {};
+    savedAddresses = Array.isArray(addresses) ? addresses : [];
+    const address = savedAddresses.find((item) => item.is_default) || savedAddresses[0] || {};
+    addressId = address.id || null;
+    const values = { recipient_name:address.recipient_name || profile.display_name || "", phone:profile.phone || "", tax_id:profile.tax_id || "" };
+    Object.entries(values).forEach(([name, value]) => {
+      const input = deliveryForm.elements[name];
+      if (input) input.value = String(value);
     });
     fillAddress(address);
-    setAddressEditorOpen(false);
-    setStatus(selectedAddressId ? "Endereço principal selecionado. Calcule o frete para continuar." : "Nenhum endereço cadastrado. Clique em Cadastrar endereço para informar o local de entrega.", "success");
+    renderAddressCards();
+    if (editor) editor.hidden = true;
+    setStatus(addressId ? "Endereço principal selecionado." : "Toque em Novo endereço para cadastrar seu primeiro endereço.", addressId ? "success" : "");
   } catch (error) {
     setStatus(error?.message || "Não foi possível carregar seus dados. Preencha-os para continuar.", "error");
   }
+
+  addButton?.addEventListener("click", () => {
+    if (savedAddresses.length >= 3) return;
+    const contactName = deliveryForm.elements.recipient_name?.value || "";
+    fillAddress({ recipient_name:contactName, is_default:savedAddresses.length === 0 });
+    addressFields.forEach((name) => { if (deliveryForm.elements[name]) deliveryForm.elements[name].value = ""; });
+    if (deliveryForm.elements.address_label) deliveryForm.elements.address_label.value = "";
+    if (editorTitle) editorTitle.textContent = "Novo endereço";
+    if (editor) editor.hidden = false;
+    setStatus("Preencha os dados do novo endereço.");
+    deliveryForm.elements.address_label?.focus();
+  });
+  cancelButton?.addEventListener("click", () => {
+    const selected = savedAddresses.find((item) => item.id === addressId) || savedAddresses.find((item) => item.is_default) || savedAddresses[0];
+    if (selected) selectAddress(selected);
+    else if (editor) editor.hidden = true;
+  });
 
   const phoneInput = deliveryForm.elements.phone;
   const taxIdInput = deliveryForm.elements.tax_id;
@@ -1721,9 +1708,9 @@ async function setupCheckoutCustomer(deliveryForm) {
       if (taxId && taxId.length !== 11) throw new Error("Digite os 11 números do CPF.");
       if (requireAddress && postalCode.length !== 8) throw new Error("Digite um CEP com 8 números.");
       if (requireAddress && !/^[A-Z]{2}$/.test(state)) throw new Error("Digite a sigla do estado com 2 letras.");
-      let address = requireAddress ? {
+      const address = requireAddress ? {
         user_id:user.id,
-        label:"Endereço",
+        label:String(formData.get("address_label") || "").trim() || (formData.get("is_default") ? "Principal" : "Endereço"),
         recipient_name:recipientName,
         postal_code:postalCode,
         street:String(formData.get("street") || "").trim(),
@@ -1732,7 +1719,7 @@ async function setupCheckoutCustomer(deliveryForm) {
         neighborhood:String(formData.get("neighborhood") || "").trim(),
         city:String(formData.get("city") || "").trim(),
         state,
-        is_default:false
+        is_default:Boolean(formData.get("is_default")) || savedAddresses.length === 0
       } : null;
       setStatus("Salvando seus dados...", "loading");
       await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
@@ -1740,22 +1727,35 @@ async function setupCheckoutCustomer(deliveryForm) {
         headers:{ Prefer:"return=minimal" },
         body:{ display_name:recipientName, phone, tax_id:taxId || null }
       });
-      const wantsSave = requireAddress && !selectedAddressId && Boolean(formData.get("save_address"));
-      const wantsDefault = wantsSave && Boolean(formData.get("save_as_default"));
-      if (wantsSave) {
-        if (addresses.length >= 3) throw new Error("Você já possui o limite de 3 endereços salvos.");
-        const saved = await client.rest("rpc/save_customer_address", { method:"POST", body:{
-          p_address_id:null, p_label:wantsDefault ? "Principal" : `Endereço ${addresses.length + 1}`,
-          p_recipient_name:address.recipient_name, p_postal_code:address.postal_code,
-          p_street:address.street, p_number:address.number, p_complement:address.complement,
-          p_neighborhood:address.neighborhood, p_city:address.city, p_state:address.state,
-          p_is_default:wantsDefault
-        }});
-        const created = Array.isArray(saved) ? saved[0] : saved;
-        selectedAddressId = created?.id || null;
-      } else if (requireAddress && selectedAddressId) {
-        const selected = addresses.find((item) => item.id === selectedAddressId);
-        if (selected) address = { ...selected, user_id:user.id };
+      if (requireAddress && address.is_default) {
+        await client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&is_default=eq.true`, {
+          method:"PATCH",
+          headers:{ Prefer:"return=minimal" },
+          body:{ is_default:false }
+        });
+      }
+      if (requireAddress && addressId) {
+        await client.rest(`addresses?id=eq.${encodeURIComponent(addressId)}`, {
+          method:"PATCH",
+          headers:{ Prefer:"return=representation" },
+          body:address
+        });
+      } else if (requireAddress) {
+        if (savedAddresses.length >= 3) throw new Error("Você já possui o limite de 3 endereços cadastrados.");
+        const created = await client.rest("addresses", {
+          method:"POST",
+          headers:{ Prefer:"return=representation" },
+          body:address
+        });
+        addressId = created?.[0]?.id || null;
+      }
+      if (requireAddress) {
+        const refreshed = await client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`);
+        savedAddresses = Array.isArray(refreshed) ? refreshed : [];
+        const selectedAddress = savedAddresses.find((item) => item.id === addressId) || savedAddresses.find((item) => item.is_default) || savedAddresses[0];
+        if (selectedAddress) fillAddress(selectedAddress);
+        renderAddressCards();
+        if (editor) editor.hidden = true;
       }
       const checkoutCustomer = {
         email:user.email || "",
@@ -1764,7 +1764,6 @@ async function setupCheckoutCustomer(deliveryForm) {
         taxId,
         ...(address || {})
       };
-      checkoutCustomer.address_id = selectedAddressId;
       sessionStorage.setItem("onlyCarsCheckoutCustomer", JSON.stringify(checkoutCustomer));
       setStatus(requireAddress ? "Dados de entrega salvos." : "Dados de contato salvos para a retirada.", "success");
       return checkoutCustomer;
@@ -2095,20 +2094,10 @@ function setupCheckoutFlow() {
       button.textContent = "Abrindo Mercado Pago...";
       error.textContent = "";
       try {
-        let checkoutCustomer = {};
-        try { checkoutCustomer = JSON.parse(sessionStorage.getItem("onlyCarsCheckoutCustomer") || "{}"); } catch (_) {}
         const response = await window.OnlySupabase.invokeFunction("mercado-pago-checkout", {
           checkout_key:checkoutKey,
           delivery_method:deliveryMethod,
           shipping_quote:shippingQuote ? { service_id:shippingQuote.serviceId } : null,
-          address_id:checkoutCustomer.address_id || null,
-          shipping_address:deliveryMethod === "shipping" ? {
-            recipient_name:checkoutCustomer.recipient_name || "",
-            postal_code:String(checkoutCustomer.postal_code || "").replace(/\D/g, ""),
-            street:checkoutCustomer.street || "", number:checkoutCustomer.number || "",
-            complement:checkoutCustomer.complement || null, neighborhood:checkoutCustomer.neighborhood || "",
-            city:checkoutCustomer.city || "", state:checkoutCustomer.state || ""
-          } : null,
           items:cart.map((item) => ({
             product_slug:item.id,
             size:item.size || "",
@@ -2389,16 +2378,11 @@ function setupOnlyCarsAppMetadata() {
 function setupAccountShortcut() {
   const header = qs(".header");
   if (!header || qs(".account-shortcut", header)) return;
-  const isAccountPage = document.body.dataset.page === "conta";
   const link = document.createElement("a");
   link.className = "account-shortcut";
-  if (isAccountPage) link.classList.add("account-home-link");
-  link.href = isAccountPage ? "index.html" : "minha-conta.html";
-  link.setAttribute("aria-label", isAccountPage ? "Voltar ao início" : "Minha conta");
-  link.title = isAccountPage ? "Voltar ao início" : "Minha conta";
-  link.innerHTML = isAccountPage
-    ? "<span>Voltar ao início</span>"
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
+  link.href = "minha-conta.html";
+  link.setAttribute("aria-label", "Minha conta");
+  link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.2-7 8-7s7.5 2 8 7"/></svg>';
   header.appendChild(link);
 }
 
