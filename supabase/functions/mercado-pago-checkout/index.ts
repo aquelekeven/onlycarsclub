@@ -471,8 +471,8 @@ if (availableStock < quantity && !allowBackorder) {
           order_id: orderId,
           order_number: orderNumber,
           checkout_url:
-            existingPreference.sandbox_init_point ||
-            existingPreference.init_point,
+            existingPreference.init_point ||
+            existingPreference.sandbox_init_point,
           reused: true,
         });
       }
@@ -597,8 +597,8 @@ if (availableStock < quantity && !allowBackorder) {
       order_id: orderId,
       order_number: orderNumber,
       checkout_url:
-        preference.sandbox_init_point ||
-        preference.init_point,
+        preference.init_point ||
+        preference.sandbox_init_point,
       reused: false,
     });
   } catch (error) {
