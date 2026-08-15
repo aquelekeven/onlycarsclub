@@ -52,16 +52,12 @@
     if (lotPrice) lotPrice.textContent = money(current.price_cents);
     if (lotName) lotName.textContent = `${current.name} aberto`;
     const occupied = Math.max(0, Number(current.sold_or_reserved || 0));
-    const paid = Math.max(0, Number(current.sold_confirmed || 0));
     const capacity = Math.max(1, Number(current.capacity || 1));
     const percent = Math.min(100, Math.round((occupied / capacity) * 100));
-    const available = Math.max(0, capacity - occupied);
-    if (progressLabel) progressLabel.textContent = `${current.name} • ${available} ${available === 1 ? "vaga restante" : "vagas restantes"}`;
+    if (progressLabel) progressLabel.textContent = `${current.name} em andamento`;
     if (progressPercent) progressPercent.textContent = `${percent}%`;
     if (progressBar) progressBar.style.width = `${percent}%`;
-    if (progressDetail) progressDetail.textContent = paid === occupied
-      ? `${paid} de ${capacity} ingressos confirmados`
-      : `${paid} pagos • ${occupied - paid} aguardando pagamento`;
+    if (progressDetail) progressDetail.textContent = "O próximo lote abre automaticamente ao atingir 100%.";
   }
 
   function startCountdown(startsAt) {
