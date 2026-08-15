@@ -44,6 +44,9 @@
       eventData = await client.publicRest("rpc/public_event_summary", { method:"POST", body:{ target_slug:root.dataset.eventSlug } });
       activeLot = eventData?.lots?.find((lot) => lot.active);
       if (eventData?.status !== "sales_open" || !activeLot || Number(eventData.remaining_public || 0) <= 0) throw new Error("As vendas do Lote 1 ainda não estão abertas.");
+      if (Number(activeLot.sold_or_reserved || 0) >= Number(activeLot.capacity || 0)) {
+        throw new Error("As vagas deste lote estão temporariamente reservadas. Tente novamente em alguns minutos.");
+      }
       root.querySelector("[data-ticket-lot]").textContent = activeLot.name;
       root.querySelector("[data-ticket-price]").textContent = money(activeLot.price_cents);
       root.querySelector("[data-ticket-total]").textContent = money(activeLot.price_cents);
