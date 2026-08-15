@@ -3,7 +3,7 @@
 
   const root = document.querySelector("[data-event-page]");
   const client = window.OnlySupabase;
-  if (!root || !client) return;
+  if (!root) return;
 
   const status = root.querySelector("[data-event-status]");
   const buyButtons = [...root.querySelectorAll("[data-event-buy]")];
@@ -86,7 +86,111 @@
     countdownTimer = setInterval(update, 1000);
   }
 
+  function initializeMemoryCarousel() {
+    const carousel = root.querySelector("[data-event-carousel]");
+    const track = carousel?.querySelector("[data-carousel-track]");
+    if (!carousel || !track) return;
+
+    const originalSlides = [...track.querySelectorAll("[data-carousel-slide]")];
+    for (let index = originalSlides.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [originalSlides[index], originalSlides[randomIndex]] = [originalSlides[randomIndex], originalSlides[index]];
+    }
+    originalSlides.forEach((slide) => track.appendChild(slide));
+
+    const slides = [...track.querySelectorAll("[data-carousel-slide]")];
+    const dots = carousel.querySelector("[data-carousel-dots]");
+    const currentLabel = carousel.querySelector("[data-carousel-current]");
+    const totalLabel = carousel.querySelector("[data-carousel-total]");
+    const previous = carousel.querySelector("[data-carousel-previous]");
+    const next = carousel.querySelector("[data-carousel-next]");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let activeIndex = 0;
+    let autoplayTimer = null;
+    let scrollTimer = null;
+
+    if (totalLabel) totalLabel.textContent = String(slides.length).padStart(2, "0");
+
+    const controls = slides.map((_, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("aria-label", `Ver foto ${index + 1}`);
+      button.addEventListener("click", () => show(index, true));
+      dots?.appendChild(button);
+      return button;
+    });
+
+    function updateState(index) {
+      activeIndex = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        const isActive = slideIndex === activeIndex;
+        slide.classList.toggle("is-active", isActive);
+        slide.setAttribute("aria-hidden", String(!isActive));
+      });
+      controls.forEach((control, controlIndex) => {
+        const isActive = controlIndex === activeIndex;
+        control.classList.toggle("is-active", isActive);
+        control.setAttribute("aria-current", isActive ? "true" : "false");
+      });
+      if (currentLabel) currentLabel.textContent = String(activeIndex + 1).padStart(2, "0");
+    }
+
+    function restartAutoplay() {
+      if (autoplayTimer) clearInterval(autoplayTimer);
+      if (reduceMotion || document.hidden) return;
+      autoplayTimer = setInterval(() => show(activeIndex + 1), 5000);
+    }
+
+    function show(index, manual = false) {
+      const targetIndex = (index + slides.length) % slides.length;
+      slides[targetIndex]?.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "nearest",
+        inline: "center"
+      });
+      updateState(targetIndex);
+      if (manual) restartAutoplay();
+    }
+
+    previous?.addEventListener("click", () => show(activeIndex - 1, true));
+    next?.addEventListener("click", () => show(activeIndex + 1, true));
+    track.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        show(activeIndex - 1, true);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        show(activeIndex + 1, true);
+      }
+    });
+    track.addEventListener("scroll", () => {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const trackCenter = track.scrollLeft + track.clientWidth / 2;
+        let closestIndex = 0;
+        let closestDistance = Infinity;
+        slides.forEach((slide, index) => {
+          const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+          const distance = Math.abs(trackCenter - slideCenter);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+        updateState(closestIndex);
+        restartAutoplay();
+      }, 120);
+    }, { passive:true });
+    document.addEventListener("visibilitychange", restartAutoplay);
+
+    updateState(0);
+    requestAnimationFrame(() => show(0));
+    restartAutoplay();
+  }
+
   async function loadEvent() {
+    if (!client) return;
     try {
       const result = await client.publicRest("rpc/public_event_summary", {
         method:"POST",
@@ -105,6 +209,7 @@
 
   buyButtons.forEach((button) => button.addEventListener("click", async () => {
     if (button.dataset.saleOpen !== "true") return;
+    if (!client) return;
     const session = await client.getSession().catch(() => null);
     const destination = `ingresso.html?event=${encodeURIComponent(root.dataset.eventSlug)}`;
     if (!session) {
@@ -115,5 +220,6 @@
     location.href = destination;
   }));
 
+  initializeMemoryCarousel();
   loadEvent();
 })();
