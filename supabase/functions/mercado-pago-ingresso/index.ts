@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v4-secure-qr";
+const FUNCTION_VERSION = "ticket-checkout-v5-production";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -171,7 +171,7 @@ Deno.serve(async (request) => {
     const { error: updateError } = await serviceClient.from("ticket_orders")
       .update({ provider_preference_id: String(preference.id) }).eq("id", order.id);
     if (updateError) throw new Error("O pagamento foi criado, mas não foi possível salvar sua identificação.");
-    return jsonResponse({ order_id: order.id, checkout_url: preference.sandbox_init_point || preference.init_point });
+    return jsonResponse({ order_id: order.id, checkout_url: preference.init_point || preference.sandbox_init_point });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível iniciar a compra.";
     console.error(`[${FUNCTION_VERSION}]`, message);
