@@ -1,0 +1,15 @@
+.event-lot-progress{width:min(520px,100%);margin-top:18px;display:grid;gap:8px}
+.event-lot-progress>div{display:flex;align-items:center;justify-content:space-between;gap:18px;color:#a5a59f;font-size:11px}
+.event-lot-progress>div strong{color:var(--yellow);font-size:12px}
+.event-lot-progress>i{height:8px;overflow:hidden;border:1px solid #ffffff12;border-radius:999px;background:#ffffff0c}
+.event-lot-progress>i b{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a88700,var(--yellow));box-shadow:0 0 18px #ffd60066;transition:width .55s ease}
+.event-lot-progress>small{color:#6f6f6a;font-size:10px}
+.event-countdown{padding:70px max(6vw,28px);display:grid;grid-template-columns:minmax(260px,.7fr) 1.3fr;align-items:end;gap:65px;border-top:1px solid #ffffff12;border-bottom:1px solid #ffffff12;background:#0d0d0d}
+.event-countdown h2{margin:0;font-size:clamp(34px,4.6vw,65px);line-height:.95;letter-spacing:-.055em}
+.event-countdown>div{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.event-countdown article{min-width:0;padding:22px 10px;display:grid;justify-items:center;gap:5px;border:1px solid #ffffff12;border-radius:20px;background:#ffffff05}
+.event-countdown article strong{color:#fff;font-size:clamp(28px,4vw,58px);line-height:1;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.event-countdown article span{color:#777;font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+.ticket-lot-progress{margin:16px 0 20px;padding:14px;border:1px solid #ffffff10;border-radius:15px;background:#ffffff04}
+@media(max-width:900px){.event-countdown{grid-template-columns:1fr;align-items:start;gap:35px}}
+@media(max-width:560px){.event-lot-progress{margin-top:14px}.event-countdown{padding:58px 18px}.event-countdown>div{grid-template-columns:repeat(2,1fr)}}
