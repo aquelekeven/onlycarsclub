@@ -1896,6 +1896,21 @@ function setupCheckoutFlow() {
       }
 
       const visibleQuotes = [...selectedQuotes.values()].slice(0, 4);
+      const getCompanyLogo = (quote) => {
+        const source = String(
+          quote?.company?.picture || quote?.company?.logo || quote?.company?.image || ""
+        ).trim();
+        if (!source) return "";
+        try {
+          const url = new URL(source, "https://melhorenvio.com.br");
+          const host = url.hostname.toLowerCase();
+          return url.protocol === "https:" && (host === "melhorenvio.com.br" || host.endsWith(".melhorenvio.com.br"))
+            ? url.href
+            : "";
+        } catch {
+          return "";
+        }
+      };
       const fragment = document.createDocumentFragment();
       visibleQuotes.forEach(({ quote, highlights }) => {
         const serviceName = String(quote.name || quote.company?.name || "Transportadora");
@@ -1924,6 +1939,17 @@ function setupCheckoutFlow() {
         });
         icon.className = "checkout-option-icon shipping-option-icon";
         icon.textContent = "↗";
+        const companyLogo = getCompanyLogo(quote);
+        if (companyLogo) {
+          const logo = document.createElement("img");
+          logo.src = companyLogo;
+          logo.alt = companyName ? `Logo ${companyName}` : "Logo da transportadora";
+          logo.loading = "lazy";
+          logo.referrerPolicy = "no-referrer";
+          logo.style.cssText = "display:block;max-width:36px;max-height:28px;width:auto;height:auto;object-fit:contain";
+          logo.addEventListener("error", () => { icon.textContent = "↗"; }, { once:true });
+          icon.replaceChildren(logo);
+        }
         badge.className = "shipping-option-badge";
         badge.textContent = highlights.join(" · ");
         badge.style.cssText = "color:#777;font-size:10px;font-weight:400;line-height:1.25;letter-spacing:.01em";
