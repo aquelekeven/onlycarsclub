@@ -143,11 +143,14 @@
 
     function show(index, manual = false) {
       const targetIndex = (index + slides.length) % slides.length;
-      slides[targetIndex]?.scrollIntoView({
-        behavior: reduceMotion ? "auto" : "smooth",
-        block: "nearest",
-        inline: "center"
-      });
+      const targetSlide = slides[targetIndex];
+      if (targetSlide) {
+        const targetLeft = targetSlide.offsetLeft - ((track.clientWidth - targetSlide.offsetWidth) / 2);
+        track.scrollTo({
+          left: Math.max(0, targetLeft),
+          behavior: reduceMotion ? "auto" : "smooth"
+        });
+      }
       updateState(targetIndex);
       if (manual) restartAutoplay();
     }
