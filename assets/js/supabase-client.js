@@ -227,6 +227,20 @@
     return data;
   }
 
+  async function signedUrl(bucket, path, expiresIn = 3600) {
+    if (!/^[a-z0-9][a-z0-9_-]*$/i.test(bucket) || !path) throw new SupabaseRequestError("Arquivo inválido.", 400);
+    const session = await getSession();
+    if (!session) throw new SupabaseRequestError("Faça login para continuar.", 401);
+    const response = await fetch(`${PROJECT_URL}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${path.split("/").map(encodeURIComponent).join("/")}`, {
+      method:"POST",
+      headers:{ apikey:PUBLISHABLE_KEY, Authorization:`Bearer ${session.access_token}`, "Content-Type":"application/json" },
+      body:JSON.stringify({ expiresIn })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.signedURL) throw new SupabaseRequestError(data?.message || data?.error || "Não foi possível abrir o arquivo.", response.status, data);
+    return /^https?:\/\//i.test(data.signedURL) ? data.signedURL : `${PROJECT_URL}/storage/v1${data.signedURL}`;
+  }
+
   window.OnlySupabase = {
     getSession,
     getUser,
@@ -238,6 +252,7 @@
     consumeAuthRedirect,
     invokeFunction,
     upload,
+    signedUrl,
     publicRest,
     rest,
     projectUrl: PROJECT_URL
