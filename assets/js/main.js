@@ -1861,8 +1861,43 @@ function setupCheckoutFlow() {
         setShippingStatus(firstError || "Nenhuma transportadora atende este CEP para o pacote informado.", "error");
         return;
       }
+      const quoteKey = (quote) => String(
+        quote?.id
+        ?? `${quote?.company?.name || ""}|${quote?.name || ""}|${quote?.custom_price ?? quote?.price}`
+      );
+      const selectedQuotes = new Map();
+      const selectQuote = (quote, highlight) => {
+        if (!quote) return;
+        const key = quoteKey(quote);
+        const current = selectedQuotes.get(key);
+        if (current) {
+          if (!current.highlights.includes(highlight)) current.highlights.push(highlight);
+          return;
+        }
+        selectedQuotes.set(key, { quote, highlights:[highlight] });
+      };
+      const quoteSearchText = (quote) => `${quote?.company?.name || ""} ${quote?.name || ""}`.toLowerCase();
+      const fastest = [...available]
+        .filter((quote) => Number.isFinite(Number(quote?.custom_delivery_time ?? quote?.delivery_time)))
+        .sort((a, b) => {
+          const deadline = Number(a.custom_delivery_time ?? a.delivery_time) - Number(b.custom_delivery_time ?? b.delivery_time);
+          return deadline || Number(a.custom_price ?? a.price) - Number(b.custom_price ?? b.price);
+        })[0];
+      const sedex = available.find((quote) => quoteSearchText(quote).includes("sedex"));
+      const jadlog = available.find((quote) => quoteSearchText(quote).includes("jadlog"));
+
+      selectQuote(available[0], "Mais barato");
+      selectQuote(fastest, "Mais rápido");
+      selectQuote(sedex, "SEDEX");
+      selectQuote(jadlog || available.find((quote) => !selectedQuotes.has(quoteKey(quote))), "Alternativa");
+      for (const quote of available) {
+        if (selectedQuotes.size >= 4) break;
+        selectQuote(quote, "Outra opção");
+      }
+
+      const visibleQuotes = [...selectedQuotes.values()].slice(0, 4);
       const fragment = document.createDocumentFragment();
-      available.forEach((quote) => {
+      visibleQuotes.forEach(({ quote, highlights }) => {
         const serviceName = String(quote.name || quote.company?.name || "Transportadora");
         const companyName = String(quote.company?.name || "");
         const price = Number(quote.custom_price ?? quote.price);
@@ -1871,6 +1906,7 @@ function setupCheckoutFlow() {
         const input = document.createElement("input");
         const icon = document.createElement("span");
         const copy = document.createElement("span");
+        const badge = document.createElement("span");
         const title = document.createElement("strong");
         const details = document.createElement("small");
         const marker = document.createElement("i");
@@ -1888,6 +1924,9 @@ function setupCheckoutFlow() {
         });
         icon.className = "checkout-option-icon shipping-option-icon";
         icon.textContent = "↗";
+        badge.className = "shipping-option-badge";
+        badge.textContent = highlights.join(" · ");
+        badge.style.cssText = "width:max-content;max-width:100%;padding:4px 8px;border-radius:999px;background:#111;color:#ffd400;font-size:9px;font-weight:900;line-height:1;letter-spacing:.08em;text-transform:uppercase";
         title.textContent = companyName && companyName !== serviceName
           ? `${companyName} · ${serviceName}`
           : serviceName;
@@ -1895,13 +1934,13 @@ function setupCheckoutFlow() {
           ? ` · até ${deliveryTime} ${deliveryTime === 1 ? "dia útil" : "dias úteis"}`
           : "";
         details.textContent = `${formatCurrency(price)}${deadline}`;
-        copy.append(title, details);
+        copy.append(badge, title, details);
         label.append(input, icon, copy, marker);
         if (savedDelivery === input.value && savedQuote?.postalCode === postalCode) input.checked = true;
         fragment.appendChild(label);
       });
       shippingResults.appendChild(fragment);
-      setShippingStatus(`${available.length} ${available.length === 1 ? "opção encontrada" : "opções encontradas"}. Escolha uma para continuar.`, "success");
+      setShippingStatus(`${visibleQuotes.length} ${visibleQuotes.length === 1 ? "opção recomendada" : "opções recomendadas"}. Escolha uma para continuar.`, "success");
     };
 
     const calculateShipping = async () => {
