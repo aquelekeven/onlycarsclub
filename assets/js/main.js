@@ -1926,14 +1926,14 @@ function setupCheckoutFlow() {
         icon.textContent = "↗";
         badge.className = "shipping-option-badge";
         badge.textContent = highlights.join(" · ");
-        badge.style.cssText = "width:max-content;max-width:100%;padding:4px 8px;border-radius:999px;background:#111;color:#ffd400;font-size:9px;font-weight:900;line-height:1;letter-spacing:.08em;text-transform:uppercase";
-        title.textContent = companyName && companyName !== serviceName
-          ? `${companyName} · ${serviceName}`
-          : serviceName;
+        badge.style.cssText = "color:#777;font-size:10px;font-weight:400;line-height:1.25;letter-spacing:.01em";
+        title.textContent = companyName || serviceName;
+        title.style.cssText = "font-size:16px;font-weight:800;line-height:1.2;color:#171717";
         const deadline = Number.isFinite(deliveryTime)
           ? ` · até ${deliveryTime} ${deliveryTime === 1 ? "dia útil" : "dias úteis"}`
           : "";
-        details.textContent = `${formatCurrency(price)}${deadline}`;
+        details.textContent = `${companyName && companyName !== serviceName ? `${serviceName} · ` : ""}${formatCurrency(price)}${deadline}`;
+        details.style.cssText = "color:#555;font-size:11px;font-weight:700;line-height:1.4";
         copy.append(badge, title, details);
         label.append(input, icon, copy, marker);
         if (savedDelivery === input.value && savedQuote?.postalCode === postalCode) input.checked = true;
