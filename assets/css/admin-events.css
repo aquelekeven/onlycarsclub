@@ -25,3 +25,43 @@
   .admin-event-selector { grid-template-columns:1fr; }
   .admin-event-selector>button { min-height:165px; }
 }
+
+.admin-confirmation-photos { margin-top:24px; padding:22px; border:1px solid #deded7; border-radius:22px; background:#fff; }
+.admin-confirmation-photos>header { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:18px; }
+.admin-confirmation-photos h3 { margin:3px 0 4px; color:#171714; font-size:20px; }
+.admin-confirmation-photos header span { color:#76766f; font-size:11px; }
+.admin-photo-filters { display:flex; gap:7px; padding:5px; border-radius:14px; background:#f1f1ed; }
+.admin-photo-filters button { min-height:38px; padding:0 12px; border:0; border-radius:10px; background:transparent; color:#5c5c56; font:inherit; font-size:10px; font-weight:800; cursor:pointer; }
+.admin-photo-filters button.active { background:#171714; color:#fff; box-shadow:0 5px 14px #1112; }
+.admin-photo-filters b { display:inline-grid; min-width:20px; height:20px; margin-left:5px; place-items:center; border-radius:999px; background:#f4cf16; color:#171714; font-size:9px; }
+.admin-photo-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.admin-photo-card { overflow:hidden; border:1px solid #deded7; border-radius:19px; background:#f8f8f5; }
+.admin-photo-preview { width:100%; aspect-ratio:4/3; padding:0; overflow:hidden; display:grid; place-items:center; border:0; background:#171714; color:#aaa; cursor:zoom-in; }
+.admin-photo-preview img { width:100%; height:100%; display:block; object-fit:cover; transition:transform .25s ease; }
+.admin-photo-preview:hover img { transform:scale(1.025); }
+.admin-photo-preview span { padding:20px; font-size:10px; }
+.admin-photo-card-body { padding:15px; }
+.admin-photo-project { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.admin-photo-project span { color:#8a8a82; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+.admin-photo-project a,.admin-photo-project strong { overflow:hidden; color:#171714; font-size:11px; font-weight:900; text-overflow:ellipsis; white-space:nowrap; }
+.admin-photo-card h4 { margin:12px 0 3px; color:#171714; font-size:15px; }
+.admin-photo-card p { margin:0; color:#66665f; font-size:10px; }
+.admin-photo-card p b { color:#171714; }
+.admin-photo-card small { display:block; margin-top:7px; color:#94948c; font-size:9px; }
+.admin-photo-actions { display:grid; grid-template-columns:1fr auto; gap:7px; margin-top:14px; }
+.admin-photo-actions button { min-height:38px; padding:0 11px; border:1px solid #d5d5ce; border-radius:10px; background:#fff; color:#171714; font:inherit; font-size:9px; font-weight:900; cursor:pointer; }
+.admin-photo-actions button.primary { border-color:#f4cf16; background:#f4cf16; }
+.admin-photo-actions button:disabled { opacity:.55; cursor:wait; }
+.admin-photo-card em { display:block; margin-top:10px; color:#218452; font-size:9px; font-style:normal; font-weight:800; }
+.admin-photo-empty { grid-column:1/-1; min-height:180px; display:grid; place-content:center; gap:6px; border:1px dashed #d5d5ce; border-radius:18px; background:#fafaf7; text-align:center; }
+.admin-photo-empty strong { color:#171714; font-size:16px; }
+.admin-photo-empty span { color:#85857d; font-size:10px; }
+
+@media(max-width:980px) { .admin-photo-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) {
+  .admin-confirmation-photos { padding:16px; }
+  .admin-confirmation-photos>header { align-items:stretch; flex-direction:column; }
+  .admin-photo-filters { overflow-x:auto; }
+  .admin-photo-filters button { flex:0 0 auto; }
+  .admin-photo-grid { grid-template-columns:1fr; }
+}
