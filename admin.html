@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://wxxgcnyolpioyiaepkvs.supabase.co; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
@@ -11,10 +11,10 @@
   <link rel="stylesheet" href="assets/css/admin-events.css?v=20260813-v1">
   <link rel="stylesheet" href="assets/css/admin-clean.css?v=20260813-dark-menu-v4">
   <script src="assets/js/main.js?v=20260805-admin2" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260812-fiscal-v125" defer></script>
-  <script src="assets/js/admin.js?v=20260813-shipping-sandbox-v130" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260815-ticket-media-v126" defer></script>
+  <script src="assets/js/admin.js?v=20260815-order-email-v141" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
-  <script src="assets/js/admin-event-tools.js?v=20260813-event-tools-v6" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260815-confirmation-photos-v7" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -158,6 +158,17 @@
               <div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>
             </section>
           </div>
+          <section class="admin-confirmation-photos">
+            <header>
+              <div><p class="eyebrow">Conteúdo do evento</p><h3>Fotos de confirmado</h3><span>Somente fotos vinculadas a ingressos pagos aparecem nesta fila.</span></div>
+              <div class="admin-photo-filters" role="group" aria-label="Filtrar fotos de confirmação">
+                <button class="active" type="button" data-photo-filter="pending">Aguardando postagem <b data-photo-pending-count>0</b></button>
+                <button type="button" data-photo-filter="posted">Já postados <b data-photo-posted-count>0</b></button>
+              </div>
+            </header>
+            <p class="admin-scanner-feedback" data-photo-feedback role="status"></p>
+            <div class="admin-photo-grid" data-confirmation-photos></div>
+          </section>
           <section class="admin-ticket-activity"><header><div><p class="eyebrow">Movimentações</p><h3>Atividade recente da portaria</h3></div></header><div data-ticket-activity></div></section>
           </div>
         </section>
