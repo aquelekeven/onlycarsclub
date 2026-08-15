@@ -8,6 +8,58 @@
   <title>Minha conta — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260813-account-events-v139">
   <link rel="stylesheet" href="assets/css/account-clean.css?v=20260813-bottom-menu-v4">
+  <style>
+    body[data-page="conta"] .account-loading-state {
+      min-height:calc(100vh - 190px);
+      display:grid;
+      place-items:center;
+      text-align:center;
+    }
+    body[data-page="conta"] .account-loading-inner {
+      display:grid;
+      justify-items:center;
+      gap:18px;
+    }
+    body[data-page="conta"] .account-loading-copy {
+      display:grid;
+      gap:5px;
+    }
+    body[data-page="conta"] .account-loading-copy strong {
+      color:#121211;
+      font-size:14px;
+      font-weight:850;
+    }
+    body[data-page="conta"] .account-loading-copy span {
+      color:#74736d;
+      font-size:10px;
+    }
+    body[data-page="conta"] .account-loader {
+      display:inline-flex;
+      gap:10px;
+    }
+    body[data-page="conta"] .account-loader::before,
+    body[data-page="conta"] .account-loader::after {
+      content:"";
+      height:20px;
+      aspect-ratio:1;
+      border-radius:50%;
+      background:
+        linear-gradient(#222 0 0) top/100% 40% no-repeat,
+        radial-gradient(farthest-side,#000 95%,#0000) 50%/8px 8px no-repeat
+        #fff;
+      animation:account-loader-l7 1.5s infinite alternate ease-in;
+    }
+    @keyframes account-loader-l7 {
+      0%,
+      70% { background-size:100% 40%,8px 8px; }
+      85% { background-size:100% 120%,8px 8px; }
+      100% { background-size:100% 40%,8px 8px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      body[data-page="conta"] .account-loader::before,
+      body[data-page="conta"] .account-loader::after { animation:none; }
+    }
+  </style>
   <script src="assets/js/main.js?v=20260812-account-mobile-v130" defer></script>
   <script src="assets/js/supabase-client.js?v=20260813-upload-v94" defer></script>
   <script src="assets/js/qrcode.min.js?v=20260812-v1" defer></script>
@@ -24,7 +76,12 @@
   </header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
   <main class="account-page"><div class="account-wrap">
-    <section class="account-state" data-account-loading><strong>Carregando sua conta...</strong><span>Aguarde só um instante.</span></section>
+    <section class="account-state account-loading-state" data-account-loading>
+      <div class="account-loading-inner">
+        <div class="account-loader" aria-hidden="true"></div>
+        <div class="account-loading-copy"><strong>Carregando sua conta...</strong><span>Aguarde só um instante.</span></div>
+      </div>
+    </section>
     <section class="account-state" data-account-guest hidden><strong>Você ainda não entrou.</strong><span>Faça login ou crie sua conta para acessar esta área.</span><div class="actions"><a class="button primary" href="login.html">Entrar</a><a class="button ghost" href="cadastro.html">Criar conta</a></div></section>
     <div class="account-center" data-account-content hidden>
       <aside class="account-sidebar">
