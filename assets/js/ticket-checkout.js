@@ -47,6 +47,17 @@
       root.querySelector("[data-ticket-lot]").textContent = activeLot.name;
       root.querySelector("[data-ticket-price]").textContent = money(activeLot.price_cents);
       root.querySelector("[data-ticket-total]").textContent = money(activeLot.price_cents);
+      const occupied = Math.max(0, Number(activeLot.sold_or_reserved || 0));
+      const paid = Math.max(0, Number(activeLot.sold_confirmed || 0));
+      const capacity = Math.max(1, Number(activeLot.capacity || 1));
+      const percent = Math.min(100, Math.round((occupied / capacity) * 100));
+      const available = Math.max(0, capacity - occupied);
+      root.querySelector("[data-ticket-progress-label]").textContent = `${available} ${available === 1 ? "vaga restante" : "vagas restantes"}`;
+      root.querySelector("[data-ticket-progress-percent]").textContent = `${percent}%`;
+      root.querySelector("[data-ticket-progress-bar]").style.width = `${percent}%`;
+      root.querySelector("[data-ticket-progress-detail]").textContent = paid === occupied
+        ? `${paid} de ${capacity} ingressos confirmados`
+        : `${paid} pagos • ${occupied - paid} aguardando pagamento`;
       submit.disabled = false;
     } catch (loadError) {
       error.textContent = loadError.message || "Não foi possível carregar o lote disponível.";

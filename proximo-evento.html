@@ -10,10 +10,11 @@
   <title>Próximo evento — Only Cars Club</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
   <link rel="shortcut icon" href="favicon.ico?v=20260729-v65">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260812-event-v124">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260815-event-live-v145">
+  <link rel="stylesheet" href="assets/css/event-live.css?v=20260815-v1">
   <script src="assets/js/main.js?v=20260730-v68" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/event.js?v=20260812-event-v2" defer></script>
+  <script src="assets/js/event.js?v=20260815-event-live-v3" defer></script>
 </head>
 <body data-page="proximo-evento" class="next-event-page">
   <header class="header">
@@ -31,6 +32,11 @@
         <h1 id="next-event-title">Only Cars<br><em>Meeting.</em></h1>
         <p class="event-hero-lead">Uma noite de exposição automotiva e drift no coração de São Paulo.</p>
         <div class="event-current-lot" aria-label="Lote atual"><span>Lote 1 aberto</span><strong>R$ 45</strong><small>por carro Expo</small></div>
+        <div class="event-lot-progress" data-event-lot-progress aria-live="polite">
+          <div><span data-lot-progress-label>Carregando lote atual...</span><strong data-lot-progress-percent>0%</strong></div>
+          <i><b data-lot-progress-bar></b></i>
+          <small data-lot-progress-detail>Conferindo vagas disponíveis</small>
+        </div>
         <div class="event-hero-actions">
           <button class="button primary" type="button" data-event-buy disabled>Vendas em breve</button>
           <a class="event-text-link" href="#detalhes">Ver todos os detalhes <span>↓</span></a>
@@ -42,6 +48,16 @@
         <strong>23</strong>
         <small>SEXTA • 2026</small>
       </aside>
+    </section>
+
+    <section class="event-countdown" data-event-countdown aria-label="Contagem regressiva para o evento">
+      <header><p class="eyebrow">Contagem regressiva</p><h2>Falta pouco para<br>acender as luzes.</h2></header>
+      <div>
+        <article><strong data-countdown-days>00</strong><span>dias</span></article>
+        <article><strong data-countdown-hours>00</strong><span>horas</span></article>
+        <article><strong data-countdown-minutes>00</strong><span>minutos</span></article>
+        <article><strong data-countdown-seconds>00</strong><span>segundos</span></article>
+      </div>
     </section>
 
     <section class="event-facts" aria-label="Informações principais">
