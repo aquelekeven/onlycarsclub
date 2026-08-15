@@ -20,12 +20,14 @@
   }).format(Number(cents || 0) / 100);
 
   function setSaleState(event) {
-    const isOpen = event?.status === "sales_open" && Number(event.remaining_public || 0) > 0;
+    const currentLot = Array.isArray(event?.lots) ? event.lots.find((lot) => lot.active) : null;
+    const lotTemporarilyFull = currentLot && Number(currentLot.sold_or_reserved || 0) >= Number(currentLot.capacity || 0);
+    const isOpen = event?.status === "sales_open" && Number(event.remaining_public || 0) > 0 && !lotTemporarilyFull;
     const isSoldOut = Number(event?.remaining_public || 0) <= 0;
 
     buyButtons.forEach((button) => {
       button.disabled = !isOpen;
-      button.textContent = isOpen ? "Comprar ingresso Expo" : isSoldOut ? "Ingressos esgotados" : "Vendas em breve";
+      button.textContent = isOpen ? "Comprar ingresso Expo" : isSoldOut ? "Ingressos esgotados" : lotTemporarilyFull ? "Vagas em pagamento" : "Vendas em breve";
       if (isOpen) button.dataset.saleOpen = "true";
       else delete button.dataset.saleOpen;
     });
@@ -35,7 +37,9 @@
         ? `${event.remaining_public} vagas públicas disponíveis`
         : isSoldOut
           ? "Capacidade Expo esgotada"
-          : "Aguardando a liberação segura das vendas"}`;
+          : lotTemporarilyFull
+            ? "As vagas deste lote estão temporariamente reservadas"
+            : "Aguardando a liberação segura das vendas"}`;
     }
     if (remaining && Number.isFinite(Number(event?.remaining_public))) {
       remaining.textContent = `${event.remaining_public} vagas públicas disponíveis`;
