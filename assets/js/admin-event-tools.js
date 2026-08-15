@@ -85,6 +85,8 @@
   let lastToken = "";
   let currentTicket = null;
   let selectedEventId = null;
+  let confirmationPhotos = [];
+  let photoFilter = "pending";
   const fallbackCanvas = document.createElement("canvas");
   const fallbackContext = fallbackCanvas.getContext("2d", { willReadFrequently:true });
 
@@ -237,6 +239,62 @@
     }
   }
 
+  const normalizeInstagram = (value) => String(value || "").trim().replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/$/, "");
+
+  async function renderConfirmationPhotos() {
+    const root = qs("[data-confirmation-photos]");
+    const feedback = qs("[data-photo-feedback]");
+    if (!root) return;
+    const visible = confirmationPhotos.filter((item) => photoFilter === "posted" ? item.posted : !item.posted);
+    qs("[data-photo-pending-count]").textContent = confirmationPhotos.filter((item) => !item.posted).length;
+    qs("[data-photo-posted-count]").textContent = confirmationPhotos.filter((item) => item.posted).length;
+    if (!visible.length) {
+      root.innerHTML = `<div class="admin-photo-empty"><strong>${photoFilter === "posted" ? "Nenhuma foto postada ainda" : "Tudo em dia por aqui"}</strong><span>${photoFilter === "posted" ? "As fotos marcadas como postadas aparecerão nesta lista." : "Novas fotos de ingressos pagos aparecerão automaticamente."}</span></div>`;
+      if (feedback) feedback.textContent = "";
+      return;
+    }
+    root.innerHTML = visible.map((item) => {
+      const handle = normalizeInstagram(item.instagram_handle);
+      return `<article class="admin-photo-card" data-photo-id="${escapeHtml(item.id)}">
+        <button class="admin-photo-preview" type="button" data-open-confirmation-photo="${escapeHtml(item.id)}"><span>Carregando foto...</span></button>
+        <div class="admin-photo-card-body">
+          <div class="admin-photo-project"><span>Projeto</span>${handle ? `<a href="https://instagram.com/${encodeURIComponent(handle)}" target="_blank" rel="noopener">@${escapeHtml(handle)}</a>` : "<strong>@ não informado</strong>"}</div>
+          <h4>${escapeHtml([item.vehicle_make, item.vehicle_model].filter(Boolean).join(" ") || "Veículo Expo")}</h4>
+          <p>${escapeHtml(item.driver_name)} · <b>${escapeHtml(item.vehicle_plate)}</b></p>
+          <small>Enviada em ${dateTime(item.created_at)}</small>
+          <div class="admin-photo-actions">
+            <button class="primary" type="button" data-set-photo-posted="${escapeHtml(item.id)}" data-posted="${item.posted ? "false" : "true"}">${item.posted ? "Voltar para aguardando" : "Marcar como postado"}</button>
+            <button type="button" data-download-confirmation-photo="${escapeHtml(item.id)}">Baixar foto</button>
+          </div>
+          ${item.posted ? `<em>Postado em ${dateTime(item.posted_at)}</em>` : ""}
+        </div>
+      </article>`;
+    }).join("");
+    await Promise.all(visible.map(async (item) => {
+      const preview = qs(`[data-photo-id="${CSS.escape(item.id)}"] [data-open-confirmation-photo]`, root);
+      try {
+        item.signed_url = item.signed_url || await client.signedUrl("ticket-confirmations", item.storage_path, 3600);
+        if (preview) preview.innerHTML = `<img src="${escapeHtml(item.signed_url)}" alt="${escapeHtml(`Foto do projeto ${item.vehicle_make || ""} ${item.vehicle_model || ""}`.trim())}">`;
+      } catch (_) {
+        if (preview) preview.innerHTML = "<span>Não foi possível carregar a foto</span>";
+      }
+    }));
+    if (feedback) feedback.textContent = "";
+  }
+
+  async function loadConfirmationPhotos() {
+    if (!selectedEventId) return;
+    const feedback = qs("[data-photo-feedback]");
+    if (feedback) feedback.textContent = "Carregando fotos de confirmação...";
+    try {
+      confirmationPhotos = await client.rest("rpc/admin_event_confirmation_photos", { method:"POST", body:{ p_event_id:selectedEventId } }) || [];
+      await renderConfirmationPhotos();
+    } catch (error) {
+      confirmationPhotos = [];
+      if (feedback) feedback.textContent = error.message || "Não foi possível carregar as fotos.";
+    }
+  }
+
   async function loadGateEvents() {
     const root = qs("[data-admin-event-selector]");
     const gate = qs("[data-admin-event-gate]");
@@ -258,7 +316,7 @@
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
-        await loadTicketStats();
+        await Promise.all([loadTicketStats(), loadConfirmationPhotos()]);
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
     } catch (error) {
@@ -272,11 +330,50 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? loadTicketStats() : loadGateEvents());
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadConfirmationPhotos()]) : loadGateEvents());
+    qs(".admin-photo-filters")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-photo-filter]");
+      if (!button) return;
+      photoFilter = button.dataset.photoFilter;
+      qsa("[data-photo-filter]").forEach((item) => item.classList.toggle("active", item === button));
+      renderConfirmationPhotos();
+    });
+    qs("[data-confirmation-photos]")?.addEventListener("click", async (event) => {
+      const postedButton = event.target.closest("[data-set-photo-posted]");
+      const openButton = event.target.closest("[data-open-confirmation-photo]");
+      const downloadButton = event.target.closest("[data-download-confirmation-photo]");
+      const id = postedButton?.dataset.setPhotoPosted || openButton?.dataset.openConfirmationPhoto || downloadButton?.dataset.downloadConfirmationPhoto;
+      const photo = confirmationPhotos.find((item) => item.id === id);
+      if (!photo) return;
+      if (postedButton) {
+        postedButton.disabled = true;
+        try {
+          await client.rest("rpc/admin_set_confirmation_photo_posted", { method:"POST", body:{ p_media_id:photo.id, p_posted:postedButton.dataset.posted === "true" } });
+          await loadConfirmationPhotos();
+        } catch (error) {
+          qs("[data-photo-feedback]").textContent = error.message || "Não foi possível atualizar a foto.";
+          postedButton.disabled = false;
+        }
+        return;
+      }
+      try {
+        photo.signed_url = photo.signed_url || await client.signedUrl("ticket-confirmations", photo.storage_path, 3600);
+        if (openButton) window.open(photo.signed_url, "_blank", "noopener");
+        if (downloadButton) {
+          const link = document.createElement("a");
+          link.href = photo.signed_url;
+          link.download = `only-${photo.vehicle_plate || photo.ticket_code || "confirmado"}.jpg`;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.click();
+        }
+      } catch (error) { qs("[data-photo-feedback]").textContent = error.message || "Não foi possível abrir a foto."; }
+    });
     qs("[data-admin-event-back]")?.addEventListener("click", () => {
       stopScanner();
       selectedEventId = null;
       currentTicket = null;
+      confirmationPhotos = [];
       lastToken = "";
       qs("[data-admin-event-gate]").hidden = true;
       qs("[data-admin-panel='tickets']")?.classList.remove("is-event-open");
