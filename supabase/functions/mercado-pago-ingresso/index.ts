@@ -81,10 +81,15 @@ Deno.serve(async (request) => {
       .select("id,name,price_cents,capacity,active").eq("id", lotId).eq("event_id", event.id).eq("active", true).single();
     if (lotError || !lot) throw new Error("O lote selecionado não está disponível.");
 
-    const { count: occupied, error: countError } = await serviceClient.from("ticket_orders")
-      .select("id", { count: "exact", head: true }).eq("lot_id", lot.id).in("status", ["pending_payment", "paid"]);
-    if (countError) throw new Error("Não foi possível conferir as vagas do lote.");
-    if (Number(occupied || 0) >= Number(lot.capacity)) throw new Error("Este lote está esgotado.");
+    const [{ count: paidCount, error: paidError }, { count: reservedCount, error: reservedError }] = await Promise.all([
+      serviceClient.from("ticket_orders").select("id", { count: "exact", head: true })
+        .eq("lot_id", lot.id).eq("status", "paid"),
+      serviceClient.from("ticket_orders").select("id", { count: "exact", head: true })
+        .eq("lot_id", lot.id).eq("status", "pending_payment").gt("expires_at", new Date().toISOString()),
+    ]);
+    if (paidError || reservedError) throw new Error("Não foi possível conferir as vagas do lote.");
+    const occupied = Number(paidCount || 0) + Number(reservedCount || 0);
+    if (occupied >= Number(lot.capacity)) throw new Error("Todas as vagas deste lote estão reservadas no momento.");
 
     const { data: existingPlate, error: plateError } = await serviceClient.from("tickets")
       .select("id").eq("event_id", event.id).eq("vehicle_plate", vehiclePlate)
