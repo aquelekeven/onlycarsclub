@@ -2104,9 +2104,22 @@ function setupCheckoutFlow() {
     if (paymentButton) paymentButton.disabled = true;
     const paymentAccessPromise = window.OnlySupabase?.getUser?.()
       .catch(() => null)
-      .then((user) => {
+      .then(async (user) => {
         if (!user) {
           location.replace("login.html?next=entrega.html");
+          return null;
+        }
+        const profiles = await window.OnlySupabase.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`).catch(() => []);
+        const birthDate = profiles?.[0]?.birth_date;
+        if (!birthDate) {
+          qs("[data-checkout-error]", paymentForm).textContent = "Informe sua data de nascimento em Minha conta antes de comprar.";
+          return null;
+        }
+        const birth = new Date(`${birthDate}T12:00:00`), today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+        if (age < 17) {
+          qs("[data-checkout-error]", paymentForm).textContent = "As compras online são permitidas somente a partir de 17 anos completos.";
           return null;
         }
         if (paymentButton) paymentButton.disabled = false;

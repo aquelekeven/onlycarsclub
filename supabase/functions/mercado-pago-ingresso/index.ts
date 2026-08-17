@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v5-production";
+const FUNCTION_VERSION = "ticket-checkout-v6-age-gate";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -18,6 +18,17 @@ const validUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-
 const sha256 = async (value: string) => Array.from(
   new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))),
 ).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+const hasPurchaseAge = (birthDate: string | null) => {
+  if (!birthDate) return false;
+  const birth = new Date(`${birthDate}T12:00:00Z`);
+  if (Number.isNaN(birth.getTime())) return false;
+  const today = new Date();
+  let age = today.getUTCFullYear() - birth.getUTCFullYear();
+  const birthdayPassed = today.getUTCMonth() > birth.getUTCMonth() ||
+    (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() >= birth.getUTCDate());
+  if (!birthdayPassed) age -= 1;
+  return age >= 17;
+};
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -51,6 +62,14 @@ Deno.serve(async (request) => {
 
   let createdOrderId: string | null = null;
   try {
+    const { data: buyerProfile, error: buyerProfileError } = await serviceClient.from("profiles")
+      .select("birth_date").eq("id", user.id).single();
+    if (buyerProfileError || !buyerProfile?.birth_date) {
+      throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
+    }
+    if (!hasPurchaseAge(buyerProfile.birth_date)) {
+      throw new Error("As compras online são permitidas somente a partir de 17 anos completos.");
+    }
     const body = await request.json().catch(() => ({}));
     const eventSlug = clean(body.event_slug, 80);
     const lotId = clean(body.lot_id, 40);

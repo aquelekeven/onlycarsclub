@@ -23,16 +23,16 @@
   <title>Ingresso Expo — Only Cars Meeting</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
   <link rel="stylesheet" href="assets/css/style.css?v=20260815-ticket-live-v2">
-  <link rel="stylesheet" href="assets/css/event-live.css?v=20260815-v1">
+  <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-film-v3">
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/ticket-checkout.js?v=20260815-ticket-live-v2" defer></script>
+  <script src="assets/js/ticket-checkout.js?v=20260817-age-v3" defer></script>
 </head>
 <body data-page="proximo-evento" class="ticket-checkout-page">
   <header class="header"><a href="proximo-evento.html" class="brand" aria-label="Voltar ao evento"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
   <main class="ticket-checkout" data-ticket-checkout data-event-slug="only-cars-meeting-2026">
-    <header class="ticket-checkout-head"><div><p class="eyebrow">Only Cars Meeting • 23.10.2026</p><h1>Garanta seu<br>Ingresso Expo.</h1></div><p>Cadastre o carro que participará da exposição. O ingresso é individual por veículo e não poderá ser transferido.</p></header>
+    <header class="ticket-checkout-head"><div><p class="eyebrow">Only Cars Meeting • 23.10.2026</p><h1>Garanta seu<br>Ingresso Expo.</h1></div><p>Cadastre o carro que participará da exposição. O ingresso é individual por veículo e não poderá ser transferido.<br><strong>Evento livre • compras online a partir de 17 anos.</strong></p></header>
     <ol class="ticket-steps" aria-label="Etapas da compra"><li class="active"><i>1</i><span>Ingresso</span></li><li class="active"><i>2</i><span>Cadastro</span></li><li><i>3</i><span>Pagamento</span></li><li><i>4</i><span>Foto do carro</span></li></ol>
     <div class="ticket-buy-grid">
       <form class="ticket-form-card" data-ticket-form>
@@ -49,7 +49,7 @@
           <label class="ticket-field">Modelo<input name="vehicle_model" placeholder="Ex.: Golf GTI" required maxlength="80"></label>
           <label class="ticket-field">Instagram do carro <span>(opcional)</span><input name="instagram_handle" placeholder="@seuprojeto" maxlength="40"></label>
         </div></fieldset>
-        <div class="ticket-rules">Ao continuar, você confirma que os dados do veículo estão corretos e aceita as <a href="proximo-evento.html#detalhes" target="_blank" rel="noopener">condições informadas para o evento</a>. Cancelamentos poderão ser solicitados até 5 horas antes do início.</div>
+        <div class="ticket-rules">Ao continuar, você confirma que os dados do veículo estão corretos, possui 17 anos completos ou mais e aceita as <a href="proximo-evento.html#detalhes" target="_blank" rel="noopener">condições informadas para o evento</a>. Cancelamentos poderão ser solicitados em Minha conta.</div>
         <button class="ticket-submit" type="submit" disabled data-ticket-submit>Continuar para o Mercado Pago</button>
         <p class="ticket-error" data-ticket-error role="alert"></p>
       </form>

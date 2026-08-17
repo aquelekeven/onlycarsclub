@@ -10,6 +10,13 @@
   let activeLot = null;
   const money = (cents) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(cents || 0) / 100);
   const digits = (value) => String(value || "").replace(/\D/g, "");
+  const ageFrom = (value) => {
+    if (!value) return -1;
+    const birth = new Date(`${value}T12:00:00`), today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
   const cpfInput = form.elements.driver_tax_id;
   const phoneInput = form.elements.driver_phone;
 
@@ -41,6 +48,10 @@
       return;
     }
     try {
+      const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`);
+      const birthDate = profiles?.[0]?.birth_date;
+      if (!birthDate) throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
+      if (ageFrom(birthDate) < 17) throw new Error("Você pode visualizar o evento, mas as compras online são permitidas somente a partir de 17 anos completos.");
       eventData = await client.publicRest("rpc/public_event_summary", { method:"POST", body:{ target_slug:root.dataset.eventSlug } });
       activeLot = eventData?.lots?.find((lot) => lot.active);
       if (eventData?.status !== "sales_open" || !activeLot || Number(eventData.remaining_public || 0) <= 0) throw new Error("As vendas do Lote 1 ainda não estão abertas.");

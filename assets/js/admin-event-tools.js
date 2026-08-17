@@ -239,6 +239,18 @@
     }
   }
 
+  async function loadRefundRequests() {
+    const root = qs("[data-refund-requests]");
+    const feedback = qs("[data-refund-feedback]");
+    if (!root || !selectedEventId) return;
+    feedback.textContent = "Carregando solicitações...";
+    try {
+      const requests = await client.rest("rpc/admin_ticket_refund_requests", { method:"POST", body:{ p_event_id:selectedEventId } }) || [];
+      root.innerHTML = requests.length ? requests.map((item) => `<article class="admin-refund-card" data-refund-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.customer_email)}</span></div><b data-status="${escapeHtml(item.status)}">${escapeHtml({requested:"Nova",under_review:"Em análise",approved:"Aprovada",rejected:"Recusada",refunded:"Reembolsada",cancelled:"Cancelada"}[item.status] || item.status)}</b></header><div><span>Motivo</span><strong>${escapeHtml(item.reason)}</strong>${item.details ? `<p>${escapeHtml(item.details)}</p>` : ""}<small>${dateTime(item.created_at)} · ${(Number(item.total_cents || 0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small></div><footer><textarea data-refund-notes rows="2" maxlength="800" placeholder="Observação para o cliente">${escapeHtml(item.admin_notes || "")}</textarea><div><button type="button" data-refund-status="under_review">Marcar em análise</button><button class="primary" type="button" data-refund-status="approved">Aprovar solicitação</button><button type="button" data-refund-status="rejected">Recusar</button></div></footer></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma solicitação de cancelamento ou reembolso.</div>';
+      feedback.textContent = "";
+    } catch (error) { root.innerHTML = ""; feedback.textContent = error.message || "Não foi possível carregar as solicitações."; }
+  }
+
   const normalizeInstagram = (value) => String(value || "").trim().replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/$/, "");
 
   async function renderConfirmationPhotos() {
@@ -316,7 +328,7 @@
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
-        await Promise.all([loadTicketStats(), loadConfirmationPhotos()]);
+        await Promise.all([loadTicketStats(), loadConfirmationPhotos(), loadRefundRequests()]);
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
     } catch (error) {
@@ -330,7 +342,19 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadConfirmationPhotos()]) : loadGateEvents());
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-refund-requests]")?.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-refund-status]");
+      if (!button) return;
+      const card = button.closest("[data-refund-id]");
+      const notes = qs("[data-refund-notes]", card)?.value.trim() || null;
+      button.disabled = true;
+      qs("[data-refund-feedback]").textContent = "Atualizando solicitação...";
+      try {
+        await client.rest("rpc/admin_update_ticket_refund_request", { method:"POST", body:{ p_request_id:card.dataset.refundId, p_status:button.dataset.refundStatus, p_admin_notes:notes } });
+        await loadRefundRequests();
+      } catch (error) { qs("[data-refund-feedback]").textContent = error.message || "Não foi possível atualizar."; button.disabled = false; }
+    });
     qs(".admin-photo-filters")?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-photo-filter]");
       if (!button) return;

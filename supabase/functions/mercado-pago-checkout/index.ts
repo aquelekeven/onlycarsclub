@@ -62,6 +62,17 @@ const jsonResponse = (
 const validUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     .test(value);
+const hasPurchaseAge = (birthDate: string | null) => {
+  if (!birthDate) return false;
+  const birth = new Date(`${birthDate}T12:00:00Z`);
+  if (Number.isNaN(birth.getTime())) return false;
+  const today = new Date();
+  let age = today.getUTCFullYear() - birth.getUTCFullYear();
+  const birthdayPassed = today.getUTCMonth() > birth.getUTCMonth() ||
+    (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() >= birth.getUTCDate());
+  if (!birthdayPassed) age -= 1;
+  return age >= 17;
+};
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
@@ -153,12 +164,18 @@ Deno.serve(async (request) => {
 
     const { data: profile, error: profileError } = await serviceClient
       .from("profiles")
-      .select("display_name, phone, tax_id")
+      .select("display_name, phone, tax_id, birth_date")
       .eq("id", user.id)
       .single();
 
     if (profileError || !profile) {
       throw new Error("Não foi possível carregar os dados do cliente.");
+    }
+    if (!profile.birth_date) {
+      throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
+    }
+    if (!hasPurchaseAge(profile.birth_date)) {
+      throw new Error("As compras online são permitidas somente a partir de 17 anos completos.");
     }
 
     let address: Record<string, any> | null = null;

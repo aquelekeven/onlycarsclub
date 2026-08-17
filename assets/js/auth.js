@@ -153,12 +153,15 @@
       if (!validPassword(password)) return setFeedback(form, "A senha precisa ter pelo menos 8 caracteres.");
       if (password !== form.password_confirmation.value) return setFeedback(form, "As senhas não coincidem.");
       if (!form.privacy.checked) return setFeedback(form, "Aceite a Política de Privacidade para continuar.");
+      const birthDate = form.birth_date.value;
+      if (!birthDate || new Date(`${birthDate}T12:00:00`).getTime() > Date.now()) return setFeedback(form, "Informe uma data de nascimento válida.");
       setSubmitting(form, true, "Criando conta...");
       try {
         const result = await client.signUp({
           name: form.name.value.trim(),
           email: form.email.value.trim(),
-          password
+          password,
+          birth_date: birthDate
         });
         if (result?.access_token) {
           location.replace("minha-conta.html");
@@ -299,7 +302,7 @@
     try {
       await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
       const [profiles, addresses, orders, ticketOrders] = await Promise.all([
-        client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id`),
+        client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id,birth_date`),
         client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
         client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
         client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => [])
@@ -326,6 +329,7 @@
       profileForm.display_name.value = profile.display_name || "";
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
+      profileForm.birth_date.value = profile.birth_date || "";
 
       qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
       const postalCodeInput = addressForm.postal_code;
@@ -372,17 +376,20 @@
       if (ticketBadge) ticketBadge.textContent = tickets.length;
       const ticketsRoot = qs("[data-account-tickets]");
       const ticketStatusLabels = { reserved:"Aguardando pagamento", active:"Ingresso confirmado", checked_in:"Entrada validada", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
+      const refundStatusLabels = { requested:"Solicitação enviada", under_review:"Em análise pela equipe", approved:"Solicitação aprovada", rejected:"Solicitação não aprovada", refunded:"Pagamento reembolsado", cancelled:"Solicitação cancelada" };
       const ticketCard = (ticket) => {
         const paid = ticket.order_status === "paid" && ["active", "checked_in"].includes(ticket.ticket_status);
         const cancellable = ticket.order_status === "pending_payment" && (!ticket.expires_at || new Date(ticket.expires_at).getTime() > Date.now());
         const expired = ticket.order_status === "pending_payment" && ticket.expires_at && new Date(ticket.expires_at).getTime() <= Date.now();
         const vehicleName = titleCase([ticket.vehicle_make, ticket.vehicle_model].filter(Boolean).join(" "));
         const driverName = titleCase(ticket.driver_name);
+        const request = ticket.refund_request;
+        const helpPanel = paid ? `<details class="account-ticket-help"><summary>Ajuda com este ingresso</summary>${request ? `<div class="account-ticket-request-status" data-status="${escapeHtml(request.status)}"><strong>${escapeHtml(refundStatusLabels[request.status] || request.status)}</strong><span>Pedido registrado em ${new Date(request.created_at).toLocaleDateString("pt-BR")}. A equipe Only fará a análise e retornará pelo e-mail da conta.</span>${request.admin_notes ? `<small>Retorno da equipe: ${escapeHtml(request.admin_notes)}</small>` : ""}</div>` : `<form data-ticket-refund-form data-order-id="${escapeHtml(ticket.order_id)}"><label>Motivo<select name="reason" required><option value="">Selecione</option><option>Não poderei comparecer</option><option>Dados do ingresso incorretos</option><option>Compra realizada por engano</option><option>Outro motivo</option></select></label><label>Conte mais para a equipe <span>(opcional)</span><textarea name="details" maxlength="800" rows="3" placeholder="Explique brevemente o que aconteceu"></textarea></label><p data-ticket-refund-feedback></p><button type="submit">Enviar solicitação</button><small>O envio não cancela automaticamente o ingresso. A equipe analisará o pedido antes de qualquer reembolso.</small></form>`}</details>` : "";
         return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
-          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}${ticket.is_test ? ' · <em class="qa-badge">QA</em>' : ""}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(expired ? "Reserva expirada" : ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
+          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}${ticket.is_test ? ' · <em class="qa-badge">QA</em>' : ""}</span><strong>${escapeHtml(ticket.ticket_code)}</strong><small>Classificação ${escapeHtml(ticket.age_rating || "Livre")}</small></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(expired ? "Reserva expirada" : ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto horizontal ou vertical do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>` : `<div><strong>${expired ? "Reserva expirada" : "Pagamento em confirmação"}</strong><span>${expired ? "Essa vaga já foi liberada. Faça uma nova reserva para continuar." : "A credencial será liberada automaticamente após a aprovação."}</span>${cancellable ? `<button type="button" class="account-ticket-cancel" data-cancel-ticket-order="${escapeHtml(ticket.order_id)}">Cancelar reserva</button>` : ""}</div>`}</footer>
+          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Seu acesso está pronto</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>${helpPanel}` : `<div class="account-ticket-waiting"><strong>${expired ? "Reserva expirada" : "Estamos confirmando o pagamento"}</strong><span>${expired ? "Essa vaga já foi liberada. Faça uma nova reserva para continuar." : "Assim que o Mercado Pago aprovar, o QR Code aparecerá aqui automaticamente."}</span>${cancellable ? `<button type="button" class="account-ticket-cancel" data-cancel-ticket-order="${escapeHtml(ticket.order_id)}">Cancelar esta reserva</button>` : ""}</div>`}</footer>
         </article>`;
       };
       if (ticketsRoot) {
@@ -433,6 +440,20 @@
       });
 
       ticketsRoot?.addEventListener("submit", async (event) => {
+        const refundForm = event.target.closest("[data-ticket-refund-form]");
+        if (refundForm) {
+          event.preventDefault();
+          if (!refundForm.reportValidity()) return;
+          const submit = qs("button[type='submit']", refundForm);
+          const feedback = qs("[data-ticket-refund-feedback]", refundForm);
+          submit.disabled = true; feedback.textContent = "Enviando solicitação...";
+          try {
+            await client.rest("rpc/customer_request_ticket_refund", { method:"POST", body:{ p_order_id:refundForm.dataset.orderId, p_reason:refundForm.reason.value, p_details:refundForm.details.value.trim() || null } });
+            feedback.textContent = "Solicitação enviada. A equipe Only fará a análise.";
+            window.setTimeout(() => location.reload(), 900);
+          } catch (error) { feedback.textContent = friendlyError(error); submit.disabled = false; }
+          return;
+        }
         const form = event.target.closest("[data-ticket-photo-form]");
         if (!form) return;
         event.preventDefault();
@@ -643,7 +664,8 @@
             body: {
               display_name: profileForm.display_name.value.trim(),
               phone: phoneDigits || null,
-              tax_id: cpfDigits || null
+              tax_id: cpfDigits || null,
+              birth_date: profileForm.birth_date.value || null
             }
           });
           const updatedName = profileForm.display_name.value.trim() || user.email.split("@")[0];
