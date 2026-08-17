@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v6-age-gate";
+const FUNCTION_VERSION = "ticket-checkout-v7-adult-gate";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -27,7 +27,7 @@ const hasPurchaseAge = (birthDate: string | null) => {
   const birthdayPassed = today.getUTCMonth() > birth.getUTCMonth() ||
     (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() >= birth.getUTCDate());
   if (!birthdayPassed) age -= 1;
-  return age >= 17;
+  return age >= 18;
 };
 
 Deno.serve(async (request) => {
@@ -68,7 +68,7 @@ Deno.serve(async (request) => {
       throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
     }
     if (!hasPurchaseAge(buyerProfile.birth_date)) {
-      throw new Error("As compras online são permitidas somente a partir de 17 anos completos.");
+      throw new Error("O ingresso deve ser comprado na conta de um responsável com 18 anos completos ou mais.");
     }
     const body = await request.json().catch(() => ({}));
     const eventSlug = clean(body.event_slug, 80);

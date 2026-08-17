@@ -22,7 +22,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260813-account-events-v139">
-  <link rel="stylesheet" href="assets/css/account-clean.css?v=20260817-tickets-v6">
+  <link rel="stylesheet" href="assets/css/account-clean.css?v=20260817-ticket-pass-v7">
   <style>
     body[data-page="conta"] .account-loading-state {
       min-height:calc(100vh - 190px);
@@ -76,9 +76,9 @@
     }
   </style>
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260817-age-v95" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
   <script src="assets/js/qrcode.min.js?v=20260812-v1" defer></script>
-  <script src="assets/js/auth.js?v=20260817-tickets-v141" defer></script>
+  <script src="assets/js/auth.js?v=20260817-ticket-pass-v142" defer></script>
 </head>
 <body data-page="conta" data-account-page>
   <header class="header">
@@ -131,7 +131,7 @@
 
         <section class="account-view" data-account-view="tickets" hidden><header class="account-view-heading"><div><p class="eyebrow">Agenda Only</p><h1>Meus eventos</h1><p>Escolha um evento para abrir seus ingressos, credenciais e fotos de confirmação.</p></div></header><div class="account-tickets" data-account-tickets></div></section>
 
-        <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div><div class="field"><label for="account_birth_date">Data de nascimento</label><input id="account_birth_date" name="birth_date" type="date" autocomplete="bday" required><small>Compras são permitidas somente a partir de 17 anos completos.</small></div></div><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
+        <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div><div class="field"><label for="account_birth_date">Data de nascimento</label><input id="account_birth_date" name="birth_date" type="date" autocomplete="bday" required><small>Loja: 17 anos ou mais. Ingressos: 18 anos ou mais.</small></div></div><label class="account-age-attestation"><input name="birth_date_attestation" type="checkbox"><span>Confirmo que a data de nascimento é verdadeira e assumo responsabilidade pelas informações cadastradas. Esta confirmação é obrigatória ao alterar a data.</span></label><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
 
         <section class="account-view" data-account-view="address" hidden>
           <header class="account-view-heading account-address-heading"><div><p class="eyebrow">Entrega</p><h1>Meus endereços</h1><p>Salve até três endereços e escolha qual será usado como principal.</p></div><button type="button" data-address-add>+ Adicionar novo endereço</button></header>

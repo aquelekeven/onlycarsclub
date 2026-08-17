@@ -18,7 +18,7 @@
   <meta name="twitter:title" content="Carrinho — Only Cars Club">
   <meta name="twitter:description" content="Área segura da Only Cars Club para clientes e administração.">
   <meta name="twitter:image" content="https://onlycarsclub.com.br/assets/images/paixao-comunidade.webp">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="theme-color" content="#090909">
@@ -27,7 +27,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=20260729-v63">
   <link rel="manifest" href="manifest.webmanifest?v=20260729-v63">
   <link rel="stylesheet" href="assets/css/style.css?v=20260808-typography-v122">
-  <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
+  <script src="assets/js/main.js?v=20260817-cart-age-v148" defer></script>
 </head>
 <body data-page="loja">
 <header class="header"><a href="index.html" class="brand"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
@@ -57,6 +58,7 @@
         <p>Resumo</p>
         <div><span>Itens</span><strong data-cart-items-total>0</strong></div>
         <div class="cart-grand-total"><span>Total</span><strong data-cart-grand-total>R$ 0,00</strong></div>
+        <div class="cart-age-notice"><strong>Compras somente a partir de 17 anos</strong><span>Se você tem 16 anos ou menos, peça para um responsável realizar a compra usando a própria conta.</span><p data-cart-age-message role="alert"></p></div>
         <a class="cart-checkout" data-cart-checkout href="entrega.html">Continuar</a>
         <a class="cart-keep-shopping" href="loja.html">Escolher mais itens</a>
         <button class="cart-clear" type="button" data-cart-clear>Limpar carrinho</button>

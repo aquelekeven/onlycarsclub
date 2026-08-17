@@ -1094,6 +1094,26 @@ function setupProductPage() {
 
 const formatCurrency = (value) => Number(value).toLocaleString("pt-BR", { style:"currency", currency:"BRL" }).replace(/[\u00a0\u202f]/g, " ");
 
+function ageFromBirthDate(value) {
+  if (!value) return -1;
+  const birth = new Date(`${value}T12:00:00`), today = new Date();
+  if (Number.isNaN(birth.getTime())) return -1;
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+async function getStorePurchaseEligibility() {
+  const client = window.OnlySupabase;
+  if (!client) return { allowed:false, reason:"unavailable" };
+  const user = await client.getUser().catch(() => null);
+  if (!user) return { allowed:false, reason:"login" };
+  const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`).catch(() => []);
+  const birthDate = profiles?.[0]?.birth_date;
+  if (!birthDate) return { allowed:false, reason:"missing_birth_date" };
+  return { allowed:ageFromBirthDate(birthDate) >= 17, reason:"underage" };
+}
+
 function getCart() {
   try {
     const cart = JSON.parse(localStorage.getItem("onlyCarsCart") || "[]");
@@ -1133,6 +1153,7 @@ function setupCheckoutSteps() {
     if (link) {
       link.setAttribute("aria-current", step === current ? "step" : "false");
       link.tabIndex = step <= maxReached ? 0 : -1;
+      if (step > maxReached) link.addEventListener("click", (event) => event.preventDefault());
     }
   });
 }
@@ -1351,6 +1372,25 @@ function setupCartPage() {
     if (!await confirmRemoval(true)) return;
     saveCart([]);
     render();
+  });
+
+  const checkoutButton = qs("[data-cart-checkout]", page);
+  if (new URLSearchParams(location.search).get("idade") === "bloqueada") {
+    const message = qs("[data-cart-age-message]", page);
+    if (message) message.textContent = "Não foi possível abrir a entrega nesta conta. Se você tem 16 anos ou menos, peça para um responsável comprar usando a própria conta.";
+  }
+  checkoutButton?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const message = qs("[data-cart-age-message]", page);
+    checkoutButton.setAttribute("aria-disabled", "true");
+    checkoutButton.textContent = "Verificando conta...";
+    const eligibility = await getStorePurchaseEligibility();
+    if (eligibility.allowed) { location.assign("entrega.html"); return; }
+    if (eligibility.reason === "login") { sessionStorage.setItem("onlycars.afterLogin", "carrinho.html"); location.assign("login.html?next=entrega.html"); return; }
+    message.textContent = eligibility.reason === "missing_birth_date"
+      ? "Cadastre sua data de nascimento em Minha conta antes de continuar."
+      : "Esta conta não possui idade mínima para comprar. Utilize a conta de um responsável com 17 anos ou mais.";
+    checkoutButton.removeAttribute("aria-disabled"); checkoutButton.textContent = "Continuar";
   });
 
   render();
@@ -1777,7 +1817,7 @@ async function setupCheckoutCustomer(deliveryForm) {
   };
 }
 
-function setupCheckoutFlow() {
+async function setupCheckoutFlow() {
   const cart = getCart().filter((item) => Number(item.quantity) > 0);
   const shippingPackage = buildShippingPackage(cart);
   const registeredWeightGrams = cart.reduce(
@@ -1803,6 +1843,10 @@ function setupCheckoutFlow() {
     pickupDeliveries.includes(delivery)
     || (typeof delivery === "string" && delivery.startsWith("Envio — "));
   if (!deliveryForm && !paymentForm) return;
+  if (deliveryForm) {
+    const eligibility = await getStorePurchaseEligibility();
+    if (!eligibility.allowed) { location.replace(eligibility.reason === "login" ? "login.html?next=entrega.html" : "carrinho.html?idade=bloqueada"); return; }
+  }
   const paymentReturnParams = new URLSearchParams(location.search);
   const paymentReturnStatus = paymentForm
     ? paymentReturnParams.get("status")

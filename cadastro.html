@@ -23,8 +23,8 @@
   <title>Criar conta — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260812-fiscal-v125">
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
-  <script src="assets/js/supabase-client.js?v=20260817-age-v95" defer></script>
-  <script src="assets/js/auth.js?v=20260817-tickets-v141" defer></script>
+  <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
+  <script src="assets/js/auth.js?v=20260817-ticket-pass-v142" defer></script>
 </head>
 <body data-page="conta">
   <header class="header"><a href="index.html" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -40,6 +40,7 @@
           <div class="field"><label for="password">Senha</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="password" aria-pressed="false">Mostrar</button></div></div>
           <div class="field"><label for="password_confirmation">Confirmar senha</label><div class="password-field"><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="password_confirmation" aria-pressed="false">Mostrar</button></div></div>
           <label class="auth-consent"><input name="privacy" type="checkbox" required><span>Li e aceito os <a href="termos.html">Termos de compra</a> e a <a href="privacidade.html">Política de Privacidade</a>.</span></label>
+          <label class="auth-consent"><input name="age_attestation" type="checkbox" required><span>Declaro que a data de nascimento informada é verdadeira e assumo responsabilidade pelas informações cadastradas.</span></label>
           <p class="form-feedback" data-form-feedback></p>
           <button class="auth-submit" type="submit">Criar conta</button>
         </form>

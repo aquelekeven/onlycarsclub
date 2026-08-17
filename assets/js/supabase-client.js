@@ -108,11 +108,11 @@
     return session;
   }
 
-  async function signUp({ name, email, password, birth_date }) {
+  async function signUp({ name, email, password, birth_date, birth_date_attested }) {
     const redirectTo = `${location.origin}/confirmacao-email.html`;
     const result = await request(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
       method: "POST",
-      body: { email, password, data: { name, birth_date } }
+      body: { email, password, data: { name, birth_date, birth_date_attested:Boolean(birth_date_attested) } }
     });
     if (result?.access_token) storeSession(result);
     return result;

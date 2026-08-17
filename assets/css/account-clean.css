@@ -125,3 +125,33 @@ body[data-page="conta"] .account-address-card.is-default { border-color:#e2bd00;
 }
 .account-ticket-cancel{margin-top:14px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:transparent;color:#fff;padding:10px 16px;font-weight:700;cursor:pointer}.account-ticket-cancel:hover{border-color:#ffce00;color:#ffce00}.account-ticket-cancel:disabled{opacity:.55;cursor:wait}.qa-badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;background:#ffce00;color:#090909;font-size:10px;font-style:normal;font-weight:900;letter-spacing:.08em;vertical-align:middle}
 .account-ticket-card.is-active{border-color:#d5bb3d;box-shadow:0 18px 50px #231d0712}.account-ticket-card>header>div{display:grid;gap:3px}.account-ticket-card>header small{color:#79776e;font-size:9px}.account-ticket-approved{padding:18px;border-radius:17px;background:linear-gradient(135deg,#10100e,#242216);color:#fff}.account-ticket-approved canvas{border-radius:12px}.account-ticket-waiting{padding:18px;border-radius:16px;background:#151513;color:#fff}.account-ticket-waiting span{display:block;margin-top:5px;color:#bbb;font-size:10px;line-height:1.55}.account-ticket-help{margin-top:14px;border-top:1px solid #deddd6;padding-top:13px}.account-ticket-help summary{color:#77756e;font-size:9px;font-weight:850;cursor:pointer;list-style:none}.account-ticket-help summary::after{content:" +"}.account-ticket-help[open] summary::after{content:" −"}.account-ticket-help form{margin-top:14px;padding:16px;display:grid;gap:12px;border-radius:15px;background:#f4f3ee}.account-ticket-help label{display:grid;gap:6px;font-size:9px;font-weight:850}.account-ticket-help label span,.account-ticket-help form>small{color:#77756e;font-weight:600}.account-ticket-help select,.account-ticket-help textarea{width:100%;padding:11px;border:1px solid #d5d3ca;border-radius:10px;background:#fff;font:inherit}.account-ticket-help form button{justify-self:start;padding:11px 15px;border:0;border-radius:999px;background:#151513;color:#fff;font:inherit;font-weight:850;cursor:pointer}.account-ticket-help form p{margin:0;color:#8c6900;font-size:9px;font-weight:800}.account-ticket-request-status{margin-top:12px;padding:15px;display:grid;gap:5px;border-radius:14px;background:#f4f3ee}.account-ticket-request-status span,.account-ticket-request-status small{color:#706e67;font-size:9px;line-height:1.5}.account-ticket-request-status[data-status="approved"],.account-ticket-request-status[data-status="refunded"]{background:#eaf7ed}.account-ticket-request-status[data-status="rejected"]{background:#fff0ed}
+
+/* Credencial compacta inspirada em cartões de embarque. */
+body[data-page="conta"] .account-ticket-card>footer{padding:16px;background:#fff}
+body[data-page="conta"] .account-ticket-pass{overflow:hidden;border:1px solid #deddd6;border-radius:20px;background:#fff;color:#171714;box-shadow:0 12px 32px #1717140b}
+body[data-page="conta"] .account-ticket-pass-title{padding:18px 20px;display:flex!important;grid-template-columns:none!important;align-items:center;justify-content:space-between;gap:16px!important;border-bottom:1px dashed #d9d7cf}
+body[data-page="conta"] .account-ticket-pass-title>div{display:grid;gap:4px}
+body[data-page="conta"] .account-ticket-pass-title span{color:#88857d;font-size:11px;font-weight:500;letter-spacing:0;text-transform:none}
+body[data-page="conta"] .account-ticket-pass-title strong{color:#171714;font-size:18px;line-height:1.15}
+body[data-page="conta"] .account-ticket-pass-title>b{padding:7px 10px;border-radius:999px;background:#f4cf16;color:#171714;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+body[data-page="conta"] .account-ticket-pass-grid{padding:18px 20px;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px!important}
+body[data-page="conta"] .account-ticket-pass-grid>div{display:grid;gap:5px}
+body[data-page="conta"] .account-ticket-pass-grid span{color:#929087;font-size:10px;font-weight:500;letter-spacing:0;text-transform:none}
+body[data-page="conta"] .account-ticket-pass-grid strong{overflow:hidden;color:#171714;font-size:14px;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+body[data-page="conta"] .account-ticket-qr-wrap{padding:22px 20px;display:grid!important;place-items:center;gap:14px!important;border-top:1px dashed #d9d7cf}
+body[data-page="conta"] .account-ticket-qr-wrap canvas{width:176px!important;height:176px!important;padding:8px;border:1px solid #e2e0d8;border-radius:12px;background:#fff;image-rendering:pixelated}
+body[data-page="conta"] .account-ticket-qr-wrap p{margin:0;color:#6f6d65;font-size:11px;font-weight:500;line-height:1.55;text-align:center}
+body[data-page="conta"] .account-ticket-pass-actions{padding:14px 20px 20px;display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important}
+body[data-page="conta"] .account-ticket-pass-actions button{min-height:44px;border:1px solid #cfcfc8;border-radius:12px;background:#fff;color:#171714;font:inherit;font-size:11px;font-weight:750;cursor:pointer}
+body[data-page="conta"] .account-ticket-pass-actions button.primary{border-color:#171714;background:#171714;color:#fff}
+body[data-page="conta"] .account-ticket-help{margin-top:18px;padding-top:16px}
+body[data-page="conta"] .account-ticket-help summary{padding:2px 0;color:#65635c;font-size:12px;font-weight:650;line-height:1.4}
+body[data-page="conta"] .account-ticket-help form{padding:18px;gap:16px;border:1px solid #e3e1d9;background:#faf9f5}
+body[data-page="conta"] .account-ticket-help label{gap:8px;color:#292824;font-size:12px;font-weight:650;line-height:1.35}
+body[data-page="conta"] .account-ticket-help label span{font-size:11px;font-weight:450}
+body[data-page="conta"] .account-ticket-help select,body[data-page="conta"] .account-ticket-help textarea{min-height:46px;padding:12px 14px;color:#20201d;font-size:13px;font-weight:450;line-height:1.45}
+body[data-page="conta"] .account-ticket-help form button{justify-self:stretch;min-height:45px;font-size:12px;font-weight:750}
+body[data-page="conta"] .account-ticket-help form>small{font-size:11px;font-weight:450;line-height:1.55}
+body[data-page="conta"] .account-age-attestation{padding:14px;display:flex;align-items:flex-start;gap:10px;border:1px solid #dedcd3;border-radius:13px;background:#fffbea;color:#4e4937;font-size:10px;line-height:1.5}
+body[data-page="conta"] .account-age-attestation input{margin-top:2px;flex:0 0 auto}
+@media(max-width:520px){body[data-page="conta"] .account-ticket-pass-actions{grid-template-columns:1fr}body[data-page="conta"] .account-ticket-pass-title strong{font-size:16px}}

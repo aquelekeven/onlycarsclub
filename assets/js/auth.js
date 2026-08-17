@@ -153,6 +153,7 @@
       if (!validPassword(password)) return setFeedback(form, "A senha precisa ter pelo menos 8 caracteres.");
       if (password !== form.password_confirmation.value) return setFeedback(form, "As senhas não coincidem.");
       if (!form.privacy.checked) return setFeedback(form, "Aceite a Política de Privacidade para continuar.");
+      if (!form.age_attestation.checked) return setFeedback(form, "Confirme que a data de nascimento informada é verdadeira.");
       const birthDate = form.birth_date.value;
       if (!birthDate || new Date(`${birthDate}T12:00:00`).getTime() > Date.now()) return setFeedback(form, "Informe uma data de nascimento válida.");
       setSubmitting(form, true, "Criando conta...");
@@ -161,7 +162,8 @@
           name: form.name.value.trim(),
           email: form.email.value.trim(),
           password,
-          birth_date: birthDate
+          birth_date: birthDate,
+          birth_date_attested: true
         });
         if (result?.access_token) {
           location.replace("minha-conta.html");
@@ -330,6 +332,7 @@
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
       profileForm.birth_date.value = profile.birth_date || "";
+      let originalBirthDate = profile.birth_date || "";
 
       qsa("input", profileForm).forEach((input) => input.defaultValue = input.value);
       const postalCodeInput = addressForm.postal_code;
@@ -385,11 +388,11 @@
         const driverName = titleCase(ticket.driver_name);
         const request = ticket.refund_request;
         const helpPanel = paid ? `<details class="account-ticket-help"><summary>Ajuda com este ingresso</summary>${request ? `<div class="account-ticket-request-status" data-status="${escapeHtml(request.status)}"><strong>${escapeHtml(refundStatusLabels[request.status] || request.status)}</strong><span>Pedido registrado em ${new Date(request.created_at).toLocaleDateString("pt-BR")}. A equipe Only fará a análise e retornará pelo e-mail da conta.</span>${request.admin_notes ? `<small>Retorno da equipe: ${escapeHtml(request.admin_notes)}</small>` : ""}</div>` : `<form data-ticket-refund-form data-order-id="${escapeHtml(ticket.order_id)}"><label>Motivo<select name="reason" required><option value="">Selecione</option><option>Não poderei comparecer</option><option>Dados do ingresso incorretos</option><option>Compra realizada por engano</option><option>Outro motivo</option></select></label><label>Conte mais para a equipe <span>(opcional)</span><textarea name="details" maxlength="800" rows="3" placeholder="Explique brevemente o que aconteceu"></textarea></label><p data-ticket-refund-feedback></p><button type="submit">Enviar solicitação</button><small>O envio não cancela automaticamente o ingresso. A equipe analisará o pedido antes de qualquer reembolso.</small></form>`}</details>` : "";
-        return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
+        return `<article class="account-ticket-card ${paid ? "is-active" : ""}" data-ticket-card-id="${escapeHtml(ticket.id)}">
           <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}${ticket.is_test ? ' · <em class="qa-badge">QA</em>' : ""}</span><strong>${escapeHtml(ticket.ticket_code)}</strong><small>Classificação ${escapeHtml(ticket.age_rating || "Livre")}</small></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(expired ? "Reserva expirada" : ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Seu acesso está pronto</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>${helpPanel}` : `<div class="account-ticket-waiting"><strong>${expired ? "Reserva expirada" : "Estamos confirmando o pagamento"}</strong><span>${expired ? "Essa vaga já foi liberada. Faça uma nova reserva para continuar." : "Assim que o Mercado Pago aprovar, o QR Code aparecerá aqui automaticamente."}</span>${cancellable ? `<button type="button" class="account-ticket-cancel" data-cancel-ticket-order="${escapeHtml(ticket.order_id)}">Cancelar esta reserva</button>` : ""}</div>`}</footer>
+          <footer>${paid && ticket.qr_token ? `<section class="account-ticket-pass"><div class="account-ticket-pass-title"><div><span>Credencial digital</span><strong>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</strong></div><b>Expo</b></div><div class="account-ticket-pass-grid"><div><span>Ingresso</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><div><span>Veículo</span><strong>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())}</strong></div><div><span>Data</span><strong>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</strong></div><div><span>Valor</span><strong>${formatMoney(ticket.total_cents)}</strong></div></div><div class="account-ticket-qr-wrap"><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas><p>Apresente este QR Code na portaria.<br>Não compartilhe sua credencial.</p></div><div class="account-ticket-pass-actions"><button type="button" class="secondary" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar código</button><button type="button" class="primary" data-download-ticket="${escapeHtml(ticket.id)}">Salvar ingresso</button></div></section><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>${helpPanel}` : `<div class="account-ticket-waiting"><strong>${expired ? "Reserva expirada" : "Estamos confirmando o pagamento"}</strong><span>${expired ? "Essa vaga já foi liberada. Faça uma nova reserva para continuar." : "Assim que o Mercado Pago aprovar, o QR Code aparecerá aqui automaticamente."}</span>${cancellable ? `<button type="button" class="account-ticket-cancel" data-cancel-ticket-order="${escapeHtml(ticket.order_id)}">Cancelar esta reserva</button>` : ""}</div>`}</footer>
         </article>`;
       };
       if (ticketsRoot) {
@@ -404,7 +407,7 @@
         }).join("") : '<div class="account-empty"><strong>Nenhum evento na sua conta.</strong><span>Quando você comprar um ingresso Expo, o evento aparecerá aqui.</span><a href="proximo-evento.html">Ver o próximo evento</a></div>';
       }
       if (window.OnlyQRCode) {
-        qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:260, margin:3, errorCorrectionLevel:"L", color:{ dark:"#000000", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
+        qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:176, margin:2, errorCorrectionLevel:"L", color:{ dark:"#111111", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
       }
       ticketsRoot?.addEventListener("click", async (event) => {
         const toggle = event.target.closest("[data-account-event-toggle]");
@@ -452,6 +455,33 @@
             feedback.textContent = "Solicitação enviada. A equipe Only fará a análise.";
             window.setTimeout(() => location.reload(), 900);
           } catch (error) { feedback.textContent = friendlyError(error); submit.disabled = false; }
+          return;
+        }
+        const downloadButton = event.target.closest("[data-download-ticket]");
+        if (downloadButton) {
+          const ticket = tickets.find((item) => item.id === downloadButton.dataset.downloadTicket);
+          const qr = qs("[data-ticket-qr]", downloadButton.closest("[data-ticket-card-id]"));
+          if (!ticket || !qr) return;
+          downloadButton.disabled = true; downloadButton.textContent = "Preparando...";
+          try {
+            const output = document.createElement("canvas"); output.width = 1080; output.height = 1350;
+            const ctx = output.getContext("2d");
+            ctx.fillStyle = "#f1cf19"; ctx.fillRect(0,0,1080,1350);
+            ctx.fillStyle = "#11110f"; ctx.fillRect(0,0,1080,210);
+            ctx.fillStyle = "#fff"; ctx.font = "900 58px Arial"; ctx.fillText("ONLY CARS MEETING",72,105);
+            ctx.fillStyle = "#f1cf19"; ctx.font = "700 25px Arial"; ctx.fillText("CREDENCIAL DIGITAL • EXPO",74,155);
+            ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.roundRect(48,180,984,1115,38); ctx.fill();
+            ctx.fillStyle = "#777"; ctx.font = "700 24px Arial"; ctx.fillText("INGRESSO",92,280); ctx.fillText("VEÍCULO",600,280); ctx.fillText("DATA",92,420); ctx.fillText("VALOR",600,420);
+            ctx.fillStyle = "#151513"; ctx.font = "900 38px Arial"; ctx.fillText(ticket.ticket_code,92,330); ctx.fillText(String(ticket.vehicle_plate || "").toUpperCase(),600,330); ctx.fillText(ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026",92,470); ctx.fillText(formatMoney(ticket.total_cents),600,470);
+            ctx.strokeStyle = "#e7e5dc"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(92,525); ctx.lineTo(988,525); ctx.stroke();
+            ctx.imageSmoothingEnabled = false; ctx.drawImage(qr,290,570,500,500);
+            ctx.fillStyle = "#151513"; ctx.font = "900 28px Arial"; ctx.textAlign = "center"; ctx.fillText("Apresente este QR Code na portaria",540,1140);
+            ctx.fillStyle = "#777"; ctx.font = "500 22px Arial"; ctx.fillText("Não compartilhe sua credencial com terceiros.",540,1180);
+            ctx.fillStyle = "#151513"; ctx.font = "700 20px Arial"; ctx.fillText(`${ticket.driver_name} • ${ticket.vehicle_make} ${ticket.vehicle_model}`,540,1240);
+            const link = document.createElement("a"); link.download = `ingresso-only-${ticket.ticket_code}.jpg`; link.href = output.toDataURL("image/jpeg",.94); link.click();
+            downloadButton.textContent = "Ingresso salvo";
+          } catch (_) { downloadButton.textContent = "Tentar novamente"; }
+          finally { downloadButton.disabled = false; }
           return;
         }
         const form = event.target.closest("[data-ticket-photo-form]");
@@ -655,23 +685,27 @@
         const cpfDigits = profileForm.tax_id.value.replace(/\D/g, "");
         if (phoneDigits && ![10, 11].includes(phoneDigits.length)) return setFeedback(profileForm, "Digite um telefone com DDD válido.");
         if (cpfDigits && cpfDigits.length !== 11) return setFeedback(profileForm, "Digite os 11 números do CPF.");
+        const birthDateChanged = profileForm.birth_date.value !== originalBirthDate;
+        if (birthDateChanged && !profileForm.birth_date_attestation.checked) return setFeedback(profileForm, "Confirme a declaração de responsabilidade para alterar a data de nascimento.");
         setSubmitting(profileForm, true, "Salvando...");
         setFeedback(profileForm, "");
         try {
+          if (birthDateChanged) await client.rest("rpc/customer_update_birth_date", { method:"POST", body:{ p_birth_date:profileForm.birth_date.value, p_attested:true } });
           await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
             method: "PATCH",
             headers: { Prefer: "return=minimal" },
             body: {
               display_name: profileForm.display_name.value.trim(),
               phone: phoneDigits || null,
-              tax_id: cpfDigits || null,
-              birth_date: profileForm.birth_date.value || null
+              tax_id: cpfDigits || null
             }
           });
           const updatedName = profileForm.display_name.value.trim() || user.email.split("@")[0];
           qsa("[data-account-name]").forEach((element) => element.textContent = updatedName);
           qs("[data-account-greeting]").textContent = updatedName.split(" ")[0];
           qs("[data-account-initial]").textContent = updatedName.charAt(0).toUpperCase() || "O";
+          originalBirthDate = profileForm.birth_date.value;
+          profileForm.birth_date_attestation.checked = false;
           setFeedback(profileForm, "Dados salvos.", "success");
         } catch (error) {
           setFeedback(profileForm, friendlyError(error));

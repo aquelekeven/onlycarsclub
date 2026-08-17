@@ -51,7 +51,7 @@
       const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`);
       const birthDate = profiles?.[0]?.birth_date;
       if (!birthDate) throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
-      if (ageFrom(birthDate) < 17) throw new Error("Você pode visualizar o evento, mas as compras online são permitidas somente a partir de 17 anos completos.");
+      if (ageFrom(birthDate) < 18) throw new Error("Você pode visualizar o evento, mas o ingresso deve ser comprado na conta de um responsável com 18 anos completos ou mais.");
       eventData = await client.publicRest("rpc/public_event_summary", { method:"POST", body:{ target_slug:root.dataset.eventSlug } });
       activeLot = eventData?.lots?.find((lot) => lot.active);
       if (eventData?.status !== "sales_open" || !activeLot || Number(eventData.remaining_public || 0) <= 0) throw new Error("As vendas do Lote 1 ainda não estão abertas.");
