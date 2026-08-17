@@ -409,6 +409,22 @@
       if (window.OnlyQRCode) {
         qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:176, margin:2, errorCorrectionLevel:"L", color:{ dark:"#111111", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
       }
+      const saveTicketImage = async (button) => {
+        const ticket = tickets.find((item) => item.id === button.dataset.downloadTicket);
+        const qr = qs("[data-ticket-qr]", button.closest("[data-ticket-card-id]"));
+        if (!ticket || !qr) throw new Error("Ingresso indisponível para download.");
+        const output = document.createElement("canvas"); output.width=1080; output.height=1350;
+        const ctx = output.getContext("2d");
+        ctx.fillStyle="#f1cf19"; ctx.fillRect(0,0,1080,1350); ctx.fillStyle="#11110f"; ctx.fillRect(0,0,1080,210);
+        ctx.fillStyle="#fff"; ctx.font="900 58px Arial"; ctx.fillText("ONLY CARS MEETING",72,105); ctx.fillStyle="#f1cf19"; ctx.font="700 25px Arial"; ctx.fillText("CREDENCIAL DIGITAL • EXPO",74,155);
+        ctx.fillStyle="#fff"; ctx.fillRect(48,180,984,1115); ctx.fillStyle="#777"; ctx.font="700 24px Arial";
+        [["INGRESSO",92,280],["VEÍCULO",600,280],["DATA",92,420],["VALOR",600,420]].forEach(([text,x,y])=>ctx.fillText(text,x,y));
+        ctx.fillStyle="#151513"; ctx.font="900 38px Arial"; ctx.fillText(ticket.ticket_code,92,330); ctx.fillText(String(ticket.vehicle_plate||"").toUpperCase(),600,330); ctx.fillText(ticket.event_starts_at?new Date(ticket.event_starts_at).toLocaleDateString("pt-BR"):"23/10/2026",92,470); ctx.fillText(formatMoney(ticket.total_cents),600,470);
+        ctx.strokeStyle="#e7e5dc"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(92,525); ctx.lineTo(988,525); ctx.stroke(); ctx.imageSmoothingEnabled=false; ctx.drawImage(qr,290,570,500,500);
+        ctx.textAlign="center"; ctx.fillStyle="#151513"; ctx.font="900 28px Arial"; ctx.fillText("Apresente este QR Code na portaria",540,1140); ctx.fillStyle="#777"; ctx.font="500 22px Arial"; ctx.fillText("Não compartilhe sua credencial com terceiros.",540,1180); ctx.fillStyle="#151513"; ctx.font="700 20px Arial"; ctx.fillText(`${ticket.driver_name} • ${ticket.vehicle_make} ${ticket.vehicle_model}`,540,1240);
+        const dataUrl = output.toDataURL("image/jpeg",.94);
+        const link = document.createElement("a"); link.download=`ingresso-only-${ticket.ticket_code}.jpg`; link.href=dataUrl; link.style.display="none"; document.body.appendChild(link); link.click(); link.remove();
+      };
       ticketsRoot?.addEventListener("click", async (event) => {
         const toggle = event.target.closest("[data-account-event-toggle]");
         if (toggle) {
@@ -430,6 +446,14 @@
             cancelButton.textContent = "Cancelar reserva";
             window.alert(friendlyError(error));
           }
+          return;
+        }
+        const downloadButton = event.target.closest("[data-download-ticket]");
+        if (downloadButton) {
+          downloadButton.disabled=true; downloadButton.textContent="Preparando...";
+          try { await saveTicketImage(downloadButton); downloadButton.textContent="Ingresso salvo"; }
+          catch (error) { console.error("Falha ao salvar ingresso",error); downloadButton.textContent="Tentar novamente"; window.alert("Não foi possível salvar o ingresso neste navegador."); }
+          finally { downloadButton.disabled=false; }
           return;
         }
         const button = event.target.closest("[data-copy-ticket-token]");
@@ -455,37 +479,6 @@
             feedback.textContent = "Solicitação enviada. A equipe Only fará a análise.";
             window.setTimeout(() => location.reload(), 900);
           } catch (error) { feedback.textContent = friendlyError(error); submit.disabled = false; }
-          return;
-        }
-        const downloadButton = event.target.closest("[data-download-ticket]");
-        if (downloadButton) {
-          const ticket = tickets.find((item) => item.id === downloadButton.dataset.downloadTicket);
-          const qr = qs("[data-ticket-qr]", downloadButton.closest("[data-ticket-card-id]"));
-          if (!ticket || !qr) return;
-          downloadButton.disabled = true; downloadButton.textContent = "Preparando...";
-          try {
-            const output = document.createElement("canvas"); output.width = 1080; output.height = 1350;
-            const ctx = output.getContext("2d");
-            ctx.fillStyle = "#f1cf19"; ctx.fillRect(0,0,1080,1350);
-            ctx.fillStyle = "#11110f"; ctx.fillRect(0,0,1080,210);
-            ctx.fillStyle = "#fff"; ctx.font = "900 58px Arial"; ctx.fillText("ONLY CARS MEETING",72,105);
-            ctx.fillStyle = "#f1cf19"; ctx.font = "700 25px Arial"; ctx.fillText("CREDENCIAL DIGITAL • EXPO",74,155);
-            ctx.fillStyle = "#fff"; ctx.fillRect(48,180,984,1115);
-            ctx.fillStyle = "#777"; ctx.font = "700 24px Arial"; ctx.fillText("INGRESSO",92,280); ctx.fillText("VEÍCULO",600,280); ctx.fillText("DATA",92,420); ctx.fillText("VALOR",600,420);
-            ctx.fillStyle = "#151513"; ctx.font = "900 38px Arial"; ctx.fillText(ticket.ticket_code,92,330); ctx.fillText(String(ticket.vehicle_plate || "").toUpperCase(),600,330); ctx.fillText(ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026",92,470); ctx.fillText(formatMoney(ticket.total_cents),600,470);
-            ctx.strokeStyle = "#e7e5dc"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(92,525); ctx.lineTo(988,525); ctx.stroke();
-            ctx.imageSmoothingEnabled = false; ctx.drawImage(qr,290,570,500,500);
-            ctx.fillStyle = "#151513"; ctx.font = "900 28px Arial"; ctx.textAlign = "center"; ctx.fillText("Apresente este QR Code na portaria",540,1140);
-            ctx.fillStyle = "#777"; ctx.font = "500 22px Arial"; ctx.fillText("Não compartilhe sua credencial com terceiros.",540,1180);
-            ctx.fillStyle = "#151513"; ctx.font = "700 20px Arial"; ctx.fillText(`${ticket.driver_name} • ${ticket.vehicle_make} ${ticket.vehicle_model}`,540,1240);
-            const blob = await new Promise((resolve) => output.toBlob(resolve,"image/jpeg",.94));
-            if (!blob) throw new Error("Não foi possível gerar o arquivo.");
-            const objectUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a"); link.download = `ingresso-only-${ticket.ticket_code}.jpg`; link.href = objectUrl; link.style.display = "none"; document.body.appendChild(link); link.click(); link.remove();
-            window.setTimeout(() => URL.revokeObjectURL(objectUrl),30000);
-            downloadButton.textContent = "Ingresso salvo";
-          } catch (error) { console.error("Falha ao salvar ingresso",error); downloadButton.textContent = "Tentar novamente"; window.alert("Não foi possível salvar o ingresso. Tente novamente ou permita downloads neste navegador."); }
-          finally { downloadButton.disabled = false; }
           return;
         }
         const form = event.target.closest("[data-ticket-photo-form]");
