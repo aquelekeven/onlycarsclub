@@ -374,13 +374,15 @@
       const ticketStatusLabels = { reserved:"Aguardando pagamento", active:"Ingresso confirmado", checked_in:"Entrada validada", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
       const ticketCard = (ticket) => {
         const paid = ticket.order_status === "paid" && ["active", "checked_in"].includes(ticket.ticket_status);
+        const cancellable = ticket.order_status === "pending_payment" && (!ticket.expires_at || new Date(ticket.expires_at).getTime() > Date.now());
+        const expired = ticket.order_status === "pending_payment" && ticket.expires_at && new Date(ticket.expires_at).getTime() <= Date.now();
         const vehicleName = titleCase([ticket.vehicle_make, ticket.vehicle_model].filter(Boolean).join(" "));
         const driverName = titleCase(ticket.driver_name);
         return `<article class="account-ticket-card ${paid ? "is-active" : ""}">
-          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
+          <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}${ticket.is_test ? ' · <em class="qa-badge">QA</em>' : ""}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(expired ? "Reserva expirada" : ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
-          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto horizontal ou vertical do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>` : `<div><strong>Pagamento em confirmação</strong><span>A credencial será liberada automaticamente após a aprovação.</span></div>`}</footer>
+          <footer>${paid && ticket.qr_token ? `<div class="account-ticket-approved"><div><strong>Ingresso liberado</strong><span>Apresente este QR Code na portaria. Não compartilhe com terceiros.</span><button type="button" data-copy-ticket-token="${escapeHtml(ticket.qr_token)}">Copiar credencial manual</button></div><canvas data-ticket-qr="${escapeHtml(ticket.qr_token)}" aria-label="QR Code do ingresso ${escapeHtml(ticket.ticket_code)}"></canvas></div><form class="account-ticket-photo" data-ticket-photo-form data-ticket-id="${escapeHtml(ticket.id)}"><div><strong>Foto para o post de confirmado</strong><span>Envie uma foto horizontal ou vertical do carro. A equipe Only revisará antes da publicação.</span></div><label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><span>Escolher foto</span></label><label class="account-ticket-consent"><input type="checkbox" name="consent" required><span>Autorizo a Only Cars Club a utilizar esta foto na divulgação do evento.</span></label><button type="submit">Enviar foto</button><p data-ticket-photo-feedback></p></form>` : `<div><strong>${expired ? "Reserva expirada" : "Pagamento em confirmação"}</strong><span>${expired ? "Essa vaga já foi liberada. Faça uma nova reserva para continuar." : "A credencial será liberada automaticamente após a aprovação."}</span>${cancellable ? `<button type="button" class="account-ticket-cancel" data-cancel-ticket-order="${escapeHtml(ticket.order_id)}">Cancelar reserva</button>` : ""}</div>`}</footer>
         </article>`;
       };
       if (ticketsRoot) {
@@ -403,6 +405,21 @@
           const panel = qs(`[data-account-event="${toggle.dataset.accountEventToggle}"]`, ticketsRoot);
           if (panel) panel.hidden = !panel.hidden;
           toggle.classList.toggle("active", panel && !panel.hidden);
+          return;
+        }
+        const cancelButton = event.target.closest("[data-cancel-ticket-order]");
+        if (cancelButton) {
+          if (!window.confirm("Cancelar esta reserva? O link de pagamento será desativado e a vaga será liberada.")) return;
+          cancelButton.disabled = true;
+          cancelButton.textContent = "Cancelando...";
+          try {
+            await client.invokeFunction("cancelar-ingresso", { order_id:cancelButton.dataset.cancelTicketOrder });
+            location.reload();
+          } catch (error) {
+            cancelButton.disabled = false;
+            cancelButton.textContent = "Cancelar reserva";
+            window.alert(friendlyError(error));
+          }
           return;
         }
         const button = event.target.closest("[data-copy-ticket-token]");

@@ -80,6 +80,33 @@ Deno.serve(async (request) => {
     if (amountCents !== Number(order.total_cents)) throw new Error("Valor do pagamento diferente do ingresso.");
 
     const rawStatus = String(payment.status || "pending");
+    if (order.status === "cancelled") {
+      if (rawStatus !== "approved") {
+        return respond({ received: true, ignored: true, reason: "cancelled_order" });
+      }
+      const refundResponse = await fetch(
+        `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}/refunds`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            "X-Idempotency-Key": `ticket-cancelled-${order.id}`,
+          },
+          body: "{}",
+        },
+      );
+      if (!refundResponse.ok) throw new Error(`Não foi possível estornar pagamento tardio: ${refundResponse.status}`);
+      const { error: refundUpdateError } = await db.from("ticket_orders").update({
+        status: "refunded",
+        payment_status: "refunded",
+        provider_payment_id: String(payment.id),
+        payment_status_detail: "refunded_after_customer_cancellation",
+      }).eq("id", order.id);
+      if (refundUpdateError) throw new Error(refundUpdateError.message);
+      await db.from("tickets").update({ status: "refunded" }).eq("order_id", order.id);
+      return respond({ received: true, processed: true, refunded: true });
+    }
     const approved = rawStatus === "approved";
     const orderStatus = approved ? "paid"
       : rawStatus === "cancelled" ? "cancelled"

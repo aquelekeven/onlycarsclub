@@ -19,6 +19,8 @@
   };
   const exchangeStatusLabels = { received:"Recebida",under_review:"Em análise",awaiting_return:"Aguardando devolução",return_in_transit:"Devolução em trânsito",received_return:"Produto recebido",exchange_sent:"Troca enviada",refunded:"Reembolso realizado",rejected:"Não aprovada",cancelled:"Cancelada",completed:"Concluída" };
   const exchangeTypeLabels = { size_exchange:"Troca de tamanho",color_exchange:"Troca de cor",defect:"Defeito",wrong_item:"Item incorreto",withdrawal:"Arrependimento",other:"Outro" };
+  const isQaOrder = (order) => Boolean(order?.profiles?.is_test || /^onlycarsqa/i.test(String(order?.customer_email || "")));
+  const qaBadge = (order) => isQaOrder(order) ? '<em class="qa-badge" title="Pedido de homologação">QA</em>' : "";
 
   function feedback(selector, message, type = "") {
     const element = qs(selector);
@@ -38,10 +40,10 @@
 
   function orderCard(order, compact = false) {
     const items = order.order_items || [];
-    if (compact) return `<article class="admin-order compact"><div><strong>${safe(order.order_number)}</strong><span>${safe(order.customer_name)} · ${dateTime(order.created_at)}</span></div><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></article>`;
+    if (compact) return `<article class="admin-order compact"><div><strong>${safe(order.order_number)} ${qaBadge(order)}</strong><span>${safe(order.customer_name)} · ${dateTime(order.created_at)}</span></div><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></article>`;
     const itemLabel = items.length === 1 ? items[0].product_name : `${items.reduce((total, item) => total + Number(item.quantity), 0)} itens`;
     return `<article class="admin-order admin-order-row" data-order-id="${order.id}" data-order-search-value="${safe(`${order.order_number} ${order.customer_name} ${order.customer_email} ${items.map((item) => item.product_name).join(" ")}`.toLowerCase())}">
-      <div><strong>${safe(order.order_number)}</strong><span>${dateTime(order.created_at)}</span></div>
+      <div><strong>${safe(order.order_number)} ${qaBadge(order)}</strong><span>${dateTime(order.created_at)}</span></div>
       <div><span>Cliente</span><strong>${safe(order.customer_name)}</strong></div>
       <div><span>Pedido</span><strong>${safe(itemLabel)}</strong></div>
       <span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span>
@@ -81,7 +83,7 @@
     dialog.dataset.orderId = order.id;
     dialog.dataset.fulfillmentStatus = order.fulfillment_status;
     dialog.innerHTML = `
-      <header class="admin-order-modal-header"><div><p class="eyebrow">Detalhes completos</p><h2>${safe(order.order_number)}</h2><span>${dateTime(order.created_at)}</span></div><button type="button" data-close-order aria-label="Fechar">×</button></header>
+      <header class="admin-order-modal-header"><div><p class="eyebrow">Detalhes completos ${qaBadge(order)}</p><h2>${safe(order.order_number)}</h2><span>${dateTime(order.created_at)}</span></div><button type="button" data-close-order aria-label="Fechar">×</button></header>
       <div class="admin-order-modal-status"><span class="admin-status" data-status="${order.status}">${statusLabels[order.status] || safe(order.status)}</span><strong>${money(order.total_cents)}</strong></div>
       <section class="admin-order-modal-section"><h3>Produtos</h3><div class="admin-order-products">${items.map((item) => `<article><div class="admin-order-product-image">${orderItemImage(item) ? `<img src="${safe(orderItemImage(item))}" alt="">` : "<span>ONLY</span>"}</div><div><strong>${safe(item.product_name)}</strong><span>${[item.sku,item.color,item.size ? `Tam. ${item.size}` : ""].filter(Boolean).map(safe).join(" · ")}</span><small>${item.quantity} × ${money(item.unit_price_cents)}</small>${item.metadata?.backorder_quantity ? `<em>${item.metadata.backorder_quantity} sob encomenda · até ${item.metadata.production_days || 10} dias úteis</em>` : ""}</div><strong>${money(item.line_total_cents)}</strong></article>`).join("")}</div></section>
       <div class="admin-order-modal-columns">
@@ -212,7 +214,7 @@
   }
 
   function ordersNeedingAttention() {
-    return state.orders.filter((order) => order.status === "paid" && !["completed", "cancelled"].includes(order.fulfillment_status));
+    return state.orders.filter((order) => order.status === "paid" && !isQaOrder(order) && !["completed", "cancelled"].includes(order.fulfillment_status));
   }
 
   function renderAttention() {
@@ -244,18 +246,19 @@
 
   function renderStats() {
     const variants = state.products.flatMap((product) => product.product_variants || []).filter((variant) => variant.active);
-    const paidOrders = state.orders.filter((order) => order.status === "paid");
+    const commercialOrders = state.orders.filter((order) => !isQaOrder(order));
+    const paidOrders = state.orders.filter((order) => order.status === "paid" && !isQaOrder(order));
     const revenue = paidOrders.reduce((total, order) => total + Number(order.total_cents || 0), 0);
     const ticket = paidOrders.length ? Math.round(revenue / paidOrders.length) : 0;
     qs("[data-stat-revenue]").textContent = money(revenue);
     qs("[data-stat-paid]").textContent = paidOrders.length;
     qs("[data-stat-ticket]").textContent = money(ticket);
     qs("[data-stat-attention]").textContent = ordersNeedingAttention().length;
-    qs("[data-stat-orders-caption]").textContent = `de ${state.orders.length} pedidos`;
-    renderAnalytics(paidOrders, revenue);
+    qs("[data-stat-orders-caption]").textContent = `de ${commercialOrders.length} pedidos reais`;
+    renderAnalytics(paidOrders, revenue, commercialOrders);
   }
 
-  function renderAnalytics(paidOrders, revenue) {
+  function renderAnalytics(paidOrders, revenue, commercialOrders) {
     const chart = qs("[data-sales-chart]");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -288,10 +291,10 @@
     const counts = statusConfig.map(([key, label, color]) => ({
       key, label, color,
       value:key === "other"
-        ? state.orders.filter((order) => !["paid", "pending_payment", "cancelled"].includes(order.status)).length
-        : state.orders.filter((order) => order.status === key).length
+        ? commercialOrders.filter((order) => !["paid", "pending_payment", "cancelled"].includes(order.status)).length
+        : commercialOrders.filter((order) => order.status === key).length
     }));
-    const totalOrders = Math.max(state.orders.length, 1);
+    const totalOrders = Math.max(commercialOrders.length, 1);
     let cursor = 0;
     const segments = counts.map((item) => {
       const start = cursor;
@@ -299,14 +302,14 @@
       return `${item.color} ${start}deg ${cursor}deg`;
     });
     const donut = qs("[data-status-donut]");
-    if (donut) donut.style.background = state.orders.length ? `conic-gradient(${segments.join(",")})` : "#e8e8e3";
-    qs("[data-donut-total]").textContent = state.orders.length;
+    if (donut) donut.style.background = commercialOrders.length ? `conic-gradient(${segments.join(",")})` : "#e8e8e3";
+    qs("[data-donut-total]").textContent = commercialOrders.length;
     qs("[data-status-legend]").innerHTML = counts.map((item) => `<li><i style="background:${item.color}"></i><span>${item.label}</span><strong>${item.value}</strong></li>`).join("");
 
     qs("[data-report-products]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.subtotal_cents || 0), 0));
     qs("[data-report-shipping]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.shipping_cents || 0), 0));
     qs("[data-report-items]").textContent = paidOrders.flatMap((order) => order.order_items || []).reduce((total, item) => total + Number(item.quantity || 0), 0);
-    qs("[data-report-conversion]").textContent = state.orders.length ? `${Math.round((paidOrders.length / state.orders.length) * 100)}%` : "0%";
+    qs("[data-report-conversion]").textContent = commercialOrders.length ? `${Math.round((paidOrders.length / commercialOrders.length) * 100)}%` : "0%";
 
     const productCounts = new Map();
     paidOrders.flatMap((order) => order.order_items || []).forEach((item) => productCounts.set(item.product_name, (productCounts.get(item.product_name) || 0) + Number(item.quantity || 0)));
@@ -325,7 +328,7 @@
     const selectedYear = state.reportMode === "month" ? monthYear : Number(state.reportYear);
     return state.orders.filter((order) => {
       const date = new Date(order.paid_at || order.created_at);
-      return order.status === "paid" && date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
+      return order.status === "paid" && !isQaOrder(order) && date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
     });
   }
 
@@ -335,7 +338,7 @@
     const selectedYear = state.reportMode === "month" ? monthYear : Number(state.reportYear);
     const createdInPeriod = state.orders.filter((order) => {
       const date = new Date(order.created_at);
-      return date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
+      return !isQaOrder(order) && date.getFullYear() === selectedYear && (state.reportMode === "year" || date.getMonth() + 1 === monthNumber);
     });
     qs("[data-report-products]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.subtotal_cents || 0), 0));
     qs("[data-report-shipping]").textContent = money(paidOrders.reduce((total, order) => total + Number(order.shipping_cents || 0), 0));
@@ -415,9 +418,12 @@
     const shipmentFields = "provider_order_id,cart_item_id,service_name,carrier_name,status,price_cents,tracking_code,tracking_url,label_url,checkout_completed_at,generated_at,label_expires_at,last_error,provider_payload,posted_at,delivered_at,updated_at";
     const ordersWithExchange = `orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(${shipmentFields}),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at),order_exchange_requests(id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at)&order=created_at.desc`;
     const ordersWithoutExchange = `orders?select=id,order_number,customer_name,customer_email,customer_phone,customer_tax_id,status,fulfillment_status,delivery_method,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_address,shipping_quote,notes,expires_at,paid_at,cancelled_at,created_at,updated_at,order_items(product_name,sku,size,color,quantity,unit_price_cents,line_total_cents,image_url,metadata,product_variants(image_urls)),payments(status,payment_method,installments,amount_cents,provider_payment_id,provider_preference_id,raw_status_detail,approved_at,created_at),shipments(${shipmentFields}),order_fiscal_documents(access_key,danfe_path,xml_path,issued_at,updated_at)&order=created_at.desc`;
+    const withQaProfile = (query) => query.replace("updated_at,order_items", "updated_at,profiles(is_test),order_items");
     const [products, orders, exchanges] = await Promise.all([
       client.rest("products?select=id,slug,name,category,active,product_variants(id,sku,size,color,price_cents,stock_quantity,reserved_quantity,active)&order=name.asc&product_variants.order=size.asc,color.asc"),
-      client.rest(ordersWithExchange).catch(() => client.rest(ordersWithoutExchange)),
+      client.rest(withQaProfile(ordersWithExchange))
+        .catch(() => client.rest(withQaProfile(ordersWithoutExchange)))
+        .catch(() => client.rest(ordersWithoutExchange)),
       client.rest("order_exchange_requests?select=id,order_id,user_id,request_type,requested_solution,status,items,details,photo_paths,customer_message,admin_notes,return_tracking_code,return_tracking_url,replacement_tracking_code,replacement_tracking_url,created_at,updated_at&order=created_at.desc")
     ]);
     state.products = products || [];
