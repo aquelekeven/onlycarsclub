@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /minha-conta.html
+Disallow: /pagamento.html
+Disallow: /entrega.html
+Disallow: /ingresso.html
+Disallow: /ingresso-retorno.html
+
+Sitemap: https://onlycarsclub.com.br/sitemap.xml

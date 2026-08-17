@@ -56,8 +56,8 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("cropped-v53-frente", "png"),
-      productImage("cropped-v53-costas", "png")
+      productImage("cropped-v53-frente", "webp"),
+      productImage("cropped-v53-costas", "webp")
     ]),
     imageAlts:Object.freeze([
       "Cropped preto Only Cars, vista frontal com modelo",
@@ -158,7 +158,7 @@ const PRODUCT_CATALOG = Object.freeze({
     sizes:Object.freeze(["Único"]),
     variants:Object.freeze(["Preto"]),
     colorOptions:true,
-    images:Object.freeze([productImage("copo-termico-v53", "png")]),
+    images:Object.freeze([productImage("copo-termico-v53", "webp")]),
     imageAlts:Object.freeze(["Copo térmico preto Only Cars com gravação a laser"])
   }),
   "camiseta-oversized-amarela": Object.freeze({
@@ -173,8 +173,8 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Amarelo"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("oversized-amarela-frente-v54", "png"),
-      productImage("oversized-amarela-costas-v54", "png")
+      productImage("oversized-amarela-frente-v54", "webp"),
+      productImage("oversized-amarela-costas-v54", "webp")
     ]),
     imageAlts:Object.freeze([
       "Camiseta oversized amarela Only Cars, vista frontal",
@@ -193,8 +193,8 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Preto","Amarelo","Branco"]),
     colorOptions:true,
     images:Object.freeze([
-      productImage("streetwear-preta-frente-v52", "png"),
-      productImage("streetwear-preta-verso-v52", "png")
+      productImage("streetwear-preta-frente-v52", "webp"),
+      productImage("streetwear-preta-verso-v52", "webp")
     ]),
     imageAlts:Object.freeze([
       "Camiseta streetwear preta Only Cars, vista frontal",
@@ -202,16 +202,16 @@ const PRODUCT_CATALOG = Object.freeze({
     ]),
     variantImages:Object.freeze({
       Preto:Object.freeze([
-        productImage("streetwear-preta-frente-v52", "png"),
-        productImage("streetwear-preta-verso-v52", "png")
+        productImage("streetwear-preta-frente-v52", "webp"),
+        productImage("streetwear-preta-verso-v52", "webp")
       ]),
       Amarelo:Object.freeze([
-        productImage("streetwear-amarela-frente-v52", "png"),
-        productImage("streetwear-amarela-verso-v52", "png")
+        productImage("streetwear-amarela-frente-v52", "webp"),
+        productImage("streetwear-amarela-verso-v52", "webp")
       ]),
       Branco:Object.freeze([
-        productImage("streetwear-branca-frente-v52", "png"),
-        productImage("streetwear-branca-verso-v52", "png")
+        productImage("streetwear-branca-frente-v52", "webp"),
+        productImage("streetwear-branca-verso-v52", "webp")
       ])
     }),
     variantImageAlts:Object.freeze({
@@ -237,7 +237,7 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho P, com 15 × 3,5 cm.",
     sizes:Object.freeze(["P"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones-p-v55", "png")]),
+    images:Object.freeze([productImage("adesivo-japones-p-v55", "webp")]),
     imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho P, 15 × 3,5 cm"])
   }),
   "adesivo-japones-m": Object.freeze({
@@ -248,7 +248,7 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho M, com 31 × 7 cm.",
     sizes:Object.freeze(["M"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones-m-v55", "png")]),
+    images:Object.freeze([productImage("adesivo-japones-m-v55", "webp")]),
     imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho M, 31 × 7 cm"])
   }),
   "adesivo-japones-g": Object.freeze({
@@ -259,7 +259,7 @@ const PRODUCT_CATALOG = Object.freeze({
     description:"Adesivo japonês Only Cars no tamanho G, com 53 × 11 cm.",
     sizes:Object.freeze(["G"]),
     variants:Object.freeze(["Padrão"]),
-    images:Object.freeze([productImage("adesivo-japones-g-v55", "png")]),
+    images:Object.freeze([productImage("adesivo-japones-g-v55", "webp")]),
     imageAlts:Object.freeze(["Adesivo japonês Only Cars tamanho G, 53 × 11 cm"])
   }),
   "adesivo-mascote": Object.freeze({
@@ -272,11 +272,11 @@ const PRODUCT_CATALOG = Object.freeze({
     variants:Object.freeze(["Colorido","Branco"]),
     colorOptions:true,
     variantPrices:Object.freeze({ Colorido:15, Branco:15 }),
-    images:Object.freeze([productImage("adesivo-mascote-colorido-v59", "png")]),
+    images:Object.freeze([productImage("adesivo-mascote-colorido-v59", "webp")]),
     imageAlts:Object.freeze(["Adesivos coloridos do mascote Onlynho"]),
     variantImages:Object.freeze({
-      Colorido:Object.freeze([productImage("adesivo-mascote-colorido-v59", "png")]),
-      Branco:Object.freeze([productImage("adesivo-mascote-branco-v59", "png")])
+      Colorido:Object.freeze([productImage("adesivo-mascote-colorido-v59", "webp")]),
+      Branco:Object.freeze([productImage("adesivo-mascote-branco-v59", "webp")])
     }),
     variantImageAlts:Object.freeze({
       Colorido:Object.freeze(["Adesivos coloridos do mascote Onlynho"]),
