@@ -22,6 +22,27 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Entrar — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260810-shipping-v123">
+  <style>
+    body[data-page="conta"] .auth-page {
+      width:100%;
+      min-height:100dvh;
+      box-sizing:border-box;
+      padding:110px 20px calc(110px + env(safe-area-inset-bottom));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    body[data-page="conta"] .auth-shell {
+      width:min(520px,100%);
+      margin:auto;
+    }
+    @media(max-width:700px) {
+      body[data-page="conta"] .auth-page {
+        min-height:100svh;
+        padding:92px 18px calc(100px + env(safe-area-inset-bottom));
+      }
+    }
+  </style>
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260805-v75" defer></script>
   <script src="assets/js/auth.js?v=20260806-v85" defer></script>
