@@ -64,6 +64,42 @@
         #fff;
       animation:account-loader-l7 1.5s infinite alternate ease-in;
     }
+    body[data-page="conta"] [data-account-guest] {
+      width:min(560px,100%);
+      min-height:calc(100dvh - 190px);
+      margin:0 auto;
+      padding:32px 20px;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      text-align:center;
+    }
+    body[data-page="conta"] [data-account-guest] > strong {
+      color:#121211;
+      font-size:clamp(24px,5vw,36px);
+      line-height:1.05;
+      letter-spacing:-.035em;
+    }
+    body[data-page="conta"] [data-account-guest] > span {
+      max-width:380px;
+      color:#74736d;
+      font-size:11px;
+      line-height:1.6;
+    }
+    body[data-page="conta"] [data-account-guest] .actions {
+      margin-top:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    body[data-page="conta"] [data-account-guest] .actions .button {
+      min-width:132px;
+    }
     @keyframes account-loader-l7 {
       0%,
       70% { background-size:100% 40%,8px 8px; }
@@ -75,6 +111,16 @@
       body[data-page="conta"] .account-loader::after { animation:none; }
     }
     @media (max-width:900px) {
+      body[data-page="conta"] [data-account-guest] {
+        min-height:calc(100svh - 190px);
+        padding:28px 14px 46px;
+      }
+      body[data-page="conta"] [data-account-guest] .actions {
+        width:min(340px,100%);
+      }
+      body[data-page="conta"] [data-account-guest] .actions .button {
+        flex:1 1 140px;
+      }
       body[data-page="conta"] .account-center {
         display:flex;
         flex-direction:column;
