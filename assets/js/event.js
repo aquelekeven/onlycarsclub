@@ -245,7 +245,21 @@
       });
       const progress = Math.min(1, Math.max(0, (marker - points[0]) / Math.max(1, points[points.length - 1] - points[0])));
       schedule.style.setProperty("--schedule-progress", progress.toFixed(4));
-      steps.forEach((step, index) => step.classList.toggle("is-reached", points[index] <= marker));
+      steps.forEach((step, index) => {
+        const reached = points[index] <= marker;
+        step.classList.toggle("is-reached", reached);
+        const clock = step.querySelector("[data-schedule-minute]");
+        const display = clock?.querySelector("b");
+        if (!clock || !display) return;
+        const targetMinute = Number(clock.dataset.scheduleMinute);
+        const previousMinute = index ? Number(steps[index - 1].querySelector("[data-schedule-minute]")?.dataset.scheduleMinute || targetMinute) : targetMinute;
+        const segmentStart = index ? (index - 1) / (steps.length - 1) : 0;
+        const segmentEnd = index / (steps.length - 1);
+        const localProgress = index ? Math.min(1, Math.max(0, (progress - segmentStart) / Math.max(.001, segmentEnd - segmentStart))) : 1;
+        const currentMinute = Math.round(previousMinute + ((targetMinute - previousMinute) * localProgress));
+        display.textContent = `${String(Math.floor(currentMinute / 60)).padStart(2, "0")}:${String(currentMinute % 60).padStart(2, "0")}`;
+        clock.classList.toggle("is-counting", localProgress > 0 && localProgress < 1 && targetMinute !== previousMinute);
+      });
     };
 
     const requestUpdate = () => {
