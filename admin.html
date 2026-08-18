@@ -23,13 +23,13 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260813-shipping-label-v140">
-  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260817-refunds-v4">
+  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260818-ticket-search-v5">
   <link rel="stylesheet" href="assets/css/admin-clean.css?v=20260817-qa-badge-v5">
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260815-ticket-media-v126" defer></script>
   <script src="assets/js/admin.js?v=20260817-qa-badge-v142" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
-  <script src="assets/js/admin-event-tools.js?v=20260817-refunds-v8" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260818-ticket-search-v9" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -166,7 +166,7 @@
                 <div class="admin-scanner-placeholder" data-scanner-placeholder><strong>Câmera desligada</strong><span>Toque abaixo para iniciar a leitura.</span></div>
               </div>
               <div class="admin-scanner-actions"><button class="primary" type="button" data-scanner-start>Iniciar câmera</button><button type="button" data-scanner-stop disabled>Parar</button></div>
-              <div class="admin-scanner-manual"><span>Leitura manual</span><div><input type="text" data-scanner-input autocomplete="off" placeholder="Cole o conteúdo completo do QR"><button type="button" data-scanner-search>Consultar</button></div></div>
+              <div class="admin-scanner-manual"><span>Pesquisar ingresso</span><div><input type="search" data-scanner-input autocomplete="off" spellcheck="false" placeholder="Nome, placa, código, telefone, modelo..."><button type="button" data-scanner-search>Pesquisar</button></div><small>Use qualquer dado informado no ingresso caso o QR Code não funcione.</small></div>
               <p class="admin-scanner-feedback" data-scanner-feedback role="status"></p>
             </section>
             <section class="admin-ticket-result" data-ticket-result>

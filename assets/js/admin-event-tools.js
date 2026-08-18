@@ -120,7 +120,7 @@
     result.innerHTML = `<article class="admin-ticket-detail" data-status="${escapeHtml(ticket.status)}">
       <header><div><span>Ingresso encontrado</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(displayStatus)}</b></header>
       <div class="admin-ticket-driver"><i>${escapeHtml(String(ticket.driver_name || "O").charAt(0).toUpperCase())}</i><div><span>Motorista</span><strong>${escapeHtml(ticket.driver_name)}</strong><small>${escapeHtml(ticket.driver_phone || "Telefone não informado")}</small></div></div>
-      <dl><div><dt>Veículo</dt><dd>${escapeHtml([ticket.vehicle_make,ticket.vehicle_model,ticket.vehicle_year].filter(Boolean).join(" "))}</dd></div><div><dt>Placa</dt><dd class="plate">${escapeHtml(ticket.vehicle_plate)}</dd></div><div><dt>Cor</dt><dd>${escapeHtml(ticket.vehicle_color)}</dd></div><div><dt>Evento</dt><dd>${escapeHtml(ticket.event_name)}</dd></div><div><dt>Última entrada</dt><dd>${dateTime(ticket.last_entry_at)}</dd></div><div><dt>Última saída</dt><dd>${dateTime(ticket.last_exit_at)}</dd></div></dl>
+      <dl><div><dt>Veículo</dt><dd>${escapeHtml([ticket.vehicle_make,ticket.vehicle_model,ticket.vehicle_year].filter(Boolean).join(" "))}</dd></div><div><dt>Placa</dt><dd class="plate">${escapeHtml(ticket.vehicle_plate)}</dd></div><div><dt>Evento</dt><dd>${escapeHtml(ticket.event_name)}</dd></div><div><dt>Última entrada</dt><dd>${dateTime(ticket.last_entry_at)}</dd></div><div><dt>Última saída</dt><dd>${dateTime(ticket.last_exit_at)}</dd></div></dl>
       <div class="admin-ticket-checkin-actions">
         <button class="primary" type="button" data-ticket-action="${entryAction}" ${allowed && !isInside ? "" : "disabled"}>${entryLabel}</button>
         <button type="button" data-ticket-action="exit" ${isInside ? "" : "disabled"}>Registrar saída</button>
@@ -137,6 +137,41 @@
     renderTicket(ticket);
     setScannerFeedback("Ingresso localizado. Confira os dados antes de confirmar.", "success");
     stopScanner();
+  }
+
+  function selectSearchResult(ticket) {
+    if (!ticket?.qr_token) throw new Error("Este ingresso não possui uma credencial válida para movimentação.");
+    lastToken = ticket.qr_token;
+    renderTicket(ticket);
+    setScannerFeedback("Ingresso selecionado. Confira os dados antes de confirmar.", "success");
+    stopScanner();
+  }
+
+  function renderSearchResults(tickets, query) {
+    const result = qs("[data-ticket-result]");
+    if (tickets.length === 1) {
+      selectSearchResult(tickets[0]);
+      return;
+    }
+    currentTicket = null;
+    lastToken = "";
+    result.innerHTML = `<div class="admin-ticket-search-results"><header><span>Resultados para</span><strong>“${escapeHtml(query)}”</strong><small>${tickets.length} ingressos encontrados. Selecione após conferir nome, placa e veículo.</small></header><div>${tickets.map((ticket, index) => `<button type="button" data-ticket-search-index="${index}"><i>${escapeHtml(String(ticket.driver_name || "O").charAt(0).toUpperCase())}</i><span><strong>${escapeHtml(ticket.driver_name)}</strong><small>${escapeHtml([ticket.ticket_code, String(ticket.vehicle_plate || "").toUpperCase(), ticket.vehicle_make, ticket.vehicle_model].filter(Boolean).join(" · "))}</small></span><b>Selecionar →</b></button>`).join("")}</div></div>`;
+    result.onclick = (event) => {
+      const button = event.target.closest("[data-ticket-search-index]");
+      if (!button) return;
+      selectSearchResult(tickets[Number(button.dataset.ticketSearchIndex)]);
+    };
+    setScannerFeedback("Mais de um ingresso foi localizado. Selecione o correto ao lado.", "warning");
+  }
+
+  async function searchTickets(value) {
+    const query = String(value || "").trim();
+    if (!selectedEventId) throw new Error("Selecione o evento antes de pesquisar.");
+    if (query.length < 2) throw new Error("Digite ao menos 2 caracteres para pesquisar.");
+    setScannerFeedback("Pesquisando ingressos...", "loading");
+    const tickets = await client.rest("rpc/admin_search_event_tickets", { method:"POST", body:{ p_event_id:selectedEventId, p_query:query } }) || [];
+    if (!tickets.length) throw new Error("Nenhum ingresso encontrado com esses dados.");
+    renderSearchResults(tickets, query);
   }
 
   async function scanLoop() {
@@ -340,7 +375,7 @@
     if (!qs("[data-admin-panel='tickets']")) return;
     qs("[data-scanner-start]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); startScanner(); });
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
-    qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); inspectToken(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
+    qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); searchTickets(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
     qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
     qs("[data-refund-requests]")?.addEventListener("click", async (event) => {
