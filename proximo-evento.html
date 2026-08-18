@@ -27,9 +27,11 @@
   <link rel="shortcut icon" href="favicon.ico?v=20260729-v65">
   <link rel="stylesheet" href="assets/css/style.css?v=20260815-event-live-v145">
   <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-event-map-v5">
+  <link rel="stylesheet" href="assets/css/drift-wall.css?v=20260817-v1">
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
   <script src="assets/js/event.js?v=20260817-scroll-flow-v5" defer></script>
+  <script src="assets/js/drift-wall.js?v=20260817-v1" defer></script>
 </head>
 <body data-page="proximo-evento" class="next-event-page">
   <header class="header">
@@ -97,42 +99,18 @@
       </div>
     </section>
 
-    <section class="event-memory" data-event-carousel aria-labelledby="event-memory-title">
+    <section class="event-memory event-memory-drift" aria-labelledby="event-memory-title">
       <header>
         <div>
           <p class="eyebrow">Memórias Only</p>
           <h2 id="event-memory-title">Outros registros no<br>Only Cars Meeting.</h2>
         </div>
-        <p>Alguns registros dos encontros que trouxeram a comunidade até aqui.</p>
+        <p>Alguns registros dos encontros que trouxeram a comunidade até aqui. Passe o cursor pelas imagens para explorar.</p>
       </header>
-      <div class="event-memory-stage">
-        <div class="event-memory-track" data-carousel-track tabindex="0" aria-label="Fotos de encontros anteriores">
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-1.webp" width="1000" height="1250" alt="Carros amarelos em um encontro automotivo" loading="eager">
-          </figure>
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-2.webp" width="1000" height="1250" alt="Honda Civic exposto em encontro automotivo" loading="lazy">
-          </figure>
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-3.webp" width="1000" height="1250" alt="Público reunido entre carros expostos" loading="lazy">
-          </figure>
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-4.webp" width="1000" height="1250" alt="Carros alinhados em acesso urbano" loading="lazy">
-          </figure>
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-5.webp" width="1000" height="1250" alt="Volkswagen rebaixados em exposição" loading="lazy">
-          </figure>
-          <figure class="event-memory-slide" data-carousel-slide>
-            <img decoding="async" src="assets/images/events/meeting-history/carrossel-6.webp" width="1000" height="1250" alt="Chevrolet Astra em encontro automotivo" loading="lazy">
-          </figure>
-        </div>
-        <button class="event-memory-arrow previous" type="button" data-carousel-previous aria-label="Foto anterior"><span aria-hidden="true">&#8592;</span></button>
-        <button class="event-memory-arrow next" type="button" data-carousel-next aria-label="Próxima foto"><span aria-hidden="true">&#8594;</span></button>
+      <div class="drift-wall" data-drift-wall role="group" aria-label="Galeria em movimento com fotos de encontros anteriores">
+        <div class="drift-wall__plane" data-drift-plane></div>
       </div>
-      <footer>
-        <div class="event-memory-dots" data-carousel-dots aria-label="Selecionar foto"></div>
-        <span><b data-carousel-current>01</b> / <span data-carousel-total>06</span></span>
-      </footer>
+      <p class="drift-wall-note">Toque ou passe o cursor sobre uma foto para destacá-la.</p>
     </section>
 
     <section class="event-flow" aria-labelledby="event-flow-title" data-event-flow>
@@ -167,11 +145,11 @@
         <p class="eyebrow">Onde vai acontecer</p>
         <h2>Centro de Esportes Radicais</h2>
         <p>Av. Presidente Castelo Branco, 5700<br>Bom Retiro • São Paulo/SP</p>
-        <div class="event-route-actions"><a class="button secondary" href="https://www.google.com/maps/search/?api=1&query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer">Google Maps <span>↗</span></a><a class="button secondary waze" href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer">Abrir no Waze <span>↗</span></a></div>
+        <div class="event-route-actions"><a class="button secondary" href="https://www.google.com/maps/search/?api=1&query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/><path fill="#34A853" d="M7.1 4.1 10.3 6.5A3 3 0 0 0 9 9.3H4.7a7.3 7.3 0 0 1 2.4-5.2Z"/><path fill="#FBBC04" d="M9 9.3c0 1.1.6 2.1 1.5 2.6l-2.6 3.4c-1.7-2.3-3.2-4.5-3.2-6H9Z"/></svg><span>Google Maps ↗</span></a><a class="button secondary waze" href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/><path d="M8.6 13c1.8 1.4 4.4 1.4 6.1 0" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="17.4" r="1.8" fill="#fff" stroke="#111"/><circle cx="16.8" cy="17.2" r="1.8" fill="#fff" stroke="#111"/></svg><span>Abrir no Waze ↗</span></a></div>
       </div>
       <div class="event-map" aria-label="Mapa interativo do Centro de Esportes Radicais">
         <iframe title="Mapa do Centro de Esportes Radicais" src="https://www.google.com/maps?q=Centro+de+Esportes+Radicais,+Av.+Presidente+Castelo+Branco,+5700,+S%C3%A3o+Paulo&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
-        <div class="event-map-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer">Google Maps ↗</a><a href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer">Waze ↗</a></div>
+        <div class="event-map-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/></svg><span>Google Maps ↗</span></a><a href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/></svg><span>Waze ↗</span></a></div>
       </div>
     </section>
 

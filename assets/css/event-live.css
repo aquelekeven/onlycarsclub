@@ -43,3 +43,4 @@
 @media(max-width:700px){.event-flow ol::after{left:27px;top:28px;width:2px;height:calc((100% - 56px) * var(--flow-progress));transition:height .08s linear}.event-venue-map{padding:76px 18px}.event-venue-map>header{margin-bottom:25px}.event-venue-map figure{border-radius:18px}.event-venue-map figcaption{justify-content:flex-start;display:grid;grid-template-columns:1fr 1fr;padding:18px;font-size:10px}}
 @media(max-width:560px){.event-lot-progress{margin-top:14px}.event-countdown{padding:58px 18px}.event-countdown>div{grid-template-columns:repeat(2,1fr)}}
 @media(prefers-reduced-motion:reduce){.event-memory-slide{transition:none}.event-memory-track{scroll-behavior:auto}}
+.event-route-icon{display:block;width:20px;height:20px;flex:0 0 20px}.event-route-actions .button{display:inline-flex;align-items:center;gap:9px}.event-map-links a{display:flex;align-items:center;gap:7px}.event-map-links .event-route-icon{width:17px;height:17px;flex-basis:17px}
