@@ -8,6 +8,7 @@
   const error = root.querySelector("[data-ticket-error]");
   let eventData = null;
   let activeLot = null;
+  let appliedCoupon = null;
   const money = (cents) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(cents || 0) / 100);
   const digits = (value) => String(value || "").replace(/\D/g, "");
   const ageFrom = (value) => {
@@ -39,6 +40,41 @@
 
   cpfInput?.addEventListener("input", () => { cpfInput.value = formatCpf(cpfInput.value); });
   phoneInput?.addEventListener("input", () => { phoneInput.value = formatPhone(phoneInput.value); });
+  const couponInput = root.querySelector("[data-ticket-coupon-code]");
+  const couponButton = root.querySelector("[data-ticket-coupon-apply]");
+  const couponFeedback = root.querySelector("[data-ticket-coupon-feedback]");
+
+  function clearCoupon() {
+    appliedCoupon = null;
+    root.querySelector("[data-ticket-discount-line]").hidden = true;
+    if (activeLot) root.querySelector("[data-ticket-total]").textContent = money(activeLot.price_cents);
+  }
+
+  async function applyCoupon() {
+    const code = String(couponInput.value || "").trim().toUpperCase();
+    couponInput.value = code;
+    clearCoupon();
+    if (!code) { couponFeedback.textContent = "Digite o código do cupom."; return; }
+    if (!eventData?.id || !activeLot) return;
+    couponButton.disabled = true;
+    couponFeedback.textContent = "Validando cupom...";
+    try {
+      const result = await client.rest("rpc/preview_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:eventData.id, p_code:code, p_subtotal_cents:Number(activeLot.price_cents) } });
+      appliedCoupon = result;
+      root.querySelector("[data-ticket-coupon-label]").textContent = result.code;
+      root.querySelector("[data-ticket-discount]").textContent = `− ${money(result.discount_cents)}`;
+      root.querySelector("[data-ticket-discount-line]").hidden = false;
+      root.querySelector("[data-ticket-total]").textContent = money(result.payable_cents);
+      couponFeedback.textContent = result.description || "Cupom aplicado com sucesso.";
+      couponFeedback.dataset.state = "success";
+    } catch (couponError) {
+      couponFeedback.textContent = couponError.message || "Não foi possível aplicar o cupom.";
+      couponFeedback.dataset.state = "error";
+    } finally { couponButton.disabled = false; }
+  }
+  couponButton?.addEventListener("click", applyCoupon);
+  couponInput?.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); applyCoupon(); } });
+  couponInput?.addEventListener("input", () => { if (appliedCoupon && couponInput.value.trim().toUpperCase() !== appliedCoupon.code) { clearCoupon(); couponFeedback.textContent = "Aplique novamente após alterar o código."; } });
 
   async function initialize() {
     const user = await client.getUser().catch(() => null);
@@ -90,7 +126,8 @@
         event_slug:root.dataset.eventSlug, lot_id:activeLot.id,
         driver_name:String(data.get("driver_name") || "").trim(), driver_tax_id:cpf, driver_phone:phone,
         vehicle_plate:plate, vehicle_make:String(data.get("vehicle_make") || "").trim(), vehicle_model:String(data.get("vehicle_model") || "").trim(),
-        instagram_handle:String(data.get("instagram_handle") || "").trim()
+        instagram_handle:String(data.get("instagram_handle") || "").trim(),
+        coupon_code:appliedCoupon?.code || null
       });
       if (!response?.checkout_url) throw new Error("O Mercado Pago não retornou o link de pagamento.");
       location.assign(response.checkout_url);

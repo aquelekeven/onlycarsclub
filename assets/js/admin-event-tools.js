@@ -6,6 +6,7 @@
   const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[character]);
   const dateTime = (value) => value ? new Date(value).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" }) : "—";
+  const money = (cents) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(cents || 0) / 100);
 
   const exchangeSteps = [
     ["received", "Recebida"], ["under_review", "Em análise"],
@@ -260,6 +261,36 @@
     if (qs("[data-scanner-stop]")) qs("[data-scanner-stop]").disabled = true;
   }
 
+  let ticketCoupons = [];
+  const localDateTime = (value) => value ? new Date(value).toISOString().slice(0,16) : "";
+
+  function openCouponForm(coupon = null) {
+    const form = qs("[data-ticket-coupon-form]");
+    form.hidden = false;
+    form.reset();
+    form.elements.coupon_id.value = coupon?.id || "";
+    form.elements.code.value = coupon?.code || "";
+    form.elements.description.value = coupon?.description || "";
+    form.elements.discount_type.value = coupon?.discount_type || "percent";
+    form.elements.discount_value.value = coupon ? (coupon.discount_type === "fixed" ? Number(coupon.discount_value) / 100 : coupon.discount_value) : 10;
+    form.elements.max_redemptions.value = coupon?.max_redemptions || "";
+    form.elements.max_redemptions_per_user.value = coupon?.max_redemptions_per_user || 1;
+    form.elements.starts_at.value = localDateTime(coupon?.starts_at);
+    form.elements.ends_at.value = localDateTime(coupon?.ends_at);
+    form.elements.active.checked = coupon?.active ?? true;
+    form.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+
+  async function loadTicketCoupons() {
+    if (!selectedEventId || !qs("[data-ticket-coupons]")) return;
+    const root = qs("[data-ticket-coupons]");
+    try {
+      ticketCoupons = await client.rest("rpc/admin_ticket_purchase_coupons", { method:"POST", body:{ p_event_id:selectedEventId } }) || [];
+      root.innerHTML = ticketCoupons.length ? `<div class="admin-coupon-list">${ticketCoupons.map((coupon) => `<article class="admin-coupon-card" data-coupon-id="${escapeHtml(coupon.id)}" data-active="${coupon.active}"><div><span>Código</span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description || (coupon.active ? "Ativo" : "Inativo"))}</small></div><div><span>Desconto</span><strong>${coupon.discount_type === "percent" ? `${coupon.discount_value}%` : money(coupon.discount_value)}</strong><small>${coupon.max_redemptions ? `${Number(coupon.paid_uses || 0)}/${coupon.max_redemptions} usos pagos` : `${Number(coupon.paid_uses || 0)} usos pagos`}</small></div><div><span>Receita gerada</span><strong>${money(coupon.revenue_cents)}</strong><small>${money(coupon.discount_granted_cents)} concedidos</small></div><div><span>Validade</span><strong>${coupon.ends_at ? dateTime(coupon.ends_at) : "Sem vencimento"}</strong><small>${Number(coupon.reserved_uses || 0)} reservados agora</small></div><div class="admin-coupon-card-actions"><button type="button" data-edit-ticket-coupon>Editar</button><button type="button" data-toggle-ticket-coupon="${coupon.active ? "false" : "true"}">${coupon.active ? "Desativar" : "Ativar"}</button></div></article>`).join("")}</div>` : '<div class="admin-ticket-activity-empty">Nenhum cupom criado para este evento.</div>';
+      qs("[data-ticket-coupon-admin-feedback]").textContent = "";
+    } catch (loadError) { root.innerHTML = ""; qs("[data-ticket-coupon-admin-feedback]").textContent = loadError.message || "Não foi possível carregar os cupons."; }
+  }
+
   async function loadTicketStats() {
     if (!selectedEventId) return;
     try {
@@ -267,6 +298,10 @@
       qs("[data-ticket-stat-active]").textContent = data.active_tickets || 0;
       qs("[data-ticket-stat-inside]").textContent = data.inside_event || 0;
       qs("[data-ticket-stat-today]").textContent = data.movements_today || 0;
+      const sales = await client.rest("rpc/admin_ticket_sales_summary", { method:"POST", body:{ p_event_id:selectedEventId } });
+      qs("[data-ticket-stat-sold]").textContent = sales.sold_tickets || 0;
+      qs("[data-ticket-stat-revenue]").textContent = money(sales.net_revenue_cents);
+      qs("[data-ticket-stat-discount]").textContent = `${money(sales.discount_cents)} em descontos`;
       const activity = qs("[data-ticket-activity]");
       activity.innerHTML = data.recent_activity?.length ? data.recent_activity.map((item) => `<article><i data-action="${escapeHtml(item.action)}"></i><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.action_label)}</span></div><time>${dateTime(item.created_at)}</time></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma movimentação registrada ainda.</div>';
     } catch (error) {
@@ -363,7 +398,7 @@
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
-        await Promise.all([loadTicketStats(), loadConfirmationPhotos(), loadRefundRequests()]);
+        await Promise.all([loadTicketStats(), loadTicketCoupons(), loadConfirmationPhotos(), loadRefundRequests()]);
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
     } catch (error) {
@@ -377,7 +412,29 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); searchTickets(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadTicketCoupons(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-new-ticket-coupon]")?.addEventListener("click", () => openCouponForm());
+    qs("[data-cancel-ticket-coupon]")?.addEventListener("click", () => { qs("[data-ticket-coupon-form]").hidden = true; });
+    qs("[data-ticket-coupon-form]")?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget, data = new FormData(form), feedback = qs("[data-ticket-coupon-admin-feedback]");
+      const type = String(data.get("discount_type"));
+      const rawValue = Number(data.get("discount_value"));
+      feedback.textContent = "Salvando cupom...";
+      try {
+        await client.rest("rpc/admin_save_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:selectedEventId, p_id:data.get("coupon_id") || null, p_code:String(data.get("code") || "").trim().toUpperCase(), p_description:String(data.get("description") || "").trim() || null, p_discount_type:type, p_discount_value:type === "fixed" ? Math.round(rawValue * 100) : Math.round(rawValue), p_max_redemptions:data.get("max_redemptions") ? Number(data.get("max_redemptions")) : null, p_max_redemptions_per_user:Number(data.get("max_redemptions_per_user") || 1), p_starts_at:data.get("starts_at") ? new Date(String(data.get("starts_at"))).toISOString() : null, p_ends_at:data.get("ends_at") ? new Date(String(data.get("ends_at"))).toISOString() : null, p_active:data.get("active") === "on" } });
+        form.hidden = true; feedback.textContent = "Cupom salvo com sucesso."; await loadTicketCoupons();
+      } catch (saveError) { feedback.textContent = saveError.message || "Não foi possível salvar o cupom."; }
+    });
+    qs("[data-ticket-coupons]")?.addEventListener("click", async (event) => {
+      const card = event.target.closest("[data-coupon-id]"); if (!card) return;
+      const coupon = ticketCoupons.find((item) => item.id === card.dataset.couponId); if (!coupon) return;
+      if (event.target.closest("[data-edit-ticket-coupon]")) return openCouponForm(coupon);
+      const toggle = event.target.closest("[data-toggle-ticket-coupon]"); if (!toggle) return;
+      toggle.disabled = true;
+      try { await client.rest("rpc/admin_toggle_ticket_purchase_coupon", { method:"POST", body:{ p_id:coupon.id, p_active:toggle.dataset.toggleTicketCoupon === "true" } }); await loadTicketCoupons(); }
+      catch (toggleError) { qs("[data-ticket-coupon-admin-feedback]").textContent = toggleError.message || "Não foi possível atualizar o cupom."; toggle.disabled = false; }
+    });
     qs("[data-refund-requests]")?.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-refund-status]");
       if (!button) return;

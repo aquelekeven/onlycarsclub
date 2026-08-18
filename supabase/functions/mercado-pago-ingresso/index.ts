@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v7-adult-gate";
+const FUNCTION_VERSION = "ticket-checkout-v8-coupons";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -80,6 +80,7 @@ Deno.serve(async (request) => {
     const vehicleMake = clean(body.vehicle_make, 60);
     const vehicleModel = clean(body.vehicle_model, 80);
     const instagramHandle = clean(body.instagram_handle, 40) || null;
+    const couponCode = clean(body.coupon_code, 30).toUpperCase() || null;
 
     if (!eventSlug) throw new Error("Evento não informado.");
     if (!validUuid(lotId)) throw new Error("Lote inválido.");
@@ -136,6 +137,16 @@ Deno.serve(async (request) => {
       throw new Error(orderError?.message || "Não foi possível reservar o ingresso.");
     }
     createdOrderId = order.id;
+    let payableCents = Number(lot.price_cents);
+    let appliedCouponCode: string | null = null;
+    if (couponCode) {
+      const { data: couponResult, error: couponError } = await serviceClient.rpc("reserve_ticket_purchase_coupon", {
+        p_order_id: order.id, p_user_id: user.id, p_code: couponCode,
+      });
+      if (couponError || !couponResult) throw new Error(couponError?.message || "Não foi possível aplicar o cupom.");
+      payableCents = Number(couponResult.payable_cents);
+      appliedCouponCode = String(couponResult.code);
+    }
 
     const qrToken = crypto.randomUUID() + crypto.randomUUID();
     const qrTokenHash = await sha256(qrToken);
@@ -172,7 +183,7 @@ Deno.serve(async (request) => {
           title: `${event.name} — ${lot.name}`,
           quantity: 1,
           currency_id: "BRL",
-          unit_price: Number((Number(lot.price_cents) / 100).toFixed(2)),
+          unit_price: Number((payableCents / 100).toFixed(2)),
         }],
         payer: { email: user.email, name: driverName, identification: { type: "CPF", number: driverTaxId } },
         external_reference: `ticket:${order.id}`,
@@ -195,7 +206,7 @@ Deno.serve(async (request) => {
     const { error: updateError } = await serviceClient.from("ticket_orders")
       .update({ provider_preference_id: String(preference.id) }).eq("id", order.id);
     if (updateError) throw new Error("O pagamento foi criado, mas não foi possível salvar sua identificação.");
-    return jsonResponse({ order_id: order.id, checkout_url: preference.init_point || preference.sandbox_init_point });
+    return jsonResponse({ order_id: order.id, checkout_url: preference.init_point || preference.sandbox_init_point, coupon_code: appliedCouponCode, total_cents: payableCents });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível iniciar a compra.";
     console.error(`[${FUNCTION_VERSION}]`, message);

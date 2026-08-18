@@ -74,10 +74,10 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: order, error } = await db.from("ticket_orders")
-      .select("id,total_cents,status").eq("id", orderId).single();
+      .select("id,payable_cents,status").eq("id", orderId).single();
     if (error || !order) throw new Error("Pedido de ingresso não encontrado.");
     const amountCents = Math.round(Number(payment.transaction_amount || 0) * 100);
-    if (amountCents !== Number(order.total_cents)) throw new Error("Valor do pagamento diferente do ingresso.");
+    if (amountCents !== Number(order.payable_cents)) throw new Error("Valor do pagamento diferente do ingresso.");
 
     const rawStatus = String(payment.status || "pending");
     if (order.status === "cancelled") {
