@@ -26,10 +26,10 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
   <link rel="shortcut icon" href="favicon.ico?v=20260729-v65">
   <link rel="stylesheet" href="assets/css/style.css?v=20260815-event-live-v145">
-  <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-launch-v4">
+  <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-event-map-v5">
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/event.js?v=20260815-event-live-v4" defer></script>
+  <script src="assets/js/event.js?v=20260817-scroll-flow-v5" defer></script>
 </head>
 <body data-page="proximo-evento" class="next-event-page">
   <header class="header">
@@ -83,7 +83,7 @@
       <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></i><span>Horário</span><strong>20h00 — 23h59</strong></article>
       <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg></i><span>Local</span><strong>Centro de Esportes Radicais</strong><small>Bom Retiro • São Paulo/SP</small></article>
       <article><i class="event-fact-icon event-fact-car" aria-hidden="true"><svg viewBox="0 0 32 20"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2"/><path d="M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><span>Ingresso Expo</span><strong>R$ 35 no Lote 1</strong><small>Lote 2: R$ 45 · Último lote e porta: R$ 60</small></article>
-      <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 16 1-5h12l1 5"/><path d="M3 16h18v3H3zM8 11l1-3h6l1 3"/></svg></i><span>Capacidade Expo</span><strong data-event-capacity>130 carros</strong></article>
+      <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 16 1-5h12l1 5"/><path d="M3 16h18v3H3zM8 11l1-3h6l1 3"/></svg></i><span>Atração</span><strong>Apresentação de drift</strong></article>
       <article class="event-fact-rating"><i class="event-rating-badge" aria-hidden="true">L</i><span>Classificação</span><strong>Livre para todos os públicos</strong><small>Ingresso: compre na conta de um responsável com 18 anos ou mais</small></article>
     </section>
 
@@ -101,7 +101,7 @@
       <header>
         <div>
           <p class="eyebrow">Memórias Only</p>
-          <h2 id="event-memory-title">A cultura já estava<br>em movimento.</h2>
+          <h2 id="event-memory-title">Outros registros no<br>Only Cars Meeting.</h2>
         </div>
         <p>Alguns registros dos encontros que trouxeram a comunidade até aqui.</p>
       </header>
@@ -135,7 +135,7 @@
       </footer>
     </section>
 
-    <section class="event-flow" aria-labelledby="event-flow-title">
+    <section class="event-flow" aria-labelledby="event-flow-title" data-event-flow>
       <header><p class="eyebrow">Do site à portaria</p><h2 id="event-flow-title">Seu ingresso, sempre com você.</h2></header>
       <ol>
         <li><i>01</i><div><strong>Cadastre o veículo</strong><span>Informe motorista, placa, modelo, ano e cor.</span></div></li>
@@ -143,6 +143,23 @@
         <li><i>03</i><div><strong>Receba o QR Code</strong><span>O ingresso ficará disponível em Minha conta.</span></div></li>
         <li><i>04</i><div><strong>Valide na entrada</strong><span>A equipe confere o veículo e ativa sua credencial.</span></div></li>
       </ol>
+    </section>
+
+    <section class="event-venue-map" aria-labelledby="event-venue-map-title">
+      <header>
+        <p class="eyebrow">Antes de chegar</p>
+        <h2 id="event-venue-map-title">Mapa do evento.</h2>
+        <p>Use os pontos de referência abaixo para localizar a entrada e as principais áreas do encontro.</p>
+      </header>
+      <figure>
+        <img src="assets/images/events/mapa-only-cars-meeting.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Mapa ilustrado do Only Cars Meeting no Centro de Esportes Radicais, com entrada, estacionamento, arena de drift e pontos de referência">
+        <figcaption aria-label="Legenda do mapa">
+          <span><i class="entry" aria-hidden="true"></i>Entrada do evento</span>
+          <span><i class="expo" aria-hidden="true"></i>Área de exposição</span>
+          <span><i class="drift" aria-hidden="true"></i>Apresentação de drift</span>
+          <span><i class="reference" aria-hidden="true"></i>Pontos de referência</span>
+        </figcaption>
+      </figure>
     </section>
 
     <section class="event-location">

@@ -192,6 +192,43 @@
     restartAutoplay();
   }
 
+  function initializeFlowProgress() {
+    const flow = root.querySelector("[data-event-flow]");
+    const steps = flow ? [...flow.querySelectorAll("li")] : [];
+    if (!flow || !steps.length) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = flow.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      let progress;
+
+      if (matchMedia("(max-width: 700px)").matches) {
+        const marker = viewportHeight * 0.58;
+        const first = steps[0].querySelector("i").getBoundingClientRect();
+        const last = steps[steps.length - 1].querySelector("i").getBoundingClientRect();
+        const firstCenter = first.top + first.height / 2;
+        const lastCenter = last.top + last.height / 2;
+        progress = (marker - firstCenter) / Math.max(1, lastCenter - firstCenter);
+      } else {
+        progress = ((viewportHeight * 0.72) - rect.top) / Math.max(1, rect.height * 0.72);
+      }
+
+      progress = Math.min(1, Math.max(0, progress));
+      flow.style.setProperty("--flow-progress", progress.toFixed(4));
+      const reachedIndex = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+      steps.forEach((step, index) => step.classList.toggle("is-reached", progress > 0 && index <= reachedIndex));
+    };
+
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    addEventListener("scroll", requestUpdate, { passive:true });
+    addEventListener("resize", requestUpdate, { passive:true });
+    update();
+  }
+
   async function loadEvent() {
     if (!client) return;
     try {
@@ -224,5 +261,6 @@
   }));
 
   initializeMemoryCarousel();
+  initializeFlowProgress();
   loadEvent();
 })();
