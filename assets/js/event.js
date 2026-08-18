@@ -245,6 +245,8 @@
       });
       const progress = Math.min(1, Math.max(0, (marker - points[0]) / Math.max(1, points[points.length - 1] - points[0])));
       schedule.style.setProperty("--schedule-progress", progress.toFixed(4));
+      const smokeProgress = Math.min(1, Math.max(0, (progress - 0.72) / 0.28));
+      schedule.style.setProperty("--schedule-smoke", smokeProgress.toFixed(4));
       steps.forEach((step, index) => {
         const reached = points[index] <= marker;
         step.classList.toggle("is-reached", reached);
