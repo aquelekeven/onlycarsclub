@@ -291,6 +291,16 @@
     } catch (loadError) { root.innerHTML = ""; qs("[data-ticket-coupon-admin-feedback]").textContent = loadError.message || "Não foi possível carregar os cupons."; }
   }
 
+  function switchEventView(view) {
+    const management = view === "management";
+    qsa("[data-event-view]").forEach((section) => { section.hidden = section.dataset.eventView !== view; });
+    qsa("[data-event-view-button]").forEach((button) => button.classList.toggle("active", button.dataset.eventViewButton === view));
+    qs("[data-admin-events-description]").textContent = management
+      ? "Indicadores, cupons, conteúdo e atendimento desta edição."
+      : "Modo portaria: leitor, ingresso consultado e movimentações recentes.";
+    if (management) stopScanner();
+  }
+
   async function loadTicketStats() {
     if (!selectedEventId) return;
     try {
@@ -395,6 +405,7 @@
         qs("[data-admin-events-description]").textContent = `${button.dataset.gateEventDate || ""} · Leitor, indicadores e movimentações da portaria.`;
         qs("[data-admin-event-back]").hidden = false;
         gate.hidden = false;
+        switchEventView("gate");
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
@@ -413,6 +424,7 @@
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); searchTickets(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
     qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadTicketCoupons(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qsa("[data-event-view-button]").forEach((button) => button.addEventListener("click", () => switchEventView(button.dataset.eventViewButton)));
     qs("[data-new-ticket-coupon]")?.addEventListener("click", () => openCouponForm());
     qs("[data-cancel-ticket-coupon]")?.addEventListener("click", () => { qs("[data-ticket-coupon-form]").hidden = true; });
     qs("[data-ticket-coupon-form]")?.addEventListener("submit", async (event) => {
