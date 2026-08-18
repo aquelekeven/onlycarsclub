@@ -37,13 +37,21 @@
       margin:auto;
     }
     body[data-page="conta"] .login-back-home {
-      position:absolute;
-      left:max(20px,5vw);
-      top:50%;
+      position:absolute !important;
+      left:max(20px,5vw) !important;
+      right:auto !important;
+      top:50% !important;
+      width:max-content !important;
+      min-width:max-content !important;
+      max-width:none !important;
       min-height:42px;
-      padding:0 14px;
-      display:inline-flex;
-      align-items:center;
+      padding:0 14px !important;
+      display:inline-flex !important;
+      flex:0 0 auto !important;
+      flex-direction:row !important;
+      flex-wrap:nowrap !important;
+      align-items:center !important;
+      justify-content:flex-start !important;
       gap:8px;
       transform:translateY(-50%);
       border:1px solid #ffffff20;
@@ -53,14 +61,25 @@
       font-size:11px;
       font-weight:750;
       line-height:1;
+      text-align:left;
       text-decoration:none;
-      white-space:nowrap;
+      white-space:nowrap !important;
+      word-break:keep-all !important;
+      overflow-wrap:normal !important;
       transition:.2s ease;
+    }
+    body[data-page="conta"] .login-back-home span {
+      display:inline-block !important;
+      width:auto !important;
+      max-width:none !important;
+      white-space:nowrap !important;
+      word-break:keep-all !important;
+      overflow-wrap:normal !important;
     }
     body[data-page="conta"] .login-back-home svg {
       width:18px;
       height:18px;
-      flex:0 0 auto;
+      flex:0 0 18px;
       fill:none;
       stroke:currentColor;
       stroke-width:1.8;
@@ -78,15 +97,16 @@
         padding:92px 18px calc(100px + env(safe-area-inset-bottom));
       }
       body[data-page="conta"] .login-back-home {
-        left:14px;
+        left:14px !important;
         min-height:40px;
-        padding:0 11px;
+        padding:0 10px !important;
         gap:6px;
         font-size:9px;
       }
       body[data-page="conta"] .login-back-home svg {
         width:16px;
         height:16px;
+        flex-basis:16px;
       }
     }
   </style>
