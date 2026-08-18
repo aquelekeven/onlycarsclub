@@ -36,10 +36,57 @@
       width:min(520px,100%);
       margin:auto;
     }
+    body[data-page="conta"] .login-back-home {
+      position:absolute;
+      left:max(20px,5vw);
+      top:50%;
+      min-height:42px;
+      padding:0 14px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transform:translateY(-50%);
+      border:1px solid #ffffff20;
+      border-radius:14px;
+      background:#ffffff0d;
+      color:#fff;
+      font-size:11px;
+      font-weight:750;
+      line-height:1;
+      text-decoration:none;
+      white-space:nowrap;
+      transition:.2s ease;
+    }
+    body[data-page="conta"] .login-back-home svg {
+      width:18px;
+      height:18px;
+      flex:0 0 auto;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    body[data-page="conta"] .login-back-home:hover {
+      border-color:var(--yellow);
+      background:var(--yellow);
+      color:#090909;
+    }
     @media(max-width:700px) {
       body[data-page="conta"] .auth-page {
         min-height:100svh;
         padding:92px 18px calc(100px + env(safe-area-inset-bottom));
+      }
+      body[data-page="conta"] .login-back-home {
+        left:14px;
+        min-height:40px;
+        padding:0 11px;
+        gap:6px;
+        font-size:9px;
+      }
+      body[data-page="conta"] .login-back-home svg {
+        width:16px;
+        height:16px;
       }
     }
   </style>
@@ -48,7 +95,13 @@
   <script src="assets/js/auth.js?v=20260806-v85" defer></script>
 </head>
 <body data-page="conta">
-  <header class="header"><a href="index.html" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
+  <header class="header">
+    <a class="login-back-home" href="index.html" aria-label="Voltar ao início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>
+      <span>Voltar ao início</span>
+    </a>
+    <a href="index.html" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a>
+  </header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
   <main class="auth-page">
     <div class="auth-shell">
