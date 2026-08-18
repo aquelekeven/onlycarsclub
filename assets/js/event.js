@@ -245,7 +245,7 @@
       });
       const progress = Math.min(1, Math.max(0, (marker - points[0]) / Math.max(1, points[points.length - 1] - points[0])));
       schedule.style.setProperty("--schedule-progress", progress.toFixed(4));
-      const blurProgress = Math.min(1, Math.max(0, (progress - 0.75) / 0.25));
+      const blurProgress = Math.min(1, Math.max(0, (progress - 0.6) / 0.4));
       schedule.style.setProperty("--schedule-blur", blurProgress.toFixed(4));
       steps.forEach((step, index) => {
         const reached = points[index] <= marker;
@@ -283,9 +283,9 @@
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
       const travel = Math.min(1, Math.max(0, (viewportHeight - rect.top) / Math.max(1, viewportHeight + rect.height)));
       const intensity = Math.sin(Math.PI * travel);
-      const maxZoom = matchMedia("(max-width: 720px)").matches ? 0.065 : 0.105;
+      const maxZoom = matchMedia("(max-width: 720px)").matches ? 0.12 : 0.19;
       section.style.setProperty("--venue-map-zoom", (1 + intensity * maxZoom).toFixed(4));
-      section.style.setProperty("--venue-map-shift", `${((travel - 0.5) * intensity * -16).toFixed(2)}px`);
+      section.style.setProperty("--venue-map-shift", `${((travel - 0.5) * intensity * -30).toFixed(2)}px`);
     };
 
     const requestUpdate = () => {
