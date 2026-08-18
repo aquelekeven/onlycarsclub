@@ -272,6 +272,30 @@
     update();
   }
 
+  function initializeVenueMapZoom() {
+    const section = root.querySelector("[data-event-venue-map]");
+    if (!section) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = section.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const travel = Math.min(1, Math.max(0, (viewportHeight - rect.top) / Math.max(1, viewportHeight + rect.height)));
+      const intensity = Math.sin(Math.PI * travel);
+      const maxZoom = matchMedia("(max-width: 720px)").matches ? 0.065 : 0.105;
+      section.style.setProperty("--venue-map-zoom", (1 + intensity * maxZoom).toFixed(4));
+      section.style.setProperty("--venue-map-shift", `${((travel - 0.5) * intensity * -16).toFixed(2)}px`);
+    };
+
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    addEventListener("scroll", requestUpdate, { passive:true });
+    addEventListener("resize", requestUpdate, { passive:true });
+    update();
+  }
+
   async function loadEvent() {
     if (!client) return;
     try {
@@ -306,5 +330,6 @@
   initializeMemoryCarousel();
   initializeFlowProgress();
   initializeScheduleProgress();
+  initializeVenueMapZoom();
   loadEvent();
 })();

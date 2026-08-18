@@ -54,3 +54,5 @@
 .event-schedule{--schedule-blur:0;overflow:hidden}.event-schedule::before{filter:blur(calc(var(--schedule-blur) * 9px)) brightness(calc(1 - (var(--schedule-blur) * .14)));transform:scale(calc(1 + (var(--schedule-blur) * .025)));transition:filter .1s linear,transform .1s linear;transform-origin:50% 72%}
 @media(max-width:720px){.event-schedule::before{filter:blur(calc(var(--schedule-blur) * 7px)) brightness(calc(1 - (var(--schedule-blur) * .12)))}}
 @media(prefers-reduced-motion:reduce){.event-schedule::before{transition:none}}
+.event-venue-map{--venue-map-zoom:1;--venue-map-shift:0px}.event-venue-map figure{isolation:isolate}.event-venue-map figure>img{transform:translate3d(0,var(--venue-map-shift),0) scale(var(--venue-map-zoom));transform-origin:50% 52%;will-change:transform;transition:transform .08s linear}
+@media(prefers-reduced-motion:reduce){.event-venue-map figure>img{transform:none;transition:none;will-change:auto}}
