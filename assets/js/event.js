@@ -229,6 +229,33 @@
     update();
   }
 
+  function initializeScheduleProgress() {
+    const schedule = root.querySelector("[data-event-schedule]");
+    const steps = schedule ? [...schedule.querySelectorAll("ol > li")] : [];
+    if (!schedule || !steps.length) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const marker = viewportHeight * 0.6;
+      const points = steps.map((step) => {
+        const dot = step.querySelector("i").getBoundingClientRect();
+        return dot.top + dot.height / 2;
+      });
+      const progress = Math.min(1, Math.max(0, (marker - points[0]) / Math.max(1, points[points.length - 1] - points[0])));
+      schedule.style.setProperty("--schedule-progress", progress.toFixed(4));
+      steps.forEach((step, index) => step.classList.toggle("is-reached", points[index] <= marker));
+    };
+
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    addEventListener("scroll", requestUpdate, { passive:true });
+    addEventListener("resize", requestUpdate, { passive:true });
+    update();
+  }
+
   async function loadEvent() {
     if (!client) return;
     try {
@@ -262,5 +289,6 @@
 
   initializeMemoryCarousel();
   initializeFlowProgress();
+  initializeScheduleProgress();
   loadEvent();
 })();
