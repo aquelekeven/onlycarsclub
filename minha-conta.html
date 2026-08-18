@@ -74,6 +74,48 @@
       body[data-page="conta"] .account-loader::before,
       body[data-page="conta"] .account-loader::after { animation:none; }
     }
+    @media (max-width:900px) {
+      body[data-page="conta"] .account-center {
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+      }
+      body[data-page="conta"] .account-sidebar {
+        display:contents;
+      }
+      body[data-page="conta"] .account-menu {
+        position:fixed;
+        left:8px;
+        right:8px;
+        bottom:calc(8px + env(safe-area-inset-bottom));
+        top:auto;
+        z-index:120;
+        padding:7px;
+        border:1px solid #ffffff16;
+        border-radius:20px;
+        background:linear-gradient(165deg,#20201e,#111110);
+        box-shadow:0 16px 45px #0008,inset 0 1px 0 #ffffff12;
+      }
+      body[data-page="conta"] .account-main {
+        order:1;
+      }
+      body[data-page="conta"] .account-sidebar-footer {
+        display:block;
+        order:2;
+        margin:0;
+        padding:0 0 12px;
+        border:0;
+      }
+      body[data-page="conta"] .account-sidebar-footer .account-logout {
+        min-height:52px;
+        border:1px solid #e2d5d2;
+        border-radius:15px;
+        background:#fff;
+        color:#a5342e;
+        font-size:10px;
+        box-shadow:0 10px 24px #2222180d;
+      }
+    }
   </style>
   <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
   <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
