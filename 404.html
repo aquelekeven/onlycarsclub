@@ -2,23 +2,210 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,follow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; upgrade-insecure-requests">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="theme-color" content="#090909">
-  <title>Página não encontrada — Only Cars Club</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <meta name="theme-color" content="#07101d">
+  <title>Fim da estrada — Only Cars Club</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --white: #f7f9ff;
+      --muted: rgba(232, 239, 250, .72);
+      --red: #ff334b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      min-height: 100svh;
+      overflow: hidden;
+      background: #07101d;
+      color: var(--white);
+      font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Consolas, "Courier New", monospace;
+    }
+
+    .error-scene {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      min-height: 100svh;
+      overflow: hidden;
+    }
+
+    .scene-image,
+    .scene-shade,
+    .scene-grain {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .scene-image {
+      z-index: -4;
+      object-fit: cover;
+      object-position: center center;
+      filter: saturate(.88) contrast(1.04);
+      transform: scale(1.006);
+    }
+
+    .scene-shade {
+      z-index: -3;
+      background:
+        linear-gradient(90deg, rgba(1, 7, 16, .38) 0%, rgba(1, 7, 16, .08) 52%, rgba(1, 5, 13, .14) 100%),
+        linear-gradient(180deg, rgba(2, 8, 18, .08) 35%, rgba(2, 7, 15, .48) 100%);
+      pointer-events: none;
+    }
+
+    .scene-grain {
+      z-index: -2;
+      opacity: .08;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
+    }
+
+    .brand {
+      position: absolute;
+      top: max(24px, env(safe-area-inset-top));
+      left: clamp(24px, 4vw, 68px);
+      z-index: 3;
+      color: rgba(255, 255, 255, .88);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .32em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, .65);
+    }
+
+    .error-content {
+      position: absolute;
+      z-index: 2;
+      top: 46%;
+      left: 32.2%;
+      width: min(430px, 38vw);
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
+
+    .error-code {
+      margin: 0;
+      color: #f5f7fb;
+      font-family: inherit;
+      font-size: clamp(82px, 8.5vw, 158px);
+      font-weight: 700;
+      font-style: normal;
+      font-variant-numeric: tabular-nums;
+      line-height: .9;
+      letter-spacing: .06em;
+      text-shadow: 5px 5px 0 rgba(0, 0, 0, .34);
+      -webkit-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .eyebrow {
+      margin: 22px 0 11px;
+      color: rgba(255, 255, 255, .9);
+      font-size: clamp(11px, .84vw, 14px);
+      font-weight: 700;
+      letter-spacing: .26em;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, .44);
+    }
+
+    .message {
+      max-width: 350px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: clamp(10px, .8vw, 13px);
+      font-weight: 600;
+      letter-spacing: .12em;
+      line-height: 1.5;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, .42);
+    }
+
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      margin-top: 18px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, .92);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-decoration: none;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, .5);
+      transition: color .15s ease, transform .15s steps(2, end);
+    }
+
+    .home-link:hover,
+    .home-link:focus-visible {
+      color: var(--red);
+      outline: none;
+      transform: translateX(4px);
+    }
+
+    @media (max-width: 760px) {
+      .scene-image {
+        object-position: 68% center;
+        filter: saturate(.82) contrast(1.05) brightness(.84);
+      }
+
+      .scene-shade {
+        background:
+          linear-gradient(180deg, rgba(2, 8, 18, .1) 20%, rgba(2, 7, 15, .52) 100%);
+      }
+
+      .brand { left: 22px; font-size: 9px; }
+
+      .error-content {
+        top: 34%;
+        left: 38%;
+        width: min(82vw, 360px);
+      }
+
+      .eyebrow { margin-top: 23px; }
+      .message { max-width: 290px; }
+      .home-link { margin-top: 20px; min-height: 44px; padding: 0 19px; }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .error-content { top: 47%; }
+      .eyebrow { margin-top: 18px; }
+      .home-link { min-height: 40px; margin-top: 14px; }
+      .message { line-height: 1.4; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .home-link { transition: none; }
+    }
+  </style>
 </head>
-<body data-page="not-found">
-  <main class="auth-page">
-    <section class="auth-card" style="text-align:center">
-      <p class="eyebrow">Erro 404</p>
-      <h1>Essa rota saiu do mapa.</h1>
-      <p>A página pode ter mudado de endereço ou não existir mais.</p>
-      <a class="button primary" href="index.html">Voltar ao início</a>
+<body>
+  <main class="error-scene">
+    <img class="scene-image" src="assets/images/wallpaper-onlynho.webp" alt="Onlynho ao lado de um carro em uma estrada com neblina">
+    <div class="scene-shade" aria-hidden="true"></div>
+    <div class="scene-grain" aria-hidden="true"></div>
+
+    <div class="brand">Only Cars Club</div>
+
+    <section class="error-content" aria-labelledby="error-title">
+      <h1 class="error-code" id="error-title">404</h1>
+      <p class="eyebrow">Fim da estrada</p>
+      <p class="message">Página não encontrada.</p>
+      <a class="home-link" href="index.html">[ Voltar ao início ]</a>
     </section>
+
   </main>
 </body>
 </html>
