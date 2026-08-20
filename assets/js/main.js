@@ -1162,8 +1162,10 @@ function setupHomeEventDiscovery() {
   placeHint();
   window.addEventListener("resize", placeHint, { passive:true });
   const dismiss = () => {
+    if (!hint.isConnected || hint.classList.contains("is-leaving")) return;
     window.removeEventListener("resize", placeHint);
-    hint.remove();
+    hint.classList.add("is-leaving");
+    window.setTimeout(() => hint.remove(), 320);
   };
   window.setTimeout(dismiss, 10000);
   eventButton.addEventListener("click", dismiss, { once:true });
