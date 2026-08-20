@@ -27,6 +27,25 @@
     return known ? known[1] : original;
   }
 
+  function renderAdminLink(isAdmin) {
+    const existingLink = qs("[data-admin-link]");
+    if (!isAdmin) {
+      existingLink?.remove();
+      return;
+    }
+
+    if (existingLink) return;
+    const header = qs("body[data-page=\"conta\"] .header");
+    if (!header) return;
+
+    const adminLink = document.createElement("a");
+    adminLink.className = "account-header-admin";
+    adminLink.href = "admin.html";
+    adminLink.dataset.adminLink = "";
+    adminLink.textContent = "Painel administrativo";
+    header.appendChild(adminLink);
+  }
+
   function confirmOrderCancellation(orderNumber, trigger) {
     return new Promise((resolve) => {
       let modal = qs("[data-order-cancel-modal]");
@@ -287,14 +306,6 @@
     const ordersList = qs("[data-orders-list]");
     let addressId = null;
     let savedAddresses = [];
-    const adminLink = qs("[data-admin-link]");
-
-    // Falha fechada: o atalho só pode existir depois de uma confirmação
-    // exclusiva do banco. Sessão ativa ou dados do perfil não bastam.
-    if (adminLink) {
-      adminLink.hidden = true;
-      adminLink.setAttribute("aria-hidden", "true");
-    }
     const orderStatusLabels = {
       pending_payment: "Aguardando pagamento",
       paid: "Pago",
@@ -332,14 +343,9 @@
       const role = qs("[data-account-role]");
       role.textContent = isAdmin ? "Administrador" : "Cliente";
       role.dataset.role = isAdmin ? "admin" : "customer";
-      if (adminLink) {
-        if (isAdmin) {
-          adminLink.hidden = false;
-          adminLink.removeAttribute("aria-hidden");
-        } else {
-          adminLink.remove();
-        }
-      }
+      // O link não existe no HTML público: ele só entra no DOM após o banco
+      // confirmar a permissão administrativa via RPC.
+      renderAdminLink(isAdmin);
       profileForm.display_name.value = profile.display_name || "";
       profileForm.phone.value = profile.phone ? formatPhone(profile.phone) : "";
       profileForm.tax_id.value = profile.tax_id ? formatCpf(profile.tax_id) : "";
