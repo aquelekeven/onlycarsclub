@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.56.0";
 import QRCode from "npm:qrcode@1.5.4";
 
 const SITE="https://onlycarsclub.com.br";
@@ -11,7 +11,8 @@ const shell=(title:string,lead:string,body:string,image:string)=>`<!doctype html
 Deno.serve(async(req)=>{
  if(req.method!=="POST") return Response.json({error:"method"},{status:405});
  const url=Deno.env.get("SUPABASE_URL")!,service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,anon=Deno.env.get("SUPABASE_ANON_KEY")!,resend=Deno.env.get("RESEND_API_KEY"),from=Deno.env.get("EMAIL_FROM")||"Only Cars Club <contato@onlycarsclub.com.br>";
- if(!url||!service||req.headers.get("apikey")!==anon) return Response.json({error:"unauthorized"},{status:401});
+ const authorization=req.headers.get("authorization")||"";
+ if(!url||!service||!anon||authorization!==`Bearer ${service}`) return Response.json({error:"unauthorized"},{status:401});
  const db=createClient(url,service,{auth:{persistSession:false}}); await db.rpc("enqueue_only_emails");
  const {data:rows,error}=await db.from("transactional_email_outbox").select("*").in("status",["pending","failed"]).lte("scheduled_at",new Date().toISOString()).lt("attempts",4).order("scheduled_at").limit(20);
  if(error) return Response.json({error:error.message},{status:500});

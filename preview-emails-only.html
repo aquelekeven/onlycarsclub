@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Prévia dos e-mails — Only Cars Club</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#090909;color:#fff;font-family:Arial,sans-serif}.top{position:sticky;top:0;z-index:3;padding:18px;background:#111;border-bottom:1px solid #292929}.top strong{color:#efd311}.top p{margin:5px 0 0;color:#aaa;font-size:13px}.nav{display:flex;gap:8px;overflow:auto;padding:14px 18px}.nav button{border:1px solid #333;background:#181818;color:#fff;border-radius:999px;padding:10px 15px;white-space:nowrap;cursor:pointer}.nav button.on{background:#efd311;color:#111;border-color:#efd311;font-weight:700}.stage{padding:10px 12px 40px}.mail{display:none;width:100%;max-width:620px;margin:auto;background:#f5f4ee;color:#171713;border-radius:22px;overflow:hidden}.mail.on{display:block}.hero{width:100%;height:250px;object-fit:cover;display:block}.content{padding:34px}.brand{font-size:11px;font-weight:800;letter-spacing:2px;color:#8a7300}h1{font-size:34px;line-height:1.05;margin:10px 0 12px}.lead{color:#65645d;line-height:1.6}.ticket{padding:20px;background:#fff;border-radius:16px}.qr{width:210px;height:210px;display:grid;place-items:center;margin:20px auto;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 50%/28px 28px;border:14px solid #fff;outline:3px solid #111;font-weight:900;color:#efd311;text-shadow:0 1px #000}.cta{display:inline-block;background:#171713;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none}.yellow{background:#efd311;color:#111;font-weight:bold}.foot{margin-top:30px;color:#88867e;font-size:12px}@media(max-width:500px){.content{padding:24px}h1{font-size:29px}.hero{height:200px}}
+  </style>
+</head>
+<body>
+  <div class="top"><strong>AMBIENTE DE PRÉVIA</strong><p>Nenhuma mensagem desta página é enviada. Os dados abaixo são fictícios.</p></div>
+  <div class="nav">
+    <button class="on" data-mail="ticket">Ingresso</button><button data-mail="recovery">Recuperação</button><button data-mail="countdown">Contagem</button><button data-mail="order">Pedido</button>
+  </div>
+  <main class="stage">
+    <article class="mail on" id="ticket"><img class="hero" src="assets/images/events/flyer-drift-background.webp" alt="Dois carros fazendo drift"><div class="content"><div class="brand">ONLY CARS CLUB</div><h1>Seu ingresso está confirmado</h1><p class="lead">Cliente Only, seu lugar no Only Cars Meeting está garantido.</p><div class="ticket"><b>OCM-EXEMPLO01</b><p>ABC1D23 · Only Cars Meeting</p><p>20/09/2026, 20:00 · R$ 35,00</p><div class="qr">QR</div><p style="text-align:center;font-size:12px">Apresente este QR Code na portaria.</p></div><p><a class="cta" href="#">Abrir meu ingresso</a></p><p class="foot">Mensagem automática da Only Cars Club.</p></div></article>
+    <article class="mail" id="recovery"><img class="hero" src="assets/images/events/flyer-drift-background.webp" alt="Dois carros fazendo drift"><div class="content"><div class="brand">ONLY CARS CLUB</div><h1>Você deixou algo para trás</h1><p class="lead">Seu carrinho ou pagamento ainda não foi concluído.</p><p>Seu ingresso ainda pode estar disponível. Continue de onde parou e garanta sua entrada para o próximo Only Cars Meeting.</p><p><a class="cta yellow" href="#">Continuar agora</a></p><p class="foot">Mensagem automática da Only Cars Club.</p></div></article>
+    <article class="mail" id="countdown"><img class="hero" src="assets/images/events/flyer-drift-background.webp" alt="Dois carros fazendo drift"><div class="content"><div class="brand">ONLY CARS CLUB</div><h1>Faltam 5 dias</h1><p class="lead">A contagem regressiva começou. Prepare o carro e confira os detalhes do evento.</p><p>Revise o horário, o trajeto e deixe seu ingresso com QR Code pronto para apresentar na portaria.</p><p><a class="cta yellow" href="#">Ver informações do evento</a></p><p class="foot">Mensagem automática da Only Cars Club.</p></div></article>
+    <article class="mail" id="order"><img class="hero" src="assets/images/paixao-comunidade.webp" alt="Imagem temporária do pedido"><div class="content"><div class="brand">ONLY CARS CLUB</div><h1>Pedido confirmado</h1><p class="lead">Recebemos o pagamento do pedido OCC-000123.</p><p><strong>Total: R$ 249,90</strong></p><p>Agora é só acompanhar as próximas atualizações pela sua conta.</p><p><a class="cta" href="#">Acompanhar pedido</a></p><p class="foot">Mensagem automática da Only Cars Club.</p></div></article>
+  </main>
+  <script>document.querySelectorAll('button[data-mail]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button,.mail').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.mail).classList.add('on')})</script>
+</body>
+</html>
