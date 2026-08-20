@@ -1135,6 +1135,22 @@ function saveCart(cart) {
     sessionStorage.removeItem("onlyCarsCheckoutMaxStep");
   }
   updateCartCount(normalizedCart);
+  if (window.OnlySupabase && document.body.dataset.page !== "admin") {
+    window.OnlySupabase.rest("rpc/sync_customer_cart_recovery", { method:"POST", body:{ p_cart:normalizedCart } }).catch(() => null);
+  }
+}
+
+function setupHomeEventDiscovery() {
+  if (document.body.dataset.page !== "home") return;
+  const eventButton = qs(".bottom-nav .next-event-nav");
+  if (!eventButton) return;
+  const hint = document.createElement("div");
+  hint.className = "event-nav-hint";
+  hint.setAttribute("role", "status");
+  hint.innerHTML = "<strong>Tem evento novo no Only.</strong><span>Toque no botão amarelo para ver data, cronograma e garantir seu ingresso.</span>";
+  document.body.appendChild(hint);
+  window.setTimeout(() => hint.remove(), 10000);
+  eventButton.addEventListener("click", () => hint.remove(), { once:true });
 }
 
 function setupCheckoutSteps() {
@@ -2532,6 +2548,7 @@ function setupAccountShortcut() {
 document.addEventListener("DOMContentLoaded", () => {
   setupOnlyCarsAppMetadata();
   setupAccountShortcut();
+  setupHomeEventDiscovery();
   setupPageTransitions();
   setupBottomNavigationStructure();
   setActiveNavigation();

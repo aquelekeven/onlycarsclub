@@ -128,6 +128,7 @@ Deno.serve(async (request) => {
       const { error: ticketError } = await db.from("tickets")
         .update({ status: "active" }).eq("order_id", order.id);
       if (ticketError) throw new Error(ticketError.message);
+      await db.rpc("enqueue_only_emails");
     }
     return respond({ received: true, processed: true });
   } catch (error) {

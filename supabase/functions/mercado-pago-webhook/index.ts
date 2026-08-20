@@ -112,6 +112,7 @@ Deno.serve(async (request) => {
       p_approved_at: payment.date_approved || null,
     });
     if (error) throw new Error(error.message);
+    if (String(payment.status) === "approved") await db.rpc("enqueue_only_emails");
     await db.from("webhook_events").update({
       processed_at: new Date().toISOString(), error_message: null,
     }).eq("id", eventRowId);

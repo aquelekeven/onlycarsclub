@@ -495,8 +495,8 @@
           const extension = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
           const path = `${user.id}/${form.dataset.ticketId}/${crypto.randomUUID()}.${extension}`;
           await client.upload("ticket-confirmations", path, file);
-          await client.rest("ticket_media?on_conflict=ticket_id", { method:"POST", headers:{ Prefer:"resolution=merge-duplicates,return=minimal" }, body:{ ticket_id:form.dataset.ticketId, owner_user_id:user.id, storage_path:path, publication_consent:true, publication_consent_at:new Date().toISOString(), status:"pending" } });
-          feedback.textContent = "Foto enviada para revisão da equipe Only.";
+          const photoResult = await client.rest("rpc/customer_submit_ticket_photo", { method:"POST", body:{ p_ticket_id:form.dataset.ticketId, p_storage_path:path, p_publication_consent:true } });
+          feedback.textContent = `Foto enviada para revisão. ${photoResult.remaining ? `Você ainda pode enviar ${photoResult.remaining} vez.` : "Limite de 2 fotos atingido para este ingresso."}`;
           form.photo.value = "";
         } catch (error) { feedback.textContent = friendlyError(error); }
         finally { submit.disabled = false; }

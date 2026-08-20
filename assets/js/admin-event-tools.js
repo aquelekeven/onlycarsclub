@@ -262,6 +262,7 @@
   }
 
   let ticketCoupons = [];
+  let ticketSales = [];
   const localDateTime = (value) => value ? new Date(value).toISOString().slice(0,16) : "";
 
   function openCouponForm(coupon = null) {
@@ -289,6 +290,20 @@
       root.innerHTML = ticketCoupons.length ? `<div class="admin-coupon-list">${ticketCoupons.map((coupon) => `<article class="admin-coupon-card" data-coupon-id="${escapeHtml(coupon.id)}" data-active="${coupon.active}"><div><span>Código</span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description || (coupon.active ? "Ativo" : "Inativo"))}</small></div><div><span>Desconto</span><strong>${coupon.discount_type === "percent" ? `${coupon.discount_value}%` : money(coupon.discount_value)}</strong><small>${coupon.max_redemptions ? `${Number(coupon.paid_uses || 0)}/${coupon.max_redemptions} usos pagos` : `${Number(coupon.paid_uses || 0)} usos pagos`}</small></div><div><span>Receita gerada</span><strong>${money(coupon.revenue_cents)}</strong><small>${money(coupon.discount_granted_cents)} concedidos</small></div><div><span>Validade</span><strong>${coupon.ends_at ? dateTime(coupon.ends_at) : "Sem vencimento"}</strong><small>${Number(coupon.reserved_uses || 0)} reservados agora</small></div><div class="admin-coupon-card-actions"><button type="button" data-edit-ticket-coupon>Editar</button><button type="button" data-toggle-ticket-coupon="${coupon.active ? "false" : "true"}">${coupon.active ? "Desativar" : "Ativar"}</button></div></article>`).join("")}</div>` : '<div class="admin-ticket-activity-empty">Nenhum cupom criado para este evento.</div>';
       qs("[data-ticket-coupon-admin-feedback]").textContent = "";
     } catch (loadError) { root.innerHTML = ""; qs("[data-ticket-coupon-admin-feedback]").textContent = loadError.message || "Não foi possível carregar os cupons."; }
+  }
+
+  function renderTicketSales(query = "") {
+    const root = qs("[data-ticket-sales-list]"); if (!root) return;
+    const normalized = query.trim().toLowerCase();
+    const rows = ticketSales.filter((item) => !normalized || `${item.ticket_code} ${item.driver_name} ${item.vehicle_plate} ${item.vehicle_make} ${item.vehicle_model} ${item.customer_email}`.toLowerCase().includes(normalized));
+    root.className = "admin-ticket-sales-list";
+    root.innerHTML = rows.length ? rows.map((item) => `<article class="admin-ticket-sale" data-ticket-sale-id="${escapeHtml(item.ticket_id)}"><button type="button" data-ticket-sale-toggle><span><strong>${escapeHtml(item.driver_name)}</strong><small>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.customer_email)}</small></span><span><strong>${escapeHtml(item.vehicle_plate)}</strong><small>${escapeHtml([item.vehicle_make,item.vehicle_model].filter(Boolean).join(" "))}</small></span><span><strong>${money(item.total_cents)}</strong><small>${item.coupon_code ? `Cupom ${escapeHtml(item.coupon_code)}` : "Sem cupom"}</small></span><b>Detalhes ↓</b></button><div class="admin-ticket-sale-detail" hidden><div><span>Pagamento</span><strong>${money(item.total_cents)} · ${escapeHtml(item.payment_method || "Não informado")}</strong></div><div><span>Preço e desconto</span><strong>${money(item.subtotal_cents)} − ${money(item.discount_cents)}</strong></div><div><span>Pago em</span><strong>${dateTime(item.paid_at)}</strong></div><div><span>Motorista</span><strong>${escapeHtml(item.driver_name)}<br>${escapeHtml(item.driver_tax_id)}<br>${escapeHtml(item.driver_phone)}</strong></div><div><span>Veículo</span><strong>${escapeHtml([item.vehicle_make,item.vehicle_model,item.vehicle_year].filter(Boolean).join(" "))}<br>${escapeHtml(item.vehicle_plate)}</strong></div><div><span>Instagram</span><strong>${escapeHtml(item.instagram_handle || "Não informado")}</strong></div>${item.photo ? `<div class="admin-ticket-sale-photo" data-ticket-sale-photo><span>Foto de confirmado · ${Number(item.photo.submission_count||1)}/2 envios</span><strong>Carregando foto...</strong></div>` : '<div class="admin-ticket-sale-photo"><span>Foto de confirmado</span><strong>Ainda não enviada</strong></div>'}</div></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum ingresso vendido encontrado.</div>';
+  }
+
+  async function loadTicketSales() {
+    if (!selectedEventId) return;
+    try { ticketSales = await client.rest("rpc/admin_event_ticket_sales", { method:"POST", body:{ p_event_id:selectedEventId } }) || []; renderTicketSales(qs("[data-ticket-sales-search]")?.value || ""); qs("[data-ticket-sales-feedback]").textContent=""; }
+    catch (error) { ticketSales=[]; qs("[data-ticket-sales-feedback]").textContent=error.message||"Não foi possível carregar os ingressos."; renderTicketSales(); }
   }
 
   function switchEventView(view) {
@@ -409,7 +424,7 @@
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do motorista e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
-        await Promise.all([loadTicketStats(), loadTicketCoupons(), loadConfirmationPhotos(), loadRefundRequests()]);
+        await Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]);
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
     } catch (error) {
@@ -423,7 +438,9 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); searchTickets(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadTicketCoupons(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-ticket-sales-search]")?.addEventListener("input", (event) => renderTicketSales(event.target.value));
+    qs("[data-ticket-sales-list]")?.addEventListener("click", async (event) => { const button=event.target.closest("[data-ticket-sale-toggle]"),card=button?.closest("[data-ticket-sale-id]"); if(!card)return; const detail=qs(".admin-ticket-sale-detail",card),opening=detail.hidden; detail.hidden=!opening; button.querySelector("b").textContent=opening?"Fechar ↑":"Detalhes ↓"; if(opening){const item=ticketSales.find(x=>x.ticket_id===card.dataset.ticketSaleId),photo=qs("[data-ticket-sale-photo]",card);if(item?.photo&&photo&&!photo.querySelector("img")){try{const url=await client.signedUrl("ticket-confirmations",item.photo.storage_path,3600);photo.innerHTML+=`<img src="${escapeHtml(url)}" alt="Foto de ${escapeHtml(item.vehicle_plate)}">`;}catch(_){photo.querySelector("strong").textContent="Não foi possível abrir a foto.";}}} });
     qsa("[data-event-view-button]").forEach((button) => button.addEventListener("click", () => switchEventView(button.dataset.eventViewButton)));
     qs("[data-new-ticket-coupon]")?.addEventListener("click", () => openCouponForm());
     qs("[data-cancel-ticket-coupon]")?.addEventListener("click", () => { qs("[data-ticket-coupon-form]").hidden = true; });
