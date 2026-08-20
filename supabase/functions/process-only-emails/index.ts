@@ -27,10 +27,18 @@ Deno.serve(async(req)=>{
   const recipient=String(body?.recipient||"").trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipient)) return Response.json({error:"recipient"},{status:400});
   const eventTest=body?.test_kind==="event";
-  const html=eventTest
+  let html="",attachments:any[]=[];
+  if(eventTest&&body?.use_real_ticket===true){
+   const {data:previewRow}=await db.from("transactional_email_outbox").select("payload").eq("template","ticket_purchase").ilike("recipient_email",recipient).order("created_at",{ascending:false}).limit(1).maybeSingle();
+   if(!previewRow?.payload) return Response.json({error:"paid_ticket_not_found"},{status:404});
+   const p=previewRow.payload;
+   const qr=await QRCode.toDataURL(String(p.qr_token),{width:360,margin:2,errorCorrectionLevel:"H"});
+   attachments=[{filename:"ingresso-only.png",content:qr.split(",")[1],content_id:"ticket-qr"}];
+   html=shell("Seu ingresso está confirmado",`${p.driver_name}, este é um teste com os dados reais do seu ingresso.`,`<div style="padding:20px;background:#fff;border-radius:16px"><b>${esc(p.ticket_code)}</b><p>${esc(p.vehicle_plate)} · ${esc(p.event_name)}</p><p>${new Date(p.event_date).toLocaleString("pt-BR")} · ${money(p.total_cents)}</p><img src="cid:ticket-qr" width="250" style="display:block;margin:20px auto"><p style="text-align:center;font-size:12px">Apresente este QR Code na portaria.</p></div><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Cópia de teste — fila de clientes ainda pausada.</p>`,EVENT_IMAGE,true);
+  }else html=eventTest
    ? shell("Seu ingresso está confirmado","Este é um teste visual do modelo do Only Cars Meeting. Nenhum cliente recebeu esta mensagem.",`<div style="padding:20px;background:#fff;border-radius:16px"><b>OCM-TESTE</b><p>ABC1D23 · Only Cars Meeting</p><p>23/10/2026, 20:00 · R$ 35,00</p><p style="padding:24px;text-align:center;border:2px dashed #171713">QR CODE DE TESTE</p></div><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Fila de clientes ainda pausada.</p>`,EVENT_IMAGE,true)
    : shell("Automação de e-mails pronta","Este é um envio técnico da Only Cars Club. Nenhum cliente recebeu esta mensagem.",`<p>A integração com o provedor foi validada com sucesso.</p><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Teste concluído — fila de clientes ainda pausada.</p>`,ORDER_IMAGE);
-  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[recipient],subject:eventTest?"[TESTE] Ingresso Only Cars Meeting":"[TESTE] Automação de e-mails Only Cars Club",html})});
+  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[recipient],subject:eventTest?"[TESTE] Ingresso Only Cars Meeting":"[TESTE] Automação de e-mails Only Cars Club",html,attachments})});
   const result=await response.json().catch(()=>({}));
   if(!response.ok) return Response.json({ok:false,error:result?.message||"Falha no provedor"},{status:502});
   return Response.json({ok:true,provider_message_id:result.id});
