@@ -13,11 +13,29 @@ Deno.serve(async(req)=>{
  if(req.method!=="POST") return Response.json({error:"method"},{status:405});
  const url=Deno.env.get("SUPABASE_URL")!,service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,anon=Deno.env.get("SUPABASE_ANON_KEY")!,resend=Deno.env.get("RESEND_API_KEY"),from=Deno.env.get("EMAIL_FROM")||"Only Cars Club <contato@onlycarsclub.com.br>";
  const authorization=req.headers.get("authorization")||"";
- if(!url||!service||!anon||authorization!==`Bearer ${service}`) return Response.json({error:"unauthorized"},{status:401});
- const db=createClient(url,service,{auth:{persistSession:false}}); await db.rpc("enqueue_only_emails");
+ if(!url||!service||!anon) return Response.json({error:"configuration"},{status:500});
+ const db=createClient(url,service,{auth:{persistSession:false}});
+ const body=await req.json().catch(()=>({}));
+ if(authorization!==`Bearer ${service}`){
+  const cronSecret=req.headers.get("x-only-cron-secret")||"";
+  const {data:allowed}=await db.rpc("verify_email_cron_secret",{p_secret:cronSecret});
+  if(!allowed) return Response.json({error:"unauthorized"},{status:401});
+ }
+ if(body?.action==="health") return Response.json({ok:true,resend_configured:Boolean(resend),from_configured:Boolean(from)});
+ if(body?.action==="test"){
+  if(!resend) return Response.json({ok:false,error:"RESEND_API_KEY ausente"},{status:503});
+  const recipient=String(body?.recipient||"").trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipient)) return Response.json({error:"recipient"},{status:400});
+  const html=shell("Automação de e-mails pronta","Este é um envio técnico da Only Cars Club. Nenhum cliente recebeu esta mensagem.",`<p>A integração com o provedor foi validada com sucesso.</p><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Teste concluído — fila de clientes ainda pausada.</p>`,ORDER_IMAGE);
+  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[recipient],subject:"[TESTE] Automação de e-mails Only Cars Club",html})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok) return Response.json({ok:false,error:result?.message||"Falha no provedor"},{status:502});
+  return Response.json({ok:true,provider_message_id:result.id});
+ }
+ await db.rpc("enqueue_only_emails");
  const {data:rows,error}=await db.from("transactional_email_outbox").select("*").in("status",["pending","failed"]).lte("scheduled_at",new Date().toISOString()).lt("attempts",4).order("scheduled_at").limit(20);
  if(error) return Response.json({error:error.message},{status:500});
- const dryRun=(await req.json().catch(()=>({})))?.dry_run===true; let sent=0,failed=0;
+ const dryRun=body?.dry_run===true; let sent=0,failed=0;
  for(const row of rows||[]){
   const p=row.payload||{}; let html="",attachments:any[]=[];
   if(row.template==="ticket_purchase"){
