@@ -388,7 +388,7 @@
         const driverName = titleCase(ticket.driver_name);
         const request = ticket.refund_request;
         const helpPanel = paid ? `<details class="account-ticket-help"><summary>Ajuda com este ingresso</summary>${request ? `<div class="account-ticket-request-status" data-status="${escapeHtml(request.status)}"><strong>${escapeHtml(refundStatusLabels[request.status] || request.status)}</strong><span>Pedido registrado em ${new Date(request.created_at).toLocaleDateString("pt-BR")}. A equipe Only fará a análise e retornará pelo e-mail da conta.</span>${request.admin_notes ? `<small>Retorno da equipe: ${escapeHtml(request.admin_notes)}</small>` : ""}</div>` : `<form data-ticket-refund-form data-order-id="${escapeHtml(ticket.order_id)}"><label>Motivo<select name="reason" required><option value="">Selecione</option><option>Não poderei comparecer</option><option>Dados do ingresso incorretos</option><option>Compra realizada por engano</option><option>Outro motivo</option></select></label><label>Conte mais para a equipe <span>(opcional)</span><textarea name="details" maxlength="800" rows="3" placeholder="Explique brevemente o que aconteceu"></textarea></label><p data-ticket-refund-feedback></p><button type="submit">Enviar solicitação</button><small>O envio não cancela automaticamente o ingresso. A equipe analisará o pedido antes de qualquer reembolso.</small></form>`}</details>` : "";
-        return `<article class="account-ticket-card ${paid ? "is-active" : ""}" data-ticket-card-id="${escapeHtml(ticket.id)}">
+        return `<article class="account-ticket-card ${paid ? "is-active" : ""}" data-ticket-card-id="${escapeHtml(ticket.id)}" data-ticket-code="${escapeHtml(ticket.ticket_code)}">
           <header><div><span>${escapeHtml(ticket.event_name || "Only Cars Meeting")}${ticket.is_test ? ' · <em class="qa-badge">QA</em>' : ""}</span><strong>${escapeHtml(ticket.ticket_code)}</strong><small>Classificação ${escapeHtml(ticket.age_rating || "Livre")}</small></div><b data-status="${escapeHtml(ticket.ticket_status)}">${escapeHtml(expired ? "Reserva expirada" : ticketStatusLabels[ticket.ticket_status] || ticket.ticket_status)}</b></header>
           <div class="account-ticket-body"><div class="account-ticket-car"><i><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><div><strong>${escapeHtml(vehicleName)}</strong><span>${escapeHtml(String(ticket.vehicle_plate || "").toUpperCase())} · ${escapeHtml(driverName)}</span></div></div>
           <dl><div><dt>Lote</dt><dd>${escapeHtml(ticket.lot_name || "Lote 1")}</dd></div><div><dt>Valor</dt><dd>${formatMoney(ticket.total_cents)}</dd></div><div><dt>Data</dt><dd>${ticket.event_starts_at ? new Date(ticket.event_starts_at).toLocaleDateString("pt-BR") : "23/10/2026"}</dd></div><div><dt>Local</dt><dd>${escapeHtml(ticket.venue_name || "Centro de Esportes Radicais")}</dd></div></dl></div>
@@ -408,6 +408,16 @@
       }
       if (window.OnlyQRCode) {
         qsa("[data-ticket-qr]", ticketsRoot).forEach((canvas) => window.OnlyQRCode.toCanvas(canvas, canvas.dataset.ticketQr, { width:176, margin:2, errorCorrectionLevel:"L", color:{ dark:"#111111", light:"#ffffff" } }).catch(() => { canvas.hidden = true; }));
+      }
+      const requestedTicketCode = new URLSearchParams(location.search).get("ticket")?.trim().toUpperCase();
+      if (requestedTicketCode && ticketsRoot) {
+        const requestedCard = qsa("[data-ticket-code]", ticketsRoot).find((card) => card.dataset.ticketCode?.toUpperCase() === requestedTicketCode);
+        if (requestedCard) {
+          showAccountView("tickets");
+          const eventTickets = requestedCard.closest("[data-account-event]");
+          if (eventTickets) eventTickets.hidden = false;
+          window.setTimeout(() => requestedCard.scrollIntoView({ behavior:"smooth", block:"start" }), 120);
+        }
       }
       const saveTicketImage = async (button) => {
         const ticket = tickets.find((item) => item.id === button.dataset.downloadTicket);
