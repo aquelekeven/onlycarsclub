@@ -26,8 +26,11 @@ Deno.serve(async(req)=>{
   if(!resend) return Response.json({ok:false,error:"RESEND_API_KEY ausente"},{status:503});
   const recipient=String(body?.recipient||"").trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipient)) return Response.json({error:"recipient"},{status:400});
-  const html=shell("Automação de e-mails pronta","Este é um envio técnico da Only Cars Club. Nenhum cliente recebeu esta mensagem.",`<p>A integração com o provedor foi validada com sucesso.</p><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Teste concluído — fila de clientes ainda pausada.</p>`,ORDER_IMAGE);
-  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[recipient],subject:"[TESTE] Automação de e-mails Only Cars Club",html})});
+  const eventTest=body?.test_kind==="event";
+  const html=eventTest
+   ? shell("Seu ingresso está confirmado","Este é um teste visual do modelo do Only Cars Meeting. Nenhum cliente recebeu esta mensagem.",`<div style="padding:20px;background:#fff;border-radius:16px"><b>OCM-TESTE</b><p>ABC1D23 · Only Cars Meeting</p><p>23/10/2026, 20:00 · R$ 35,00</p><p style="padding:24px;text-align:center;border:2px dashed #171713">QR CODE DE TESTE</p></div><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Fila de clientes ainda pausada.</p>`,EVENT_IMAGE,true)
+   : shell("Automação de e-mails pronta","Este é um envio técnico da Only Cars Club. Nenhum cliente recebeu esta mensagem.",`<p>A integração com o provedor foi validada com sucesso.</p><p style="padding:14px 18px;background:#efd311;border-radius:12px;font-weight:bold">Teste concluído — fila de clientes ainda pausada.</p>`,ORDER_IMAGE);
+  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[recipient],subject:eventTest?"[TESTE] Ingresso Only Cars Meeting":"[TESTE] Automação de e-mails Only Cars Club",html})});
   const result=await response.json().catch(()=>({}));
   if(!response.ok) return Response.json({ok:false,error:result?.message||"Falha no provedor"},{status:502});
   return Response.json({ok:true,provider_message_id:result.id});
