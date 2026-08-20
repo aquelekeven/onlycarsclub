@@ -1149,8 +1149,24 @@ function setupHomeEventDiscovery() {
   hint.setAttribute("role", "status");
   hint.innerHTML = "<strong>Tem evento novo no Only.</strong><span>Toque no botão amarelo para ver data, cronograma e garantir seu ingresso.</span>";
   document.body.appendChild(hint);
-  window.setTimeout(() => hint.remove(), 10000);
-  eventButton.addEventListener("click", () => hint.remove(), { once:true });
+  const placeHint = () => {
+    if (!hint.isConnected) return;
+    const buttonBox = eventButton.getBoundingClientRect();
+    const hintWidth = Math.min(310, window.innerWidth - 24);
+    const center = buttonBox.left + buttonBox.width / 2;
+    const safeCenter = Math.max(hintWidth / 2 + 12, Math.min(window.innerWidth - hintWidth / 2 - 12, center));
+    hint.style.setProperty("--event-hint-left", `${safeCenter}px`);
+    hint.style.setProperty("--event-hint-bottom", `${Math.max(82, window.innerHeight - buttonBox.top + 14)}px`);
+    hint.style.setProperty("--event-hint-arrow", `${Math.max(22, Math.min(hintWidth - 22, center - (safeCenter - hintWidth / 2)))}px`);
+  };
+  placeHint();
+  window.addEventListener("resize", placeHint, { passive:true });
+  const dismiss = () => {
+    window.removeEventListener("resize", placeHint);
+    hint.remove();
+  };
+  window.setTimeout(dismiss, 10000);
+  eventButton.addEventListener("click", dismiss, { once:true });
 }
 
 function setupCheckoutSteps() {
@@ -2548,9 +2564,9 @@ function setupAccountShortcut() {
 document.addEventListener("DOMContentLoaded", () => {
   setupOnlyCarsAppMetadata();
   setupAccountShortcut();
-  setupHomeEventDiscovery();
   setupPageTransitions();
   setupBottomNavigationStructure();
+  setupHomeEventDiscovery();
   setActiveNavigation();
   setupTypingReplay();
   setupStats();
