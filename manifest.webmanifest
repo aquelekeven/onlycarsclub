@@ -4,7 +4,7 @@
   "short_name": "Only Cars",
   "description": "Cultura automotiva, comunidade e respeito.",
   "lang": "pt-BR",
-  "start_url": "./index.html",
+  "start_url": "/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090909",

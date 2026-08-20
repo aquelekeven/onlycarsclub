@@ -726,12 +726,12 @@
 
     try {
       user = await client.getUser();
-      if (!user) return location.replace("index.html");
+      if (!user) return location.replace("/");
       const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=role,display_name`);
       profile = profiles?.[0];
-      if (profile?.role !== "admin") return location.replace("index.html");
+      if (profile?.role !== "admin") return location.replace("/");
     } catch (_) {
-      return location.replace("index.html");
+      return location.replace("/");
     }
 
     qs("[data-admin-name]").textContent = profile.display_name || "Administrador";

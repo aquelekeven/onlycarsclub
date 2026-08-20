@@ -1,3 +1,7 @@
+if (/\/index\.html$/i.test(location.pathname)) {
+  history.replaceState(history.state, "", `/${location.search}${location.hash}`);
+}
+
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
@@ -368,7 +372,7 @@ function setupBottomNavigationStructure() {
 
   navigation.setAttribute("aria-label", "Navegação principal");
   navigation.innerHTML = `
-    <a href="index.html" data-page="home" aria-label="Início">
+    <a href="/" data-page="home" aria-label="Início">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
     </a>
     <a href="loja.html" data-page="loja" aria-label="Loja">
@@ -2554,7 +2558,7 @@ function setupAccountShortcut() {
   const link = document.createElement("a");
   link.className = "account-shortcut";
   if (isAccountPage) link.classList.add("account-home-link");
-  link.href = isAccountPage ? "index.html" : "minha-conta.html";
+  link.href = isAccountPage ? "/" : "minha-conta.html";
   link.setAttribute("aria-label", isAccountPage ? "Voltar ao início" : "Minha conta");
   link.title = isAccountPage ? "Voltar ao início" : "Minha conta";
   link.innerHTML = isAccountPage

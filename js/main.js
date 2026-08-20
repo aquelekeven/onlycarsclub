@@ -7,7 +7,7 @@ function setupBottomNavigationStructure() {
 
   navigation.setAttribute("aria-label", "Navegação principal");
   navigation.innerHTML = `
-    <a href="index.html" data-page="home" aria-label="Início">
+    <a href="/" data-page="home" aria-label="Início">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
     </a>
     <a href="loja.html" data-page="loja" aria-label="Loja">
