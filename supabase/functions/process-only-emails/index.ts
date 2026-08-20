@@ -3,7 +3,7 @@ import QRCode from "npm:qrcode@1.5.4";
 
 const SITE="https://onlycarsclub.com.br";
 const EVENT_IMAGE=`${SITE}/assets/images/events/flyer-drift-background.webp`;
-const ORDER_IMAGE=`${SITE}/assets/images/paixao-comunidade.webp`;
+const ORDER_IMAGE=`${SITE}/assets/images/only-trunk.png`;
 const EVENT_LOGO=`${SITE}/assets/images/events/only-meeting-logo.png`;
 const esc=(v:unknown)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
 const money=(v:unknown)=>(Number(v||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
