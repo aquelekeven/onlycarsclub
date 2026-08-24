@@ -1,5 +1,7 @@
 .event-lot-progress{width:min(520px,100%);margin-top:18px;display:grid;gap:8px}
 .event-lot-progress>div{display:flex;align-items:center;justify-content:space-between;gap:18px;color:#a5a59f;font-size:11px}
+[data-lot-progress-label]{display:inline-flex;align-items:center;gap:7px}
+[data-lot-progress-label]::before{content:"";width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#35d07f;box-shadow:0 0 0 3px #35d07f24,0 0 14px #35d07fb8}
 .event-lot-progress>div strong{color:var(--yellow);font-size:12px}
 .event-lot-progress>i{height:8px;overflow:hidden;border:1px solid #ffffff12;border-radius:999px;background:#ffffff0c}
 .event-lot-progress>i b{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a88700,var(--yellow));box-shadow:0 0 18px #ffd60066;transition:width .55s ease}
