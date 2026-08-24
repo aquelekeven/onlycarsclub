@@ -13,7 +13,6 @@
   const progressLabel = root.querySelector("[data-lot-progress-label]");
   const progressPercent = root.querySelector("[data-lot-progress-percent]");
   const progressBar = root.querySelector("[data-lot-progress-bar]");
-  const progressDetail = root.querySelector("[data-lot-progress-detail]");
   let countdownTimer = null;
   const money = (cents) => new Intl.NumberFormat("pt-BR", {
     style:"currency", currency:"BRL", maximumFractionDigits:0
@@ -57,7 +56,6 @@
     if (progressLabel) progressLabel.textContent = `${current.name} em andamento`;
     if (progressPercent) progressPercent.textContent = `${percent}%`;
     if (progressBar) progressBar.style.width = `${percent}%`;
-    if (progressDetail) progressDetail.textContent = "O próximo lote abre automaticamente ao atingir 100%.";
   }
 
   function startCountdown(startsAt) {
