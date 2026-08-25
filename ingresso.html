@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="only light">
     <meta name="description" content="Área segura da Only Cars Club para clientes e administração.">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <link rel="canonical" href="https://onlycarsclub.com.br/ingresso.html">
@@ -22,11 +23,11 @@
   <meta name="theme-color" content="#080808">
   <title>Ingresso Expo — Only Cars Meeting</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260815-ticket-live-v2">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260824-signup-ticket-v126">
   <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-launch-v4">
-  <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
+  <script src="assets/js/main.js?v=20260824-account-right-v147" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/ticket-checkout.js?v=20260818-coupons-v1" defer></script>
+  <script src="assets/js/ticket-checkout.js?v=20260824-multiple-v2" defer></script>
 </head>
 <body data-page="proximo-evento" class="ticket-checkout-page">
   <header class="header"><a href="proximo-evento.html" class="brand" aria-label="Voltar ao evento"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -37,23 +38,25 @@
     <div class="ticket-buy-grid">
       <form class="ticket-form-card" data-ticket-form>
         <h2>Dados do participante</h2><p>Usaremos estes dados para identificar o responsável pelo veículo na portaria.</p>
+        <label class="ticket-use-account"><input type="checkbox" data-ticket-use-account><span><strong>Usar os mesmos dados da minha conta</strong><small data-ticket-account-data>Preenche automaticamente nome, CPF e WhatsApp cadastrados.</small></span></label>
         <fieldset class="ticket-fieldset"><legend>Motorista</legend><div class="ticket-fields">
           <label class="ticket-field full">Nome completo<input name="driver_name" autocomplete="name" required maxlength="120"></label>
           <label class="ticket-field">CPF<input name="driver_tax_id" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14"></label>
           <label class="ticket-field">WhatsApp<input name="driver_phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" required maxlength="16"></label>
         </div></fieldset>
         <div class="ticket-divider"></div>
-        <fieldset class="ticket-fieldset"><legend>Veículo Expo</legend><div class="ticket-fields">
+        <div data-ticket-vehicles><fieldset class="ticket-fieldset ticket-vehicle" data-ticket-vehicle><legend>Veículo Expo 1</legend><div class="ticket-fields">
           <label class="ticket-field">Placa<input name="vehicle_plate" autocomplete="off" placeholder="ABC1D23" required maxlength="8"></label>
           <label class="ticket-field">Marca<input name="vehicle_make" autocomplete="organization" placeholder="Ex.: Volkswagen" required maxlength="60"></label>
           <label class="ticket-field">Modelo<input name="vehicle_model" placeholder="Ex.: Golf GTI" required maxlength="80"></label>
           <label class="ticket-field">Instagram do carro <span>(opcional)</span><input name="instagram_handle" placeholder="@seuprojeto" maxlength="40"></label>
-        </div></fieldset>
+        </div></fieldset></div>
+        <button class="ticket-add-another" type="button" data-ticket-add>+ Adicionar mais um ingresso</button>
         <div class="ticket-rules">Ao continuar, você confirma que os dados do veículo estão corretos, que a conta pertence a uma pessoa com 18 anos completos ou mais e aceita as <a href="proximo-evento.html#detalhes" target="_blank" rel="noopener">condições informadas para o evento</a>. Cancelamentos poderão ser solicitados em Minha conta.</div>
         <button class="ticket-submit" type="submit" disabled data-ticket-submit>Continuar para o Mercado Pago</button>
         <p class="ticket-error" data-ticket-error role="alert"></p>
       </form>
-      <aside class="ticket-order-card"><p class="eyebrow">Resumo</p><h2>Ingresso Expo</h2><p>Entrada de um veículo na área de exposição.</p><div class="ticket-lot-line"><span data-ticket-lot>Lote 1</span><strong data-ticket-price>R$ 35</strong></div><div class="event-lot-progress ticket-lot-progress" data-ticket-lot-progress><div><span data-ticket-progress-label>Carregando lote...</span><strong data-ticket-progress-percent>0%</strong></div><i><b data-ticket-progress-bar></b></i><small data-ticket-progress-detail>Conferindo disponibilidade</small></div><ul class="ticket-includes"><li>Entrada do veículo Expo</li><li>Motorista e pedestres com entrada gratuita</li><li>QR Code para entrada e reentrada</li></ul><div class="ticket-photo-note"><strong>Foto do carro após o pagamento</strong><span>Quando o ingresso for aprovado, o envio da foto será liberado em Minha conta para o post de confirmado.</span></div><div class="ticket-coupon"><label for="ticket-coupon-code">Cupom de desconto</label><div><input id="ticket-coupon-code" data-ticket-coupon-code maxlength="30" autocomplete="off" spellcheck="false" placeholder="Digite seu cupom"><button type="button" data-ticket-coupon-apply>Aplicar</button></div><p data-ticket-coupon-feedback role="status"></p></div><div class="ticket-discount-line" data-ticket-discount-line hidden><span>Desconto <b data-ticket-coupon-label></b></span><strong data-ticket-discount></strong></div><div class="ticket-total-line"><span>Total</span><strong data-ticket-total>R$ 35,00</strong></div></aside>
+      <aside class="ticket-order-card"><p class="eyebrow">Resumo</p><h2 data-ticket-order-title>Ingresso Expo</h2><p data-ticket-order-description>Entrada de um veículo na área de exposição.</p><div class="ticket-quantity-line"><span>Quantidade</span><strong data-ticket-quantity>1 ingresso</strong></div><div class="ticket-lot-line"><span data-ticket-lot>Lote 1</span><strong data-ticket-price>R$ 35</strong></div><div class="event-lot-progress ticket-lot-progress" data-ticket-lot-progress><div><span data-ticket-progress-label>Carregando lote...</span><strong data-ticket-progress-percent>0%</strong></div><i><b data-ticket-progress-bar></b></i><small data-ticket-progress-detail>Conferindo disponibilidade</small></div><ul class="ticket-includes"><li>Entrada do veículo Expo</li><li>Motorista e pedestres com entrada gratuita</li><li>QR Code individual para cada veículo</li></ul><div class="ticket-photo-note"><strong>Foto do carro após o pagamento</strong><span>Quando o ingresso for aprovado, o envio da foto será liberado em Minha conta para o post de confirmado.</span></div><div class="ticket-coupon"><label for="ticket-coupon-code">Cupom de desconto</label><div><input id="ticket-coupon-code" data-ticket-coupon-code maxlength="30" autocomplete="off" spellcheck="false" placeholder="Digite seu cupom"><button type="button" data-ticket-coupon-apply>Aplicar</button></div><p data-ticket-coupon-feedback role="status"></p></div><div class="ticket-discount-line" data-ticket-discount-line hidden><span>Desconto <b data-ticket-coupon-label></b></span><strong data-ticket-discount></strong></div><div class="ticket-total-line"><span>Total</span><strong data-ticket-total>R$ 35,00</strong></div></aside>
     </div>
   </main>
 </body>

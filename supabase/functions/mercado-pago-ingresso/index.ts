@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v8-coupons";
+const FUNCTION_VERSION = "ticket-checkout-v9-multiple";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -76,10 +76,23 @@ Deno.serve(async (request) => {
     const driverName = clean(body.driver_name);
     const driverTaxId = onlyDigits(body.driver_tax_id);
     const driverPhone = onlyDigits(body.driver_phone);
-    const vehiclePlate = clean(body.vehicle_plate, 8).replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    const vehicleMake = clean(body.vehicle_make, 60);
-    const vehicleModel = clean(body.vehicle_model, 80);
-    const instagramHandle = clean(body.instagram_handle, 40) || null;
+    const rawTickets = Array.isArray(body.tickets) && body.tickets.length
+      ? body.tickets
+      : [{
+        vehicle_plate: body.vehicle_plate,
+        vehicle_make: body.vehicle_make,
+        vehicle_model: body.vehicle_model,
+        instagram_handle: body.instagram_handle,
+      }];
+    if (rawTickets.length < 1 || rawTickets.length > 2) throw new Error("É possível comprar até 2 ingressos por pagamento.");
+    const tickets = rawTickets.map((item: Record<string, unknown>, index: number) => ({
+      index: index + 1,
+      vehiclePlate: clean(item?.vehicle_plate, 8).replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
+      vehicleMake: clean(item?.vehicle_make, 60),
+      vehicleModel: clean(item?.vehicle_model, 80),
+      instagramHandle: clean(item?.instagram_handle, 40) || null,
+    }));
+    const vehiclePlates = tickets.map((ticket) => ticket.vehiclePlate);
     const couponCode = clean(body.coupon_code, 30).toUpperCase() || null;
 
     if (!eventSlug) throw new Error("Evento não informado.");
@@ -87,9 +100,9 @@ Deno.serve(async (request) => {
     if (!driverName) throw new Error("Informe o nome completo do motorista.");
     if (driverTaxId.length !== 11) throw new Error("Informe um CPF válido com 11 números.");
     if (driverPhone.length < 10 || driverPhone.length > 11) throw new Error("Informe um WhatsApp válido com DDD.");
-    if (vehiclePlate.length !== 7) throw new Error("Informe uma placa válida com 7 caracteres.");
-    if (!vehicleMake) throw new Error("Informe a marca do veículo.");
-    if (!vehicleModel) throw new Error("Informe o modelo do veículo.");
+    const invalidTicket = tickets.find((ticket) => ticket.vehiclePlate.length !== 7 || !ticket.vehicleMake || !ticket.vehicleModel);
+    if (invalidTicket) throw new Error(`Confira placa, marca e modelo do veículo ${invalidTicket.index}.`);
+    if (new Set(vehiclePlates).size !== vehiclePlates.length) throw new Error("Cada ingresso precisa ter uma placa diferente.");
 
     const { data: event, error: eventError } = await serviceClient.from("events")
       .select("id,name,status,regulation_version,sales_end_at").eq("slug", eventSlug).single();
@@ -101,21 +114,22 @@ Deno.serve(async (request) => {
       .select("id,name,price_cents,capacity,active").eq("id", lotId).eq("event_id", event.id).eq("active", true).single();
     if (lotError || !lot) throw new Error("O lote selecionado não está disponível.");
 
-    const [{ count: paidCount, error: paidError }, { count: reservedCount, error: reservedError }] = await Promise.all([
-      serviceClient.from("ticket_orders").select("id", { count: "exact", head: true })
+    const [{ data: paidOrders, error: paidError }, { data: reservedOrders, error: reservedError }] = await Promise.all([
+      serviceClient.from("ticket_orders").select("quantity")
         .eq("lot_id", lot.id).eq("status", "paid"),
-      serviceClient.from("ticket_orders").select("id", { count: "exact", head: true })
+      serviceClient.from("ticket_orders").select("quantity")
         .eq("lot_id", lot.id).eq("status", "pending_payment").gt("expires_at", new Date().toISOString()),
     ]);
     if (paidError || reservedError) throw new Error("Não foi possível conferir as vagas do lote.");
-    const occupied = Number(paidCount || 0) + Number(reservedCount || 0);
-    if (occupied >= Number(lot.capacity)) throw new Error("Todas as vagas deste lote estão reservadas no momento.");
+    const occupied = [...(paidOrders || []), ...(reservedOrders || [])]
+      .reduce((total, order) => total + Number(order.quantity || 0), 0);
+    if (occupied + tickets.length > Number(lot.capacity)) throw new Error("Não há vagas suficientes neste lote para todos os ingressos adicionados.");
 
-    const { data: existingPlate, error: plateError } = await serviceClient.from("tickets")
-      .select("id").eq("event_id", event.id).eq("vehicle_plate", vehiclePlate)
-      .in("status", ["reserved", "active", "checked_in"]).maybeSingle();
+    const { data: existingPlates, error: plateError } = await serviceClient.from("tickets")
+      .select("vehicle_plate").eq("event_id", event.id).in("vehicle_plate", vehiclePlates)
+      .in("status", ["reserved", "active", "checked_in"]);
     if (plateError) throw new Error("Não foi possível verificar a placa.");
-    if (existingPlate) throw new Error("Esta placa já possui um ingresso ativo para o evento.");
+    if (existingPlates?.length) throw new Error(`A placa ${existingPlates[0].vehicle_plate} já possui um ingresso ativo para o evento.`);
 
     const { data: order, error: orderError } = await serviceClient.from("ticket_orders").insert({
       event_id: event.id,
@@ -125,19 +139,19 @@ Deno.serve(async (request) => {
       customer_email: user.email,
       customer_phone: driverPhone,
       customer_tax_id: driverTaxId,
-      quantity: 1,
+      quantity: tickets.length,
       unit_price_cents: lot.price_cents,
       expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       regulation_version: event.regulation_version,
       regulation_accepted_at: new Date().toISOString(),
-      metadata: { vehicle_plate: vehiclePlate },
+      metadata: { vehicle_plates: vehiclePlates },
     }).select("id").single();
     if (orderError || !order) {
       console.error("Erro ao criar pedido:", orderError);
       throw new Error(orderError?.message || "Não foi possível reservar o ingresso.");
     }
     createdOrderId = order.id;
-    let payableCents = Number(lot.price_cents);
+    let payableCents = Number(lot.price_cents) * tickets.length;
     let appliedCouponCode: string | null = null;
     if (couponCode) {
       const { data: couponResult, error: couponError } = await serviceClient.rpc("reserve_ticket_purchase_coupon", {
@@ -148,23 +162,25 @@ Deno.serve(async (request) => {
       appliedCouponCode = String(couponResult.code);
     }
 
-    const qrToken = crypto.randomUUID() + crypto.randomUUID();
-    const qrTokenHash = await sha256(qrToken);
-    const { error: ticketError } = await serviceClient.from("tickets").insert({
-      order_id: order.id,
-      event_id: event.id,
-      owner_user_id: user.id,
-      qr_token: qrToken,
-      qr_token_hash: qrTokenHash,
-      status: "reserved",
-      driver_name: driverName,
-      driver_tax_id: driverTaxId,
-      driver_phone: driverPhone,
-      vehicle_plate: vehiclePlate,
-      vehicle_make: vehicleMake,
-      vehicle_model: vehicleModel,
-      instagram_handle: instagramHandle,
-    });
+    const ticketRows = await Promise.all(tickets.map(async (ticket) => {
+      const qrToken = crypto.randomUUID() + crypto.randomUUID();
+      return {
+        order_id: order.id,
+        event_id: event.id,
+        owner_user_id: user.id,
+        qr_token: qrToken,
+        qr_token_hash: await sha256(qrToken),
+        status: "reserved",
+        driver_name: driverName,
+        driver_tax_id: driverTaxId,
+        driver_phone: driverPhone,
+        vehicle_plate: ticket.vehiclePlate,
+        vehicle_make: ticket.vehicleMake,
+        vehicle_model: ticket.vehicleModel,
+        instagram_handle: ticket.instagramHandle,
+      };
+    }));
+    const { error: ticketError } = await serviceClient.from("tickets").insert(ticketRows);
     if (ticketError) {
       console.error("Erro ao criar ingresso:", ticketError);
       throw new Error(ticketError.message || "Não foi possível gerar o ingresso.");
@@ -180,7 +196,7 @@ Deno.serve(async (request) => {
       body: JSON.stringify({
         items: [{
           id: `ticket-${lot.id}`,
-          title: `${event.name} — ${lot.name}`,
+          title: tickets.length === 1 ? `${event.name} — ${lot.name}` : `${event.name} — ${tickets.length} ingressos ${lot.name}`,
           quantity: 1,
           currency_id: "BRL",
           unit_price: Number((payableCents / 100).toFixed(2)),
@@ -206,7 +222,7 @@ Deno.serve(async (request) => {
     const { error: updateError } = await serviceClient.from("ticket_orders")
       .update({ provider_preference_id: String(preference.id) }).eq("id", order.id);
     if (updateError) throw new Error("O pagamento foi criado, mas não foi possível salvar sua identificação.");
-    return jsonResponse({ order_id: order.id, checkout_url: preference.init_point || preference.sandbox_init_point, coupon_code: appliedCouponCode, total_cents: payableCents });
+    return jsonResponse({ order_id: order.id, checkout_url: preference.init_point || preference.sandbox_init_point, coupon_code: appliedCouponCode, total_cents: payableCents, ticket_count: tickets.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível iniciar a compra.";
     console.error(`[${FUNCTION_VERSION}]`, message);

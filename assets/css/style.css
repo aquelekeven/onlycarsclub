@@ -4359,3 +4359,85 @@ body[data-page="conta"] .account-back-home svg { width:18px; height:18px; flex:0
 }
 .home-event-feature{position:relative;min-height:min(780px,92vh);display:flex;align-items:flex-end;overflow:hidden;background:#08090b url("../images/events/flyer-drift-background.webp") center 63%/cover no-repeat;border-block:1px solid #efd31155}.home-event-feature:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#050608f2 0%,#050608b8 42%,#05060822 72%),linear-gradient(0deg,#050608ee 0%,transparent 56%)}.home-event-feature-shade{position:absolute;inset:auto -10% -36% 34%;height:72%;background:#efd31133;filter:blur(100px);transform:rotate(-8deg)}.home-event-feature-content{position:relative;z-index:2;width:min(1180px,86vw);margin:0 auto;padding:90px 0 82px}.home-event-feature-logo{display:block;width:min(440px,58vw);height:auto;margin:0 0 18px;object-fit:contain}.home-event-feature-date{margin:0 0 18px;color:#efd311;font-size:.78rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}.home-event-feature h2{max-width:900px;margin:0;color:#fff;font-size:clamp(2.4rem,6.3vw,5.6rem);line-height:.94;letter-spacing:-.055em}.home-event-feature-content>p:not(.home-event-feature-date){max-width:650px;margin:25px 0 30px;color:#d8d8d4;font-size:clamp(.96rem,1.4vw,1.15rem);line-height:1.6}.home-event-feature-actions{position:relative;z-index:4;display:flex;align-items:center;gap:24px}.home-event-ticket-link{color:#fff;font-size:.84rem;font-weight:800;text-decoration:none}.home-event-feature-cover{position:absolute;z-index:1;inset:0}.event-nav-hint{position:fixed;left:var(--event-hint-left,50%);bottom:var(--event-hint-bottom,94px);z-index:1000;width:min(310px,calc(100vw - 24px));padding:16px 18px;border:1px solid #fff7a8;border-radius:15px;background:#efd311;color:#111;box-shadow:0 16px 50px #000b;transform:translateX(-50%);animation:eventHintJumpIn .42s cubic-bezier(.2,.9,.25,1.25) both;pointer-events:none}.event-nav-hint.is-leaving{animation:eventHintJumpOut .3s ease-in both}.event-nav-hint strong{display:block;font-size:.92rem}.event-nav-hint span{display:block;margin-top:5px;font-size:.76rem;line-height:1.4}.event-nav-hint:after{content:"";position:absolute;left:var(--event-hint-arrow,50%);bottom:-10px;border:11px solid transparent;border-top-color:#efd311;border-bottom:0;transform:translateX(-50%)}@keyframes eventHintJumpIn{0%{opacity:0;transform:translate(-50%,22px) scale(.94)}68%{opacity:1;transform:translate(-50%,-5px) scale(1.015)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}@keyframes eventHintJumpOut{0%{opacity:1;transform:translate(-50%,0) scale(1)}35%{transform:translate(-50%,-7px) scale(1.01)}100%{opacity:0;transform:translate(-50%,18px) scale(.96)}}@media(max-width:700px){.home-event-feature{min-height:720px;background-position:62% center}.home-event-feature:before{background:linear-gradient(0deg,#050608fa 0%,#050608bd 55%,#05060840 100%)}.home-event-feature-content{width:calc(100% - 34px);padding:240px 0 70px}.home-event-feature-logo{width:min(390px,86vw)}.home-event-feature h2{font-size:clamp(2.35rem,12vw,4rem)}.home-event-feature-actions{align-items:flex-start;flex-direction:column;gap:18px}.event-nav-hint{bottom:var(--event-hint-bottom,90px)}}
 .ticket-return-photo{display:grid;gap:12px;width:min(560px,100%);margin:28px auto;padding:22px;border:1px solid #dedcd2;border-radius:18px;background:#f5f4ee;text-align:left}.ticket-return-photo>span{color:#706e66;font-size:.82rem;line-height:1.5}.ticket-return-photo>label:not(.consent){padding:14px;border:1px dashed #aaa79c;border-radius:12px;cursor:pointer}.ticket-return-photo>label:not(.consent) input{display:block;margin-bottom:8px}.ticket-return-photo .consent{font-size:.76rem;line-height:1.4}.ticket-return-photo p{min-height:18px;margin:0;font-size:.78rem}
+/* v14.6 — cadastro consistente, atalhos à direita e múltiplos ingressos */
+html { color-scheme:only light; }
+.account-shortcut { left:auto; right:max(20px,5vw); }
+.header.has-cart-shortcut .account-shortcut { right:calc(max(20px,5vw) + 58px); }
+body[data-page="conta"] .account-home-link {
+  width:auto;
+  min-width:max-content;
+  height:42px;
+  padding:0 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  right:max(20px,5vw);
+  left:auto;
+  color:#fff;
+  font-size:11px;
+  font-weight:850;
+  line-height:1;
+  white-space:nowrap;
+}
+.auth-shell,.auth-card,.auth-form,.field,.password-field { min-width:0; box-sizing:border-box; }
+.auth-card,.auth-form,.field,.password-field,.field input { width:100%; max-width:100%; }
+.field input { min-width:0; box-sizing:border-box; color-scheme:only light; }
+.field input[type="date"] { display:block; appearance:none; -webkit-appearance:none; }
+.auth-consent a { color:var(--yellow); font-weight:800; text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:3px; }
+.auth-signup-success { padding:16px 0 5px; display:grid; justify-items:center; text-align:center; }
+.auth-success-mark { width:66px; height:66px; margin-bottom:18px; display:grid; place-items:center; border-radius:50%; background:var(--yellow); color:#090909; font-size:34px; font-weight:950; box-shadow:0 0 42px #f4c90035; }
+.auth-signup-success h2 { margin:7px 0 12px; color:#fff; font-size:clamp(30px,6vw,42px); line-height:1; }
+.auth-signup-success>p:not(.eyebrow) { max-width:390px; margin:0 0 24px; color:#aaa; font-size:13px; line-height:1.6; }
+.auth-signup-success>p strong { color:#fff; overflow-wrap:anywhere; }
+.auth-signup-success .auth-submit { min-height:52px; display:grid; place-items:center; text-decoration:none; }
+.policy-modal { position:fixed; z-index:400; inset:0; padding:22px; display:grid; place-items:center; }
+.policy-modal[hidden] { display:none!important; }
+.policy-modal-backdrop { position:absolute; inset:0; width:100%; height:100%; border:0; background:#000b; backdrop-filter:blur(12px); cursor:pointer; }
+.policy-modal-card { position:relative; width:min(760px,100%); max-height:min(82vh,800px); overflow:hidden; display:grid; grid-template-rows:auto minmax(0,1fr) auto; border:1px solid #ffffff25; border-radius:25px; background:#141412; color:#fff; box-shadow:0 30px 100px #000; }
+.policy-modal-card>header { padding:20px 22px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid #ffffff12; }
+.policy-modal-card>header h2 { margin:4px 0 0; font-size:24px; }
+.policy-modal-card>header>button { width:42px; height:42px; flex:0 0 auto; border:1px solid #ffffff1c; border-radius:50%; background:#ffffff0a; color:#fff; font-size:27px; cursor:pointer; }
+.policy-modal-content { min-height:0; overflow:auto; padding:8px 24px 28px; color:#c7c7c1; font-size:13px; line-height:1.65; }
+.policy-modal-content .page-hero { min-height:0; padding:24px 0 8px; background:none; }
+.policy-modal-content .page-hero h1 { font-size:34px; }
+.policy-modal-content section:not(.page-hero) { width:100%; padding:18px 0; }
+.policy-modal-content h2,.policy-modal-content h3 { color:#fff; }
+.policy-modal-content a { color:var(--yellow); text-decoration:underline; }
+.policy-modal-card>footer { padding:15px 22px; border-top:1px solid #ffffff12; }
+.policy-modal-card>footer button { width:100%; min-height:48px; border:0; border-radius:999px; background:var(--yellow); color:#090909; font:inherit; font-size:11px; font-weight:900; cursor:pointer; }
+.ticket-use-account { margin:0 0 26px; padding:15px 16px; display:flex; align-items:flex-start; gap:11px; border:1px solid #f4c90035; border-radius:15px; background:#f4c9000b; cursor:pointer; }
+.ticket-use-account input { width:18px; height:18px; margin:2px 0 0; flex:0 0 auto; accent-color:var(--yellow); }
+.ticket-use-account>span { display:grid; gap:3px; }
+.ticket-use-account strong { color:#fff; font-size:11px; }
+.ticket-use-account small { color:#999; }
+.ticket-vehicle { position:relative; margin-top:0; }
+.ticket-vehicle+.ticket-vehicle { margin-top:26px; padding-top:25px; border-top:1px solid #ffffff12; }
+.ticket-vehicle-head { margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+.ticket-vehicle-head strong { color:var(--yellow); font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+.ticket-vehicle-remove { min-height:34px; margin:-42px 0 12px auto; padding:0 12px; display:block; border:1px solid #ff6c6350; border-radius:999px; background:#ff4d4410; color:#ff8d86; font:inherit; font-size:9px; font-weight:850; cursor:pointer; }
+.ticket-add-another { width:100%; min-height:48px; margin-top:22px; border:1px dashed #f4c90065; border-radius:15px; background:#f4c90008; color:var(--yellow); font:inherit; font-size:11px; font-weight:900; cursor:pointer; }
+.ticket-add-another:disabled { display:none; }
+.ticket-quantity-line { padding:14px 0; display:flex; align-items:center; justify-content:space-between; gap:18px; border-bottom:1px solid #ffffff10; }
+.ticket-quantity-line span { color:#888; font-size:11px; }
+.ticket-quantity-line strong { color:#fff; font-size:13px; }
+@media(max-width:700px) {
+  .account-shortcut { left:auto; right:15px; }
+  .header.has-cart-shortcut .account-shortcut { right:70px; }
+  body[data-page="conta"] .account-home-link { left:auto; right:10px; max-width:none; padding:0 12px; transform:translateY(-50%); }
+  .auth-page { padding:96px 14px 100px; place-items:start center; }
+  .auth-shell { width:100%; }
+  .auth-heading { margin-bottom:20px; }
+  .auth-heading h1 { font-size:44px; line-height:.92; }
+  .auth-card { padding:22px 16px; border-radius:22px; }
+  .auth-form { gap:15px; }
+  .field input { min-height:50px; padding:0 12px; }
+  .password-field input { padding-right:76px; }
+  .auth-consent { width:100%; }
+  .auth-consent input { width:17px; height:17px; flex:0 0 17px; }
+  .policy-modal { padding:8px; align-items:end; }
+  .policy-modal-card { max-height:92vh; border-radius:24px 24px 12px 12px; }
+  .policy-modal-card>header,.policy-modal-card>footer { padding:15px 16px; }
+  .policy-modal-content { padding:4px 17px 24px; }
+  .ticket-use-account { padding:14px; }
+  .ticket-vehicle+.ticket-vehicle { margin-top:22px; padding-top:22px; }
+}

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="only light">
     <meta name="description" content="Área segura da Only Cars Club para clientes e administração.">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <link rel="canonical" href="https://onlycarsclub.com.br/cadastro.html">
@@ -21,10 +22,10 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://wxxgcnyolpioyiaepkvs.supabase.co; media-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Criar conta — Only Cars Club</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260812-fiscal-v125">
-  <script src="assets/js/main.js?v=20260816-audit-v146" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260824-signup-ticket-v126">
+  <script src="assets/js/main.js?v=20260824-account-right-v147" defer></script>
   <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
-  <script src="assets/js/auth.js?v=20260817-ticket-pass-v142" defer></script>
+  <script src="assets/js/auth.js?v=20260824-signup-modal-v143" defer></script>
 </head>
 <body data-page="conta">
   <header class="header"><a href="/" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -39,14 +40,16 @@
           <div class="field"><label for="birth_date">Data de nascimento</label><input id="birth_date" name="birth_date" type="date" autocomplete="bday" required><small>Usamos somente para validar a idade de compra. Essa informação não fica pública.</small></div>
           <div class="field"><label for="password">Senha</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="password" aria-pressed="false">Mostrar</button></div></div>
           <div class="field"><label for="password_confirmation">Confirmar senha</label><div class="password-field"><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-toggle-password="password_confirmation" aria-pressed="false">Mostrar</button></div></div>
-          <label class="auth-consent"><input name="privacy" type="checkbox" required><span>Li e aceito os <a href="termos.html">Termos de compra</a> e a <a href="privacidade.html">Política de Privacidade</a>.</span></label>
+          <label class="auth-consent"><input name="privacy" type="checkbox" required><span>Li e aceito os <a href="termos.html" data-policy-link="terms">Termos de compra</a> e a <a href="privacidade.html" data-policy-link="privacy">Política de Privacidade</a>.</span></label>
           <label class="auth-consent"><input name="age_attestation" type="checkbox" required><span>Declaro que a data de nascimento informada é verdadeira e assumo responsabilidade pelas informações cadastradas.</span></label>
           <p class="form-feedback" data-form-feedback></p>
           <button class="auth-submit" type="submit">Criar conta</button>
         </form>
-        <div class="auth-links"><span>Já tem cadastro?</span><a href="login.html">Entrar</a></div>
+        <div class="auth-signup-success" data-signup-success hidden aria-live="polite"><span class="auth-success-mark" aria-hidden="true">✓</span><p class="eyebrow">Cadastro concluído</p><h2>Conta criada<br>com sucesso.</h2><p>Enviamos um link de confirmação para <strong data-signup-email></strong>. Abra o e-mail e confirme o cadastro para acessar sua conta.</p><a class="auth-submit" href="login.html">Ir para o login</a></div>
+        <div class="auth-links" data-signup-links><span>Já tem cadastro?</span><a href="login.html">Entrar</a></div>
       </section>
     </div>
   </main>
+  <div class="policy-modal" data-policy-modal hidden role="dialog" aria-modal="true" aria-labelledby="policy-modal-title"><button class="policy-modal-backdrop" type="button" data-policy-close aria-label="Fechar"></button><section class="policy-modal-card"><header><div><p class="eyebrow">Only Cars Club</p><h2 id="policy-modal-title" data-policy-title>Documento</h2></div><button type="button" data-policy-close aria-label="Fechar popup">×</button></header><div class="policy-modal-content" data-policy-content><p>Carregando...</p></div><footer><button type="button" data-policy-close>Fechar e continuar cadastro</button></footer></section></div>
 </body>
 </html>

@@ -9,6 +9,11 @@
   let eventData = null;
   let activeLot = null;
   let appliedCoupon = null;
+  let buyerProfile = null;
+  const vehiclesRoot = root.querySelector("[data-ticket-vehicles]");
+  const addTicketButton = root.querySelector("[data-ticket-add]");
+  const useAccountInput = root.querySelector("[data-ticket-use-account]");
+  const accountDataLabel = root.querySelector("[data-ticket-account-data]");
   const money = (cents) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(cents || 0) / 100);
   const digits = (value) => String(value || "").replace(/\D/g, "");
   const ageFrom = (value) => {
@@ -20,6 +25,8 @@
   };
   const cpfInput = form.elements.driver_tax_id;
   const phoneInput = form.elements.driver_phone;
+  const ticketCount = () => root.querySelectorAll("[data-ticket-vehicle]").length;
+  const subtotalCents = () => Number(activeLot?.price_cents || 0) * ticketCount();
 
   function formatCpf(value) {
     const number = digits(value).slice(0, 11);
@@ -47,8 +54,42 @@
   function clearCoupon() {
     appliedCoupon = null;
     root.querySelector("[data-ticket-discount-line]").hidden = true;
-    if (activeLot) root.querySelector("[data-ticket-total]").textContent = money(activeLot.price_cents);
+    if (activeLot) root.querySelector("[data-ticket-total]").textContent = money(subtotalCents());
   }
+
+  function updateTicketSummary() {
+    const count = ticketCount();
+    root.querySelector("[data-ticket-quantity]").textContent = `${count} ${count === 1 ? "ingresso" : "ingressos"}`;
+    root.querySelector("[data-ticket-order-title]").textContent = count === 1 ? "Ingresso Expo" : `${count} Ingressos Expo`;
+    root.querySelector("[data-ticket-order-description]").textContent = count === 1 ? "Entrada de um veículo na área de exposição." : "Entrada de dois veículos, cada um com seu próprio QR Code.";
+    clearCoupon();
+    if (couponInput.value.trim()) couponFeedback.textContent = "Aplique novamente o cupom para recalcular o total.";
+    addTicketButton.disabled = count >= 2 || (eventData && Number(eventData.remaining_public || 0) <= count);
+  }
+
+  addTicketButton?.addEventListener("click", () => {
+    if (ticketCount() >= 2) return;
+    const first = root.querySelector("[data-ticket-vehicle]");
+    const second = first.cloneNode(true);
+    second.querySelector("legend").textContent = "Veículo Expo 2";
+    second.querySelectorAll("input").forEach((input) => { input.value = ""; input.removeAttribute("id"); });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "ticket-vehicle-remove";
+    remove.dataset.ticketRemove = "";
+    remove.textContent = "Remover segundo ingresso";
+    second.querySelector("legend").after(remove);
+    vehiclesRoot.appendChild(second);
+    updateTicketSummary();
+    second.querySelector("input")?.focus();
+  });
+  vehiclesRoot?.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-ticket-remove]");
+    if (!remove) return;
+    remove.closest("[data-ticket-vehicle]")?.remove();
+    updateTicketSummary();
+    addTicketButton.focus();
+  });
 
   async function applyCoupon() {
     const code = String(couponInput.value || "").trim().toUpperCase();
@@ -59,7 +100,7 @@
     couponButton.disabled = true;
     couponFeedback.textContent = "Validando cupom...";
     try {
-      const result = await client.rest("rpc/preview_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:eventData.id, p_code:code, p_subtotal_cents:Number(activeLot.price_cents) } });
+      const result = await client.rest("rpc/preview_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:eventData.id, p_code:code, p_subtotal_cents:subtotalCents() } });
       appliedCoupon = result;
       root.querySelector("[data-ticket-coupon-label]").textContent = result.code;
       root.querySelector("[data-ticket-discount]").textContent = `− ${money(result.discount_cents)}`;
@@ -76,6 +117,20 @@
   couponInput?.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); applyCoupon(); } });
   couponInput?.addEventListener("input", () => { if (appliedCoupon && couponInput.value.trim().toUpperCase() !== appliedCoupon.code) { clearCoupon(); couponFeedback.textContent = "Aplique novamente após alterar o código."; } });
 
+  useAccountInput?.addEventListener("change", () => {
+    if (!useAccountInput.checked) return;
+    if (!buyerProfile) {
+      useAccountInput.checked = false;
+      accountDataLabel.textContent = "Não foi possível carregar os dados da conta.";
+      return;
+    }
+    form.elements.driver_name.value = buyerProfile.display_name || "";
+    cpfInput.value = formatCpf(buyerProfile.tax_id || "");
+    phoneInput.value = formatPhone(buyerProfile.phone || "");
+    const missing = [buyerProfile.display_name, buyerProfile.tax_id, buyerProfile.phone].filter((value) => !value).length;
+    accountDataLabel.textContent = missing ? "Preenchemos o que já estava salvo. Complete os dados restantes." : "Dados da conta aplicados. Você ainda pode editar antes de pagar.";
+  });
+
   async function initialize() {
     const user = await client.getUser().catch(() => null);
     if (!user) {
@@ -84,8 +139,9 @@
       return;
     }
     try {
-      const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`);
-      const birthDate = profiles?.[0]?.birth_date;
+      const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date,display_name,phone,tax_id`);
+      buyerProfile = profiles?.[0] || null;
+      const birthDate = buyerProfile?.birth_date;
       if (!birthDate) throw new Error("Informe sua data de nascimento em Minha conta antes de comprar.");
       if (ageFrom(birthDate) < 18) throw new Error("Você pode visualizar o evento, mas o ingresso deve ser comprado na conta de um responsável com 18 anos completos ou mais.");
       eventData = await client.publicRest("rpc/public_event_summary", { method:"POST", body:{ target_slug:root.dataset.eventSlug } });
@@ -96,7 +152,7 @@
       }
       root.querySelector("[data-ticket-lot]").textContent = activeLot.name;
       root.querySelector("[data-ticket-price]").textContent = money(activeLot.price_cents);
-      root.querySelector("[data-ticket-total]").textContent = money(activeLot.price_cents);
+      root.querySelector("[data-ticket-total]").textContent = money(subtotalCents());
       const occupied = Math.max(0, Number(activeLot.sold_or_reserved || 0));
       const capacity = Math.max(1, Number(activeLot.capacity || 1));
       const percent = Math.min(100, Math.round((occupied / capacity) * 100));
@@ -104,6 +160,7 @@
       root.querySelector("[data-ticket-progress-percent]").textContent = `${percent}%`;
       root.querySelector("[data-ticket-progress-bar]").style.width = `${percent}%`;
       root.querySelector("[data-ticket-progress-detail]").textContent = "O próximo lote abre automaticamente ao atingir 100%.";
+      addTicketButton.disabled = Number(eventData.remaining_public || 0) < 2;
       submit.disabled = false;
     } catch (loadError) {
       error.textContent = loadError.message || "Não foi possível carregar o lote disponível.";
@@ -116,17 +173,24 @@
     const data = new FormData(form);
     const cpf = digits(data.get("driver_tax_id"));
     const phone = digits(data.get("driver_phone"));
-    const plate = String(data.get("vehicle_plate") || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+    const tickets = [...root.querySelectorAll("[data-ticket-vehicle]")].map((vehicle, index) => ({
+      vehicle_plate:String(vehicle.querySelector('[name="vehicle_plate"]').value || "").replace(/[^a-z0-9]/gi, "").toUpperCase(),
+      vehicle_make:String(vehicle.querySelector('[name="vehicle_make"]').value || "").trim(),
+      vehicle_model:String(vehicle.querySelector('[name="vehicle_model"]').value || "").trim(),
+      instagram_handle:String(vehicle.querySelector('[name="instagram_handle"]').value || "").trim(),
+      index:index + 1
+    }));
     if (cpf.length !== 11) { error.textContent = "Informe um CPF válido com 11 números."; return; }
     if (phone.length < 10 || phone.length > 11) { error.textContent = "Informe um WhatsApp válido com DDD."; return; }
-    if (plate.length !== 7) { error.textContent = "Informe uma placa válida com 7 caracteres."; return; }
+    const invalidTicket = tickets.find((ticket) => ticket.vehicle_plate.length !== 7 || !ticket.vehicle_make || !ticket.vehicle_model);
+    if (invalidTicket) { error.textContent = `Confira placa, marca e modelo do veículo ${invalidTicket.index}.`; return; }
+    if (new Set(tickets.map((ticket) => ticket.vehicle_plate)).size !== tickets.length) { error.textContent = "Cada ingresso precisa ter uma placa diferente."; return; }
     submit.disabled = true; submit.textContent = "Abrindo Mercado Pago..."; error.textContent = "";
     try {
       const response = await client.invokeFunction("mercado-pago-ingresso", {
         event_slug:root.dataset.eventSlug, lot_id:activeLot.id,
         driver_name:String(data.get("driver_name") || "").trim(), driver_tax_id:cpf, driver_phone:phone,
-        vehicle_plate:plate, vehicle_make:String(data.get("vehicle_make") || "").trim(), vehicle_model:String(data.get("vehicle_model") || "").trim(),
-        instagram_handle:String(data.get("instagram_handle") || "").trim(),
+        tickets:tickets.map(({ index, ...ticket }) => ticket),
         coupon_code:appliedCoupon?.code || null
       });
       if (!response?.checkout_url) throw new Error("O Mercado Pago não retornou o link de pagamento.");

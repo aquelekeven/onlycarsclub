@@ -2528,6 +2528,13 @@ function setupPageHeroParallax() {
 function setupOnlyCarsAppMetadata() {
   const head = document.head;
   if (!head) return;
+  let colorScheme = head.querySelector('meta[name="color-scheme"]');
+  if (!colorScheme) {
+    colorScheme = document.createElement("meta");
+    colorScheme.name = "color-scheme";
+    head.appendChild(colorScheme);
+  }
+  colorScheme.content = "only light";
 
   const upsertLink = (rel, href, attributes = {}) => {
     let link = head.querySelector(`link[rel="${rel}"]`);
@@ -2554,6 +2561,7 @@ function setupOnlyCarsAppMetadata() {
 function setupAccountShortcut() {
   const header = qs(".header");
   if (!header || qs(".account-shortcut", header)) return;
+  if (qs(".cart-shortcut", header)) header.classList.add("has-cart-shortcut");
   const isAccountPage = document.body.dataset.page === "conta";
   const link = document.createElement("a");
   link.className = "account-shortcut";

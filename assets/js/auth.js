@@ -156,27 +156,67 @@
       if (!form.age_attestation.checked) return setFeedback(form, "Confirme que a data de nascimento informada é verdadeira.");
       const birthDate = form.birth_date.value;
       if (!birthDate || new Date(`${birthDate}T12:00:00`).getTime() > Date.now()) return setFeedback(form, "Informe uma data de nascimento válida.");
+      const signupEmail = form.email.value.trim();
       setSubmitting(form, true, "Criando conta...");
       try {
         const result = await client.signUp({
           name: form.name.value.trim(),
-          email: form.email.value.trim(),
+          email: signupEmail,
           password,
           birth_date: birthDate,
           birth_date_attested: true
         });
-        if (result?.access_token) {
-          location.replace("minha-conta.html");
-          return;
-        }
+        const success = qs("[data-signup-success]");
+        const signupLinks = qs("[data-signup-links]");
+        const emailTarget = qs("[data-signup-email]", success || document);
         form.reset();
-        setFeedback(form, "Conta criada. Enviamos um link de confirmação para o seu e-mail.", "success");
+        form.hidden = true;
+        if (signupLinks) signupLinks.hidden = true;
+        if (emailTarget) emailTarget.textContent = signupEmail;
+        if (success) success.hidden = false;
+        success?.querySelector("a")?.focus();
       } catch (error) {
         setFeedback(form, friendlyError(error));
       } finally {
         setSubmitting(form, false);
       }
     });
+  }
+
+  function setupPolicyModals() {
+    const modal = qs("[data-policy-modal]");
+    if (!modal) return;
+    const title = qs("[data-policy-title]", modal);
+    const content = qs("[data-policy-content]", modal);
+    let lastTrigger = null;
+    const close = () => {
+      modal.hidden = true;
+      document.body.classList.remove("modal-open");
+      lastTrigger?.focus();
+    };
+    qsa("[data-policy-close]", modal).forEach((button) => button.addEventListener("click", close));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.hidden) close();
+    });
+    qsa("[data-policy-link]").forEach((link) => link.addEventListener("click", async (event) => {
+      event.preventDefault();
+      lastTrigger = link;
+      title.textContent = link.dataset.policyLink === "privacy" ? "Política de Privacidade" : "Termos de compra";
+      content.innerHTML = "<p>Carregando documento...</p>";
+      modal.hidden = false;
+      document.body.classList.add("modal-open");
+      qs("[data-policy-close]:not(.policy-modal-backdrop)", modal)?.focus();
+      try {
+        const response = await fetch(link.href, { headers:{ Accept:"text/html" } });
+        if (!response.ok) throw new Error("Documento indisponível.");
+        const page = new DOMParser().parseFromString(await response.text(), "text/html");
+        const main = page.querySelector("main");
+        if (!main) throw new Error("Documento indisponível.");
+        content.innerHTML = main.innerHTML;
+      } catch (_) {
+        content.innerHTML = `<p>Não foi possível carregar o documento agora. <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener">Abrir em uma nova aba</a>.</p>`;
+      }
+    }));
   }
 
   function setupRecovery() {
@@ -815,6 +855,7 @@
     setupPasswordToggles();
     setupMasks();
     setupLogin();
+    setupPolicyModals();
     setupSignup();
     setupRecovery();
     setupEmailConfirmation(redirect);
