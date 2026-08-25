@@ -76,7 +76,6 @@
     if (fields) fields.hidden = !otherPerson;
     inputs.forEach((input) => {
       input.required = otherPerson;
-      if (!otherPerson) input.value = "";
     });
     vehicle.classList.toggle("has-other-holder", otherPerson);
   }
@@ -159,11 +158,7 @@
 
   useAccountInput?.addEventListener("change", () => {
     if (!useAccountInput.checked) {
-      buyerNameInput.value = "";
-      cpfInput.value = "";
-      phoneInput.value = "";
-      accountDataLabel.textContent = "Dados removidos. Preencha o comprador manualmente ou marque novamente.";
-      buyerNameInput.focus();
+      accountDataLabel.textContent = "Preenchimento automático desligado. Os dados atuais foram mantidos para você editar.";
       return;
     }
     if (!buyerProfile) {
