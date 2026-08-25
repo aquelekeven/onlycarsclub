@@ -55,6 +55,25 @@
   line-height: 1.55;
 }
 
+.launch-promo-countdown {
+  width:max-content;
+  max-width:100%;
+  margin-top:20px;
+  padding:12px 15px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(255,212,31,.32);
+  border-radius:16px;
+  background:rgba(0,0,0,.34);
+  box-shadow:inset 0 0 22px rgba(255,212,31,.05);
+}
+
+.launch-promo-countdown>span { min-width:46px; display:grid; justify-items:center; gap:3px; }
+.launch-promo-countdown strong { color:#fff; font-size:23px; line-height:1; font-variant-numeric:tabular-nums; }
+.launch-promo-countdown small { color:rgba(255,255,255,.55); font-size:7px; font-weight:900; letter-spacing:.09em; text-transform:uppercase; }
+.launch-promo-countdown>i { color:#ffd41f; font-size:18px; font-style:normal; font-weight:900; }
+
 .launch-promo-mark {
   flex: 0 0 auto;
   color: #ffd41f;
@@ -317,6 +336,12 @@
     max-width: 250px;
     font-size: 11px;
   }
+
+  .launch-promo-countdown { margin-top:17px; padding:10px 11px; gap:6px; border-radius:13px; }
+  .launch-promo-countdown>span { min-width:37px; }
+  .launch-promo-countdown strong { font-size:19px; }
+  .launch-promo-countdown small { font-size:6px; }
+  .launch-promo-countdown>i { font-size:14px; }
 
   .launch-promo-mark {
     position: absolute;

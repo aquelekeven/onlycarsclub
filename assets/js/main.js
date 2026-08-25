@@ -14,6 +14,8 @@ const PRODUCT_IMAGE_VERSION = "20260729-v59";
 const productImage = (key, extension = "webp") =>
   `assets/images/${key}.${extension}?v=${PRODUCT_IMAGE_VERSION}`;
 const PROMOTION_DISCOUNT_RATE = 0.1;
+const PROMOTION_END_AT = new Date("2026-08-28T00:00:00-03:00").getTime();
+const isLaunchPromotionActive = () => Date.now() < PROMOTION_END_AT;
 const MOLETOM_GIFT_OPTIONS = Object.freeze([
   "Japonês P",
   "Japonês M",
@@ -299,8 +301,12 @@ const getOriginalCatalogPrice = (product, size, variant) => {
   return Number.isFinite(Number(candidate)) ? Number(candidate) : 0;
 };
 
-const getCatalogPrice = (product, size, variant) =>
-  Math.round(getOriginalCatalogPrice(product, size, variant) * (1 - PROMOTION_DISCOUNT_RATE) * 100) / 100;
+const getCatalogPrice = (product, size, variant) => {
+  const originalPrice = getOriginalCatalogPrice(product, size, variant);
+  return isLaunchPromotionActive()
+    ? Math.round(originalPrice * (1 - PROMOTION_DISCOUNT_RATE) * 100) / 100
+    : originalPrice;
+};
 
 const publicInventory = { promise:null };
 const inventoryKey = (productId, size, variant) => [productId, size || "", variant || ""].join("\u0000");
@@ -709,6 +715,18 @@ function setupShop() {
     const copy = qs(".product-copy", card);
     if (!product || !visual || !image || !copy) return;
     card.dataset.productId = id;
+    const cardPricing = qs(".product-card-pricing", card);
+    if (cardPricing) {
+      const promotionalPrice = getCatalogPrice(product, product.sizes[0], product.variants[0]);
+      const originalPrice = getOriginalCatalogPrice(product, product.sizes[0], product.variants[0]);
+      const current = qs("strong", cardPricing);
+      const previous = qs("del", cardPricing);
+      if (current) current.textContent = promotionalPrice.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }).replace(/[\u00a0\u202f]/g, " ");
+      if (previous) {
+        previous.textContent = originalPrice.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }).replace(/[\u00a0\u202f]/g, " ");
+        previous.hidden = !isLaunchPromotionActive();
+      }
+    }
 
     const availability = document.createElement("span");
     availability.className = "product-card-availability loading";
@@ -985,6 +1003,7 @@ function setupProductPage() {
   }
   const priceElement = qs("[data-product-price]");
   const originalPriceElement = qs("[data-product-original-price]");
+  const discountBadge = qs(".product-detail-discount");
   const availability = qs("[data-product-availability]");
   const availabilityTitle = qs("[data-product-availability-title]");
   const availabilityText = qs("[data-product-availability-text]");
@@ -1019,12 +1038,13 @@ function setupProductPage() {
     selectedPrice = getCatalogPrice(product, selectedSize, selectedVariant);
     priceElement.textContent = product.unavailable ? product.price : formatPrice(selectedPrice);
     priceElement.hidden = false;
-    priceElement.setAttribute("aria-label", `Preço promocional: ${priceElement.textContent}`);
+    priceElement.setAttribute("aria-label", `${isLaunchPromotionActive() ? "Preço promocional" : "Preço"}: ${priceElement.textContent}`);
     if (originalPriceElement) {
       originalPriceElement.textContent = formatPrice(originalPrice);
-      originalPriceElement.hidden = false;
+      originalPriceElement.hidden = !isLaunchPromotionActive();
       originalPriceElement.setAttribute("aria-label", `Preço original: ${originalPriceElement.textContent}`);
     }
+    if (discountBadge) discountBadge.hidden = !isLaunchPromotionActive();
     updateAvailability(selectedSize, selectedVariant);
   };
   qsa('input[name="variant"]', form).forEach((input) => input.addEventListener("change", () => {
@@ -1327,7 +1347,8 @@ function setupCartPage() {
       unitPrice.textContent = formatCurrency(item.price);
       originalUnitPrice.textContent = formatCurrency(originalItemPrice);
       discountTag.textContent = "10% OFF";
-      priceLine.append(unitPrice, originalUnitPrice, discountTag);
+      priceLine.append(unitPrice);
+      if (isLaunchPromotionActive()) priceLine.append(originalUnitPrice, discountTag);
       remove.type = "button";
       remove.className = "cart-remove";
       remove.dataset.cartRemove = "";
@@ -2560,7 +2581,7 @@ function setupOnlyCarsAppMetadata() {
 
 function setupAccountShortcut() {
   const header = qs(".header");
-  if (!header || qs(".account-shortcut", header)) return;
+  if (!header || qs(".account-shortcut,.admin-account-link", header)) return;
   if (qs(".cart-shortcut", header)) header.classList.add("has-cart-shortcut");
   const isAccountPage = document.body.dataset.page === "conta";
   const link = document.createElement("a");
@@ -2575,9 +2596,42 @@ function setupAccountShortcut() {
   header.appendChild(link);
 }
 
+function setupLaunchPromotionCountdown() {
+  const banner = qs("[data-launch-promo]");
+  const countdown = qs("[data-launch-countdown]", banner || document);
+  if (!banner || !countdown) return;
+  const deadline = new Date(banner.dataset.launchDeadline || PROMOTION_END_AT).getTime();
+  const fields = {
+    days:qs("[data-launch-days]", countdown),
+    hours:qs("[data-launch-hours]", countdown),
+    minutes:qs("[data-launch-minutes]", countdown),
+    seconds:qs("[data-launch-seconds]", countdown)
+  };
+  const pad = (value) => String(Math.max(0, value)).padStart(2, "0");
+  let timer = 0;
+  const render = () => {
+    const remaining = Math.max(0, deadline - Date.now());
+    const totalSeconds = Math.floor(remaining / 1000);
+    fields.days.textContent = pad(Math.floor(totalSeconds / 86400));
+    fields.hours.textContent = pad(Math.floor((totalSeconds % 86400) / 3600));
+    fields.minutes.textContent = pad(Math.floor((totalSeconds % 3600) / 60));
+    fields.seconds.textContent = pad(totalSeconds % 60);
+    countdown.setAttribute("aria-label", remaining > 0
+      ? `${fields.days.textContent} dias, ${fields.hours.textContent} horas, ${fields.minutes.textContent} minutos e ${fields.seconds.textContent} segundos restantes`
+      : "Promoção encerrada");
+    if (remaining > 0) return;
+    window.clearInterval(timer);
+    banner.hidden = true;
+  };
+  render();
+  if (!banner.hidden) timer = window.setInterval(render, 1000);
+  window.addEventListener("pagehide", () => window.clearInterval(timer), { once:true });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupOnlyCarsAppMetadata();
   setupAccountShortcut();
+  setupLaunchPromotionCountdown();
   setupPageTransitions();
   setupBottomNavigationStructure();
   setupHomeEventDiscovery();

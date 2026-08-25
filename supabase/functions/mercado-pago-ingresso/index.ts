@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v9-multiple";
+const FUNCTION_VERSION = "ticket-checkout-v10-ticket-holders";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -73,9 +73,9 @@ Deno.serve(async (request) => {
     const body = await request.json().catch(() => ({}));
     const eventSlug = clean(body.event_slug, 80);
     const lotId = clean(body.lot_id, 40);
-    const driverName = clean(body.driver_name);
-    const driverTaxId = onlyDigits(body.driver_tax_id);
-    const driverPhone = onlyDigits(body.driver_phone);
+    const buyerName = clean(body.buyer_name || body.driver_name);
+    const buyerTaxId = onlyDigits(body.buyer_tax_id || body.driver_tax_id);
+    const buyerPhone = onlyDigits(body.buyer_phone || body.driver_phone);
     const rawTickets = Array.isArray(body.tickets) && body.tickets.length
       ? body.tickets
       : [{
@@ -83,6 +83,9 @@ Deno.serve(async (request) => {
         vehicle_make: body.vehicle_make,
         vehicle_model: body.vehicle_model,
         instagram_handle: body.instagram_handle,
+        driver_name: body.driver_name,
+        driver_tax_id: body.driver_tax_id,
+        driver_phone: body.driver_phone,
       }];
     if (rawTickets.length < 1 || rawTickets.length > 2) throw new Error("É possível comprar até 2 ingressos por pagamento.");
     const tickets = rawTickets.map((item: Record<string, unknown>, index: number) => ({
@@ -91,17 +94,23 @@ Deno.serve(async (request) => {
       vehicleMake: clean(item?.vehicle_make, 60),
       vehicleModel: clean(item?.vehicle_model, 80),
       instagramHandle: clean(item?.instagram_handle, 40) || null,
+      driverName: clean(item?.driver_name || buyerName),
+      driverTaxId: onlyDigits(item?.driver_tax_id || buyerTaxId),
+      driverPhone: onlyDigits(item?.driver_phone || buyerPhone),
+      holderIsBuyer: item?.holder_is_buyer !== false,
     }));
     const vehiclePlates = tickets.map((ticket) => ticket.vehiclePlate);
     const couponCode = clean(body.coupon_code, 30).toUpperCase() || null;
 
     if (!eventSlug) throw new Error("Evento não informado.");
     if (!validUuid(lotId)) throw new Error("Lote inválido.");
-    if (!driverName) throw new Error("Informe o nome completo do motorista.");
-    if (driverTaxId.length !== 11) throw new Error("Informe um CPF válido com 11 números.");
-    if (driverPhone.length < 10 || driverPhone.length > 11) throw new Error("Informe um WhatsApp válido com DDD.");
+    if (!buyerName) throw new Error("Informe o nome completo do comprador.");
+    if (buyerTaxId.length !== 11) throw new Error("Informe um CPF válido com 11 números para o comprador.");
+    if (buyerPhone.length < 10 || buyerPhone.length > 11) throw new Error("Informe um WhatsApp válido com DDD para o comprador.");
     const invalidTicket = tickets.find((ticket) => ticket.vehiclePlate.length !== 7 || !ticket.vehicleMake || !ticket.vehicleModel);
     if (invalidTicket) throw new Error(`Confira placa, marca e modelo do veículo ${invalidTicket.index}.`);
+    const invalidHolder = tickets.find((ticket) => !ticket.driverName || ticket.driverTaxId.length !== 11 || ticket.driverPhone.length < 10 || ticket.driverPhone.length > 11);
+    if (invalidHolder) throw new Error(`Confira nome, CPF e WhatsApp do titular do ingresso ${invalidHolder.index}.`);
     if (new Set(vehiclePlates).size !== vehiclePlates.length) throw new Error("Cada ingresso precisa ter uma placa diferente.");
 
     const { data: event, error: eventError } = await serviceClient.from("events")
@@ -135,16 +144,22 @@ Deno.serve(async (request) => {
       event_id: event.id,
       lot_id: lot.id,
       user_id: user.id,
-      customer_name: driverName,
+      customer_name: buyerName,
       customer_email: user.email,
-      customer_phone: driverPhone,
-      customer_tax_id: driverTaxId,
+      customer_phone: buyerPhone,
+      customer_tax_id: buyerTaxId,
       quantity: tickets.length,
       unit_price_cents: lot.price_cents,
       expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       regulation_version: event.regulation_version,
       regulation_accepted_at: new Date().toISOString(),
-      metadata: { vehicle_plates: vehiclePlates },
+      metadata: {
+        vehicle_plates: vehiclePlates,
+        ticket_holders: tickets.map((ticket) => ({
+          vehicle_plate: ticket.vehiclePlate,
+          holder_is_buyer: ticket.holderIsBuyer,
+        })),
+      },
     }).select("id").single();
     if (orderError || !order) {
       console.error("Erro ao criar pedido:", orderError);
@@ -171,9 +186,9 @@ Deno.serve(async (request) => {
         qr_token: qrToken,
         qr_token_hash: await sha256(qrToken),
         status: "reserved",
-        driver_name: driverName,
-        driver_tax_id: driverTaxId,
-        driver_phone: driverPhone,
+        driver_name: ticket.driverName,
+        driver_tax_id: ticket.driverTaxId,
+        driver_phone: ticket.driverPhone,
         vehicle_plate: ticket.vehiclePlate,
         vehicle_make: ticket.vehicleMake,
         vehicle_model: ticket.vehicleModel,
@@ -201,7 +216,7 @@ Deno.serve(async (request) => {
           currency_id: "BRL",
           unit_price: Number((payableCents / 100).toFixed(2)),
         }],
-        payer: { email: user.email, name: driverName, identification: { type: "CPF", number: driverTaxId } },
+        payer: { email: user.email, name: buyerName, identification: { type: "CPF", number: buyerTaxId } },
         external_reference: `ticket:${order.id}`,
         notification_url: `${supabaseUrl}/functions/v1/mercado-pago-ingresso-webhook`,
         back_urls: {

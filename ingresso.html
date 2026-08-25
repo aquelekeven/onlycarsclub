@@ -23,29 +23,36 @@
   <meta name="theme-color" content="#080808">
   <title>Ingresso Expo — Only Cars Meeting</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=20260729-v65">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260824-signup-ticket-v126">
-  <link rel="stylesheet" href="assets/css/event-live.css?v=20260817-launch-v4">
-  <script src="assets/js/main.js?v=20260824-account-right-v147" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260825-ticket-holders-v127">
+  <link rel="stylesheet" href="assets/css/event-live.css?v=20260825-coupon-v5">
+  <script src="assets/js/main.js?v=20260825-promo-header-v148" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/ticket-checkout.js?v=20260824-multiple-v2" defer></script>
+  <script src="assets/js/ticket-checkout.js?v=20260825-holders-v3" defer></script>
 </head>
 <body data-page="proximo-evento" class="ticket-checkout-page">
   <header class="header"><a href="proximo-evento.html" class="brand" aria-label="Voltar ao evento"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
   <main class="ticket-checkout" data-ticket-checkout data-event-slug="only-cars-meeting-2026">
-    <header class="ticket-checkout-head"><div><p class="eyebrow">Only Cars Meeting • 23.10.2026</p><h1>Garanta seu<br>Ingresso Expo.</h1></div><p>Cadastre o carro que participará da exposição. O ingresso é individual por veículo e não poderá ser transferido.<br><strong>Evento livre • compra somente em conta de maior de 18 anos.</strong></p></header>
+    <header class="ticket-checkout-head"><div><p class="eyebrow">Only Cars Meeting • 23.10.2026</p><h1>Garanta seu<br>Ingresso Expo.</h1></div><p>Cadastre cada carro e defina quem apresentará o ingresso na portaria. Depois da compra, o titular fica vinculado ao respectivo QR Code.<br><strong>Evento livre • compra somente em conta de maior de 18 anos.</strong></p></header>
     <ol class="ticket-steps" aria-label="Etapas da compra"><li class="active"><i>1</i><span>Ingresso</span></li><li class="active"><i>2</i><span>Cadastro</span></li><li><i>3</i><span>Pagamento</span></li><li><i>4</i><span>Foto do carro</span></li></ol>
     <div class="ticket-buy-grid">
       <form class="ticket-form-card" data-ticket-form>
-        <h2>Dados do participante</h2><p>Usaremos estes dados para identificar o responsável pelo veículo na portaria.</p>
+        <h2>Dados do comprador</h2><p>A pessoa desta conta é responsável pelo pedido e pelo pagamento. Cada ingresso pode ficar no nome do comprador ou de outro participante.</p>
         <label class="ticket-use-account"><input type="checkbox" data-ticket-use-account><span><strong>Usar os mesmos dados da minha conta</strong><small data-ticket-account-data>Preenche automaticamente nome, CPF e WhatsApp cadastrados.</small></span></label>
-        <fieldset class="ticket-fieldset"><legend>Motorista</legend><div class="ticket-fields">
-          <label class="ticket-field full">Nome completo<input name="driver_name" autocomplete="name" required maxlength="120"></label>
-          <label class="ticket-field">CPF<input name="driver_tax_id" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14"></label>
-          <label class="ticket-field">WhatsApp<input name="driver_phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" required maxlength="16"></label>
+        <fieldset class="ticket-fieldset"><legend>Comprador responsável</legend><div class="ticket-fields">
+          <label class="ticket-field full">Nome completo<input name="buyer_name" autocomplete="name" required maxlength="120"></label>
+          <label class="ticket-field">CPF<input name="buyer_tax_id" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14"></label>
+          <label class="ticket-field">WhatsApp<input name="buyer_phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" required maxlength="16"></label>
         </div></fieldset>
         <div class="ticket-divider"></div>
-        <div data-ticket-vehicles><fieldset class="ticket-fieldset ticket-vehicle" data-ticket-vehicle><legend>Veículo Expo 1</legend><div class="ticket-fields">
+        <div data-ticket-vehicles><fieldset class="ticket-fieldset ticket-vehicle" data-ticket-vehicle data-ticket-index="1"><legend>Ingresso Expo 1</legend>
+          <label class="ticket-holder-choice"><input type="checkbox" data-ticket-other-holder><span><strong>O ingresso é para outra pessoa</strong><small>Deixe desmarcado para usar o comprador como titular.</small></span></label>
+          <div class="ticket-holder-fields" data-ticket-holder-fields hidden><p>Titular deste ingresso</p><div class="ticket-fields">
+            <label class="ticket-field full">Nome completo<input name="holder_name_1" data-ticket-holder-name autocomplete="name" maxlength="120"></label>
+            <label class="ticket-field">CPF<input name="holder_tax_id_1" data-ticket-holder-tax-id inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14"></label>
+            <label class="ticket-field">WhatsApp<input name="holder_phone_1" data-ticket-holder-phone inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="16"></label>
+          </div></div>
+          <div class="ticket-fields ticket-vehicle-fields">
           <label class="ticket-field">Placa<input name="vehicle_plate" autocomplete="off" placeholder="ABC1D23" required maxlength="8"></label>
           <label class="ticket-field">Marca<input name="vehicle_make" autocomplete="organization" placeholder="Ex.: Volkswagen" required maxlength="60"></label>
           <label class="ticket-field">Modelo<input name="vehicle_model" placeholder="Ex.: Golf GTI" required maxlength="80"></label>

@@ -23,8 +23,9 @@
     if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
     return age;
   };
-  const cpfInput = form.elements.driver_tax_id;
-  const phoneInput = form.elements.driver_phone;
+  const buyerNameInput = form.elements.buyer_name;
+  const cpfInput = form.elements.buyer_tax_id;
+  const phoneInput = form.elements.buyer_phone;
   const ticketCount = () => root.querySelectorAll("[data-ticket-vehicle]").length;
   const subtotalCents = () => Number(activeLot?.price_cents || 0) * ticketCount();
 
@@ -45,8 +46,10 @@
     return `(${number.slice(0, 2)}) ${number.slice(2, 7)}-${number.slice(7)}`;
   }
 
-  cpfInput?.addEventListener("input", () => { cpfInput.value = formatCpf(cpfInput.value); });
-  phoneInput?.addEventListener("input", () => { phoneInput.value = formatPhone(phoneInput.value); });
+  form.addEventListener("input", (event) => {
+    if (event.target.matches('[name="buyer_tax_id"],[data-ticket-holder-tax-id]')) event.target.value = formatCpf(event.target.value);
+    if (event.target.matches('[name="buyer_phone"],[data-ticket-holder-phone]')) event.target.value = formatPhone(event.target.value);
+  });
   const couponInput = root.querySelector("[data-ticket-coupon-code]");
   const couponButton = root.querySelector("[data-ticket-coupon-apply]");
   const couponFeedback = root.querySelector("[data-ticket-coupon-feedback]");
@@ -67,12 +70,43 @@
     addTicketButton.disabled = count >= 2 || (eventData && Number(eventData.remaining_public || 0) <= count);
   }
 
+  function setHolderMode(vehicle, otherPerson) {
+    const fields = vehicle.querySelector("[data-ticket-holder-fields]");
+    const inputs = fields ? [...fields.querySelectorAll("input")] : [];
+    if (fields) fields.hidden = !otherPerson;
+    inputs.forEach((input) => {
+      input.required = otherPerson;
+      if (!otherPerson) input.value = "";
+    });
+    vehicle.classList.toggle("has-other-holder", otherPerson);
+  }
+
+  function prepareTicketVehicle(vehicle, index) {
+    vehicle.dataset.ticketIndex = String(index);
+    vehicle.querySelector("legend").textContent = `Ingresso Expo ${index}`;
+    const holderNames = {
+      "[data-ticket-holder-name]":`holder_name_${index}`,
+      "[data-ticket-holder-tax-id]":`holder_tax_id_${index}`,
+      "[data-ticket-holder-phone]":`holder_phone_${index}`
+    };
+    Object.entries(holderNames).forEach(([selector, name]) => {
+      const input = vehicle.querySelector(selector);
+      if (input) input.name = name;
+    });
+    const toggle = vehicle.querySelector("[data-ticket-other-holder]");
+    if (toggle) toggle.checked = false;
+    setHolderMode(vehicle, false);
+  }
+
+  const firstTicketVehicle = root.querySelector("[data-ticket-vehicle]");
+  if (firstTicketVehicle) prepareTicketVehicle(firstTicketVehicle, 1);
+
   addTicketButton?.addEventListener("click", () => {
     if (ticketCount() >= 2) return;
     const first = root.querySelector("[data-ticket-vehicle]");
     const second = first.cloneNode(true);
-    second.querySelector("legend").textContent = "Veículo Expo 2";
     second.querySelectorAll("input").forEach((input) => { input.value = ""; input.removeAttribute("id"); });
+    prepareTicketVehicle(second, 2);
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "ticket-vehicle-remove";
@@ -89,6 +123,12 @@
     remove.closest("[data-ticket-vehicle]")?.remove();
     updateTicketSummary();
     addTicketButton.focus();
+  });
+  vehiclesRoot?.addEventListener("change", (event) => {
+    const toggle = event.target.closest("[data-ticket-other-holder]");
+    if (!toggle) return;
+    const vehicle = toggle.closest("[data-ticket-vehicle]");
+    if (vehicle) setHolderMode(vehicle, toggle.checked);
   });
 
   async function applyCoupon() {
@@ -118,13 +158,20 @@
   couponInput?.addEventListener("input", () => { if (appliedCoupon && couponInput.value.trim().toUpperCase() !== appliedCoupon.code) { clearCoupon(); couponFeedback.textContent = "Aplique novamente após alterar o código."; } });
 
   useAccountInput?.addEventListener("change", () => {
-    if (!useAccountInput.checked) return;
+    if (!useAccountInput.checked) {
+      buyerNameInput.value = "";
+      cpfInput.value = "";
+      phoneInput.value = "";
+      accountDataLabel.textContent = "Dados removidos. Preencha o comprador manualmente ou marque novamente.";
+      buyerNameInput.focus();
+      return;
+    }
     if (!buyerProfile) {
       useAccountInput.checked = false;
       accountDataLabel.textContent = "Não foi possível carregar os dados da conta.";
       return;
     }
-    form.elements.driver_name.value = buyerProfile.display_name || "";
+    buyerNameInput.value = buyerProfile.display_name || "";
     cpfInput.value = formatCpf(buyerProfile.tax_id || "");
     phoneInput.value = formatPhone(buyerProfile.phone || "");
     const missing = [buyerProfile.display_name, buyerProfile.tax_id, buyerProfile.phone].filter((value) => !value).length;
@@ -171,25 +218,36 @@
     event.preventDefault();
     if (!eventData || !activeLot || !form.reportValidity()) return;
     const data = new FormData(form);
-    const cpf = digits(data.get("driver_tax_id"));
-    const phone = digits(data.get("driver_phone"));
-    const tickets = [...root.querySelectorAll("[data-ticket-vehicle]")].map((vehicle, index) => ({
-      vehicle_plate:String(vehicle.querySelector('[name="vehicle_plate"]').value || "").replace(/[^a-z0-9]/gi, "").toUpperCase(),
-      vehicle_make:String(vehicle.querySelector('[name="vehicle_make"]').value || "").trim(),
-      vehicle_model:String(vehicle.querySelector('[name="vehicle_model"]').value || "").trim(),
-      instagram_handle:String(vehicle.querySelector('[name="instagram_handle"]').value || "").trim(),
-      index:index + 1
-    }));
+    const buyerName = String(data.get("buyer_name") || "").trim();
+    const cpf = digits(data.get("buyer_tax_id"));
+    const phone = digits(data.get("buyer_phone"));
+    const tickets = [...root.querySelectorAll("[data-ticket-vehicle]")].map((vehicle, index) => {
+      const otherHolder = vehicle.querySelector("[data-ticket-other-holder]")?.checked;
+      return {
+        vehicle_plate:String(vehicle.querySelector('[name="vehicle_plate"]').value || "").replace(/[^a-z0-9]/gi, "").toUpperCase(),
+        vehicle_make:String(vehicle.querySelector('[name="vehicle_make"]').value || "").trim(),
+        vehicle_model:String(vehicle.querySelector('[name="vehicle_model"]').value || "").trim(),
+        instagram_handle:String(vehicle.querySelector('[name="instagram_handle"]').value || "").trim(),
+        driver_name:otherHolder ? String(vehicle.querySelector("[data-ticket-holder-name]").value || "").trim() : buyerName,
+        driver_tax_id:otherHolder ? digits(vehicle.querySelector("[data-ticket-holder-tax-id]").value) : cpf,
+        driver_phone:otherHolder ? digits(vehicle.querySelector("[data-ticket-holder-phone]").value) : phone,
+        holder_is_buyer:!otherHolder,
+        index:index + 1
+      };
+    });
+    if (!buyerName) { error.textContent = "Informe o nome completo do comprador."; return; }
     if (cpf.length !== 11) { error.textContent = "Informe um CPF válido com 11 números."; return; }
     if (phone.length < 10 || phone.length > 11) { error.textContent = "Informe um WhatsApp válido com DDD."; return; }
     const invalidTicket = tickets.find((ticket) => ticket.vehicle_plate.length !== 7 || !ticket.vehicle_make || !ticket.vehicle_model);
     if (invalidTicket) { error.textContent = `Confira placa, marca e modelo do veículo ${invalidTicket.index}.`; return; }
+    const invalidHolder = tickets.find((ticket) => !ticket.driver_name || ticket.driver_tax_id.length !== 11 || ticket.driver_phone.length < 10 || ticket.driver_phone.length > 11);
+    if (invalidHolder) { error.textContent = `Confira nome, CPF e WhatsApp do titular do ingresso ${invalidHolder.index}.`; return; }
     if (new Set(tickets.map((ticket) => ticket.vehicle_plate)).size !== tickets.length) { error.textContent = "Cada ingresso precisa ter uma placa diferente."; return; }
     submit.disabled = true; submit.textContent = "Abrindo Mercado Pago..."; error.textContent = "";
     try {
       const response = await client.invokeFunction("mercado-pago-ingresso", {
         event_slug:root.dataset.eventSlug, lot_id:activeLot.id,
-        driver_name:String(data.get("driver_name") || "").trim(), driver_tax_id:cpf, driver_phone:phone,
+        buyer_name:buyerName, buyer_tax_id:cpf, buyer_phone:phone,
         tickets:tickets.map(({ index, ...ticket }) => ticket),
         coupon_code:appliedCoupon?.code || null
       });
