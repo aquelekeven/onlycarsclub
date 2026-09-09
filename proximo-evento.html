@@ -32,11 +32,12 @@
   <link rel="shortcut icon" href="favicon.ico?v=20260729-v65">
   <link rel="stylesheet" href="assets/css/style.css?v=20260824-signup-ticket-v126">
   <link rel="stylesheet" href="assets/css/event-live.css?v=20260824-lot-status-v14">
-  <link rel="stylesheet" href="assets/css/drift-wall.css?v=20260817-v1">
+
   <script src="assets/js/main.js?v=20260824-account-right-v147" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/event.js?v=20260909-event-v1" defer></script>
-  <script src="assets/js/drift-wall.js?v=20260817-v1" defer></script>
+  <script src="assets/js/ticket-options.js?v=20260909-modalidades-v1" defer></script>
+  <script src="assets/js/event.js?v=20260909-modalidades-v1" defer></script>
+
   <link rel="stylesheet" href="assets/css/ticket-redesign.css?v=20260909-modalidades-v1">
 </head>
 <body data-page="proximo-evento" class="next-event-page ticket-detail-page">
@@ -60,7 +61,7 @@
     </section>
     <div class="ticket-detail-columns">
       <div class="ticket-editorial">
-        <section class="ticket-about" id="detalhes"><h2>Sobre o evento</h2><p><strong>Original ou mexido, todos fazem parte.</strong></p><p>O Only Cars Meeting reúne a comunidade automotiva em uma noite dedicada a carros, cultura e experiências. Teremos uma área de exposição para projetos de diferentes estilos, apresentação de drift e um ambiente preparado para aproximar proprietários, entusiastas, marcas e apaixonados pelo universo automotivo.</p><p>Não existe seleção prévia de veículos: qualquer projeto poderá participar da exposição mediante a compra do ingresso Expo e disponibilidade de vagas.</p><p><strong>Pedestres e motorista têm entrada gratuita.</strong> O ingresso é cobrado pelo veículo na área de exposição.</p></section>
+        <section class="ticket-about" id="detalhes"><h2>Sobre o evento</h2><p><strong>Original ou mexido, todos fazem parte.</strong></p><p>O Only Cars Meeting reúne a comunidade automotiva em uma noite dedicada a carros, cultura e experiências. Teremos uma área de exposição para projetos de diferentes estilos, apresentação de drift e um ambiente preparado para aproximar proprietários, entusiastas, marcas e apaixonados pelo universo automotivo.</p><p>Não existe seleção prévia de veículos: qualquer projeto poderá participar da exposição mediante a compra do ingresso Expo e disponibilidade de vagas.</p><p><strong>Pedestres e motorista têm entrada gratuita.</strong> O ingresso Expo é cobrado pelo veículo na área de exposição. A Carona Radical é uma experiência à parte, como passageiro em uma apresentação de drift.</p></section>
         <section class="ticket-producer"><h2>Produzido por</h2><div><img src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club" loading="lazy"><div><strong>Only Cars Club</strong><a href="sobre.html">Conheça o clube ↗</a></div></div></section>
             <section class="event-location" id="location_details">
       <div>
@@ -94,17 +95,7 @@
       </div>
     </section>
       </div>
-      <aside class="ticket-selection" id="ingressos" aria-labelledby="ticket-selection-title">
-        <h2 id="ticket-selection-title">Ingressos</h2>
-        <div class="ticket-expo-row"><span class="ticket-tag">EXPOSIÇÃO</span><h3>Ingresso Expo · Veículo</h3><p>Um veículo na exposição, com QR Code individual.</p><div class="event-current-lot"><span>Consultando lote</span><strong>—</strong></div></div>
-        <div class="event-lot-progress" data-event-lot-progress><div><span data-lot-progress-label>Consultando disponibilidade…</span><strong data-lot-progress-percent>—</strong></div><i><b data-lot-progress-bar></b></i></div>
-        <p class="ticket-sale-status" data-event-status role="status">Carregando ingressos…</p>
-        <button class="ticket-primary" type="button" data-event-buy disabled>Carregando ingressos…</button>
-        <p class="ticket-payment-note">Pagamento pelo Mercado Pago.<br>Seu ingresso fica disponível em Minha conta.</p>
-        <div class="ticket-free-row"><div><strong>Pedestres</strong><small>Não precisa comprar ingresso.</small></div><span>Grátis</span></div>
-        <a class="ticket-account-link" href="minha-conta.html">Já comprou? Acesse seu ingresso ↗</a>
-        <noscript><p>Ative o JavaScript para consultar os lotes e comprar seu ingresso.</p></noscript>
-      </aside>
+      <aside class="ticket-selection ticket-options-panel" id="ingressos" aria-labelledby="ticket-selection-title"><h2 id="ticket-selection-title">Escolha seus ingressos</h2><p class="ticket-selector-hint">Selecione as opções e quantidades.</p><div class="ticket-option-list"><article class="ticket-option" data-ticket-option="expo"><div class="ticket-option-copy"><h3>Expo · Veículo</h3><p>Entrada de um veículo na exposição.</p><span class="ticket-option-price" data-option-price="expo">Consultando…</span><small data-option-status="expo">Consultando disponibilidade</small></div><div class="ticket-stepper" role="group" aria-label="Quantidade de Expo · Veículo"><button type="button" data-quantity-kind="expo" data-quantity-delta="-1" aria-label="Remover Expo · Veículo" disabled>−</button><output data-option-quantity="expo" aria-live="polite">0</output><button type="button" data-quantity-kind="expo" data-quantity-delta="1" aria-label="Adicionar Expo · Veículo" disabled>+</button></div></article><article class="ticket-option" data-ticket-option="carona"><div class="ticket-option-copy"><h3>Carona Radical</h3><p>Experiência de drift para uma pessoa. Não inclui vaga Expo.</p><span class="ticket-option-price" data-option-price="carona">Consultando…</span><small data-option-status="carona">Consultando disponibilidade</small></div><div class="ticket-stepper" role="group" aria-label="Quantidade de Carona Radical"><button type="button" data-quantity-kind="carona" data-quantity-delta="-1" aria-label="Remover Carona Radical" disabled>−</button><output data-option-quantity="carona" aria-live="polite">0</output><button type="button" data-quantity-kind="carona" data-quantity-delta="1" aria-label="Adicionar Carona Radical" disabled>+</button></div></article><article class="ticket-option" data-ticket-option="combo"><div class="ticket-option-copy"><h3>Expo + Carona Radical</h3><p>Um veículo na exposição + uma Carona para o titular.</p><span class="ticket-option-price" data-option-price="combo">Consultando…</span><span class="ticket-combo-badge">10% de desconto no total</span><small data-option-status="combo">Consultando disponibilidade</small></div><div class="ticket-stepper" role="group" aria-label="Quantidade de Expo + Carona Radical"><button type="button" data-quantity-kind="combo" data-quantity-delta="-1" aria-label="Remover Expo + Carona Radical" disabled>−</button><output data-option-quantity="combo" aria-live="polite">0</output><button type="button" data-quantity-kind="combo" data-quantity-delta="1" aria-label="Adicionar Expo + Carona Radical" disabled>+</button></div></article></div><div class="ticket-selection-total" aria-live="polite"><span data-selection-count>Nenhum ingresso selecionado</span><strong data-selection-total>R$ 0,00</strong></div><p class="ticket-sale-status" data-event-status role="status">Carregando ingressos…</p><button class="ticket-primary" type="button" data-event-buy disabled>Selecione um ingresso</button><p class="ticket-payment-note">Pagamento pelo Mercado Pago.<br>QR Codes disponíveis em Minha conta.</p><div class="ticket-free-row"><div><strong>Pedestres</strong><small>Não precisa comprar ingresso.</small></div><span>Grátis</span></div><a class="ticket-account-link" href="minha-conta.html">Já comprou? Acesse seu ingresso ↗</a><noscript><p>Ative o JavaScript para consultar os lotes.</p></noscript></aside>
     </div>
     <footer class="ticket-support">Dúvidas sobre o evento? <a href="mailto:contato@onlycarsclub.com.br">contato@onlycarsclub.com.br</a></footer>
   </main>
