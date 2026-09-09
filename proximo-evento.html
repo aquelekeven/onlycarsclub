@@ -37,7 +37,7 @@
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
   <script src="assets/js/event.js?v=20260909-event-v1" defer></script>
   <script src="assets/js/drift-wall.js?v=20260817-v1" defer></script>
-  <link rel="stylesheet" href="assets/css/ticket-redesign.css?v=20260909-v1">
+  <link rel="stylesheet" href="assets/css/ticket-redesign.css?v=20260909-modalidades-v1">
 </head>
 <body data-page="proximo-evento" class="next-event-page ticket-detail-page">
   <header class="header"><a href="/" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
@@ -74,86 +74,16 @@
         <div class="event-map-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/></svg><span>Google Maps ↗</span></a><a href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/></svg><span>Waze ↗</span></a></div>
       </div>
     </section>
-        <details class="ticket-more"><summary>Vídeo, programação e mapa do evento <span aria-hidden="true">+</span></summary><div class="ticket-extra-content">    <section class="event-film" aria-labelledby="event-film-title">
-      <header><p class="eyebrow">Aperte o play</p><h2 id="event-film-title">Sinta o clima<br>antes de chegar.</h2><span>Carros, cultura e a energia que vai tomar São Paulo.</span></header>
-      <div class="event-film-player"><iframe src="https://www.youtube-nocookie.com/embed/o_gNiwyZEzo?rel=0&amp;modestbranding=1" title="Vídeo oficial do Only Cars Meeting" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
-    </section>
-    <section class="event-countdown" data-event-countdown aria-label="Contagem regressiva para o evento">
-      <header><p class="eyebrow">Contagem regressiva</p><h2>Falta pouco para<br>acender as luzes.</h2></header>
-      <div>
-        <article><strong data-countdown-days>00</strong><span>dias</span></article>
-        <article><strong data-countdown-hours>00</strong><span>horas</span></article>
-        <article><strong data-countdown-minutes>00</strong><span>minutos</span></article>
-        <article><strong data-countdown-seconds>00</strong><span>segundos</span></article>
-      </div>
-    </section>
-    <section class="event-memory event-memory-drift" aria-labelledby="event-memory-title">
-      <header>
-        <div>
-          <p class="eyebrow">Memórias Only</p>
-          <h2 id="event-memory-title">Outros registros no<br>Only Cars Meeting.</h2>
-        </div>
-        <p>Alguns registros dos encontros que trouxeram a comunidade até aqui. Passe o cursor pelas imagens para explorar.</p>
-      </header>
-      <div class="drift-wall" data-drift-wall role="group" aria-label="Galeria em movimento com fotos de encontros anteriores">
-        <div class="drift-wall__plane" data-drift-plane></div>
-      </div>
-      <p class="drift-wall-note">Toque ou passe o cursor sobre uma foto para destacá-la.</p>
-    </section>
-    <section class="event-flow" aria-labelledby="event-flow-title" data-event-flow>
-      <header><p class="eyebrow">Do site à portaria</p><h2 id="event-flow-title">Seu ingresso, sempre com você.</h2></header>
-      <ol>
-        <li><i>01</i><div><strong>Cadastre o veículo</strong><span>Informe motorista, placa, modelo, ano e cor.</span></div></li>
-        <li><i>02</i><div><strong>Pague com Mercado Pago</strong><span>A confirmação acontece automaticamente.</span></div></li>
-        <li><i>03</i><div><strong>Receba o QR Code</strong><span>O ingresso ficará disponível em Minha conta.</span></div></li>
-        <li><i>04</i><div><strong>Valide na entrada</strong><span>A equipe confere o veículo e ativa sua credencial.</span></div></li>
-      </ol>
-    </section>
-    <section class="event-schedule" aria-labelledby="event-schedule-title" data-event-schedule>
-      <header>
-        <div><p class="eyebrow">Cronograma do evento</p><h2 id="event-schedule-title">Da abertura ao<br>último ronco.</h2></div>
-        <div class="event-schedule-window"><span>23 de outubro</span><strong>20h00 → 23h50</strong><small>Os horários poderão receber pequenos ajustes operacionais.</small></div>
-      </header>
-      <ol aria-label="Horários e atividades do Only Cars Meeting">
-        <li>
-          <article><span>Portões abertos</span><time datetime="20:00">20h00</time><strong>Abertura dos portões + início da exposição</strong><small>Chegada dos veículos, acesso do público e início oficial do encontro.</small></article>
-          <i class="event-schedule-clock" aria-hidden="true" data-schedule-minute="1200"><b>20:00</b></i>
-        </li>
-        <li>
-          <article><span>Expo</span><time datetime="20:00">20h00</time><strong>Exposição de veículos</strong><small>Projetos, estilos e a comunidade reunidos na área principal durante a noite.</small></article>
-          <i class="event-schedule-clock" aria-hidden="true" data-schedule-minute="1200"><b>20:00</b></i>
-        </li>
-        <li>
-          <article><span>Preparação de pista</span><time datetime="21:50">21h50</time><strong>Posicionamento dos carros de drift</strong><small>Preparação operacional para a apresentação com segurança.</small></article>
-          <i class="event-schedule-clock" aria-hidden="true" data-schedule-minute="1310"><b>20:00</b></i>
-        </li>
-        <li class="is-highlight">
-          <article><span>Momento principal</span><time datetime="22:00">22h00</time><strong><em aria-hidden="true">🔥</em> Apresentação de Drift</strong><small>A pista ganha vida no ponto alto da noite.</small></article>
-          <i class="event-schedule-clock" aria-hidden="true" data-schedule-minute="1320"><b>21:50</b></i>
-        </li>
-        <li>
-          <article><span>Fim da programação</span><time datetime="23:50">23h50</time><strong>Encerramento do evento</strong><small>Conclusão oficial das atividades do Only Cars Meeting.</small></article>
-          <i class="event-schedule-clock" aria-hidden="true" data-schedule-minute="1430"><b>22:00</b></i>
-        </li>
-      </ol>
-    </section>
-    <section class="event-venue-map" aria-labelledby="event-venue-map-title" data-event-venue-map>
-      <header>
-        <p class="eyebrow">Antes de chegar</p>
-        <h2 id="event-venue-map-title">Mapa do evento.</h2>
-        <p>Use os pontos de referência abaixo para localizar a entrada e as principais áreas do encontro.</p>
-      </header>
-      <figure>
-        <img src="assets/images/events/mapa-only-cars-meeting.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Mapa ilustrado do Only Cars Meeting no Centro de Esportes Radicais, com entrada, estacionamento, arena de drift e pontos de referência">
-        <figcaption aria-label="Legenda do mapa">
-          <span><i class="entry" aria-hidden="true"></i>Entrada do evento</span>
-          <span><i class="expo" aria-hidden="true"></i>Área de exposição</span>
-          <span><i class="drift" aria-hidden="true"></i>Apresentação de drift</span>
-          <span><i class="reference" aria-hidden="true"></i>Pontos de referência</span>
-        </figcaption>
-      </figure>
-    </section></div></details>
-            <section class="event-faq">
+        <section class="event-details-section">
+          <h2>Conheça o encontro</h2><p>Um pouco do clima que espera por você no Only Cars Meeting.</p>
+          <div class="event-video-frame"><iframe src="https://www.youtube-nocookie.com/embed/o_gNiwyZEzo?rel=0" title="Vídeo do Only Cars Meeting" loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        </section>
+        <section class="event-details-section"><h2>Programação</h2><p>23 de outubro · horários sujeitos a ajustes operacionais.</p>
+          <ol class="event-agenda"><li><time>20h00</time><div><strong>Abertura e exposição</strong><span>Chegada dos veículos e acesso do público.</span></div></li><li><time>21h50</time><div><strong>Preparação de pista</strong><span>Posicionamento dos carros para a apresentação.</span></div></li><li class="agenda-highlight"><time>22h00</time><div><strong>Drift e Carona Radical</strong><span>A apresentação ganha a pista. Quem tem Carona participa como passageiro.</span></div></li><li><time>23h50</time><div><strong>Encerramento</strong><span>Conclusão das atividades do encontro.</span></div></li></ol>
+        </section>
+        <section class="event-details-section"><h2>Mapa do evento</h2><p>Confira a entrada, a exposição e a área de drift antes de chegar.</p><a class="event-venue-image" href="assets/images/events/mapa-only-cars-meeting.webp" target="_blank" rel="noopener"><img src="assets/images/events/mapa-only-cars-meeting.webp" alt="Mapa do evento com entrada, exposição e arena de drift" loading="lazy"><span>Abrir mapa completo ↗</span></a></section>
+        <section class="event-details-section"><h2>Nos encontros anteriores</h2><p>Carros e histórias da nossa comunidade. Deslize para ver as fotos.</p><div class="event-photo-strip" tabindex="0" role="region" aria-label="Fotos de encontros anteriores"><a href="assets/images/events/meeting-history/carrossel-1.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-1.webp" alt="Registro 1 de um encontro Only Cars" loading="lazy"></a><a href="assets/images/events/meeting-history/carrossel-2.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-2.webp" alt="Registro 2 de um encontro Only Cars" loading="lazy"></a><a href="assets/images/events/meeting-history/carrossel-3.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-3.webp" alt="Registro 3 de um encontro Only Cars" loading="lazy"></a><a href="assets/images/events/meeting-history/carrossel-4.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-4.webp" alt="Registro 4 de um encontro Only Cars" loading="lazy"></a><a href="assets/images/events/meeting-history/carrossel-5.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-5.webp" alt="Registro 5 de um encontro Only Cars" loading="lazy"></a><a href="assets/images/events/meeting-history/carrossel-6.webp" target="_blank" rel="noopener"><img src="assets/images/events/meeting-history/carrossel-6.webp" alt="Registro 6 de um encontro Only Cars" loading="lazy"></a></div></section>
+    <section class="event-faq">
       <header><p class="eyebrow">Antes de comprar</p><h2>Perguntas rápidas.</h2></header>
       <div>
         <details><summary>Pedestre precisa comprar ingresso?<i></i></summary><p>Não. A entrada de pedestres será gratuita. O ingresso Expo é cobrado somente para o veículo.</p></details>
