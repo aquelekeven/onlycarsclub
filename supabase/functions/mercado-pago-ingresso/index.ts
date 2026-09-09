@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v10-ticket-holders";
+const FUNCTION_VERSION = "ticket-checkout-v11-modalities";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -15,9 +15,6 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
 const clean = (value: unknown, max = 120) => String(value || "").trim().slice(0, max);
 const onlyDigits = (value: unknown) => clean(value).replace(/\D/g, "");
 const validUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-const sha256 = async (value: string) => Array.from(
-  new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))),
-).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 const hasPurchaseAge = (birthDate: string | null) => {
   if (!birthDate) return false;
   const birth = new Date(`${birthDate}T12:00:00Z`);
@@ -87,9 +84,10 @@ Deno.serve(async (request) => {
         driver_tax_id: body.driver_tax_id,
         driver_phone: body.driver_phone,
       }];
-    if (rawTickets.length < 1 || rawTickets.length > 2) throw new Error("É possível comprar até 2 ingressos por pagamento.");
+    if (rawTickets.length < 1 || rawTickets.length > 10) throw new Error("É possível comprar até 10 ingressos por pagamento.");
     const tickets = rawTickets.map((item: Record<string, unknown>, index: number) => ({
       index: index + 1,
+      kind: clean(item?.ticket_kind || "expo",20),
       vehiclePlate: clean(item?.vehicle_plate, 8).replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
       vehicleMake: clean(item?.vehicle_make, 60),
       vehicleModel: clean(item?.vehicle_model, 80),
@@ -99,15 +97,15 @@ Deno.serve(async (request) => {
       driverPhone: onlyDigits(item?.driver_phone || buyerPhone),
       holderIsBuyer: item?.holder_is_buyer !== false,
     }));
-    const vehiclePlates = tickets.map((ticket) => ticket.vehiclePlate);
+    const vehiclePlates = tickets.filter(ticket => ticket.kind !== "carona").map((ticket) => ticket.vehiclePlate);
     const couponCode = clean(body.coupon_code, 30).toUpperCase() || null;
 
     if (!eventSlug) throw new Error("Evento não informado.");
-    if (!validUuid(lotId)) throw new Error("Lote inválido.");
+    if (tickets.some(ticket => ticket.kind !== "carona") && !validUuid(lotId)) throw new Error("Lote inválido.");
     if (!buyerName) throw new Error("Informe o nome completo do comprador.");
     if (buyerTaxId.length !== 11) throw new Error("Informe um CPF válido com 11 números para o comprador.");
     if (buyerPhone.length < 10 || buyerPhone.length > 11) throw new Error("Informe um WhatsApp válido com DDD para o comprador.");
-    const invalidTicket = tickets.find((ticket) => ticket.vehiclePlate.length !== 7 || !ticket.vehicleMake || !ticket.vehicleModel);
+    const invalidTicket = tickets.find((ticket) => ticket.kind !== "carona" && (ticket.vehiclePlate.length !== 7 || !ticket.vehicleMake || !ticket.vehicleModel));
     if (invalidTicket) throw new Error(`Confira placa, marca e modelo do veículo ${invalidTicket.index}.`);
     const invalidHolder = tickets.find((ticket) => !ticket.driverName || ticket.driverTaxId.length !== 11 || ticket.driverPhone.length < 10 || ticket.driverPhone.length > 11);
     if (invalidHolder) throw new Error(`Confira nome, CPF e WhatsApp do titular do ingresso ${invalidHolder.index}.`);
@@ -119,87 +117,18 @@ Deno.serve(async (request) => {
     if (event.status !== "sales_open") throw new Error("As vendas deste evento ainda não estão abertas.");
     if (new Date(event.sales_end_at).getTime() <= Date.now()) throw new Error("As vendas deste evento foram encerradas.");
 
-    const { data: lot, error: lotError } = await serviceClient.from("event_lots")
-      .select("id,name,price_cents,capacity,active").eq("id", lotId).eq("event_id", event.id).eq("active", true).single();
-    if (lotError || !lot) throw new Error("O lote selecionado não está disponível.");
-
-    const [{ data: paidOrders, error: paidError }, { data: reservedOrders, error: reservedError }] = await Promise.all([
-      serviceClient.from("ticket_orders").select("quantity")
-        .eq("lot_id", lot.id).eq("status", "paid"),
-      serviceClient.from("ticket_orders").select("quantity")
-        .eq("lot_id", lot.id).eq("status", "pending_payment").gt("expires_at", new Date().toISOString()),
-    ]);
-    if (paidError || reservedError) throw new Error("Não foi possível conferir as vagas do lote.");
-    const occupied = [...(paidOrders || []), ...(reservedOrders || [])]
-      .reduce((total, order) => total + Number(order.quantity || 0), 0);
-    if (occupied + tickets.length > Number(lot.capacity)) throw new Error("Não há vagas suficientes neste lote para todos os ingressos adicionados.");
-
-    const { data: existingPlates, error: plateError } = await serviceClient.from("tickets")
-      .select("vehicle_plate").eq("event_id", event.id).in("vehicle_plate", vehiclePlates)
-      .in("status", ["reserved", "active", "checked_in"]);
-    if (plateError) throw new Error("Não foi possível verificar a placa.");
-    if (existingPlates?.length) throw new Error(`A placa ${existingPlates[0].vehicle_plate} já possui um ingresso ativo para o evento.`);
-
-    const { data: order, error: orderError } = await serviceClient.from("ticket_orders").insert({
-      event_id: event.id,
-      lot_id: lot.id,
-      user_id: user.id,
-      customer_name: buyerName,
-      customer_email: user.email,
-      customer_phone: buyerPhone,
-      customer_tax_id: buyerTaxId,
-      quantity: tickets.length,
-      unit_price_cents: lot.price_cents,
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-      regulation_version: event.regulation_version,
-      regulation_accepted_at: new Date().toISOString(),
-      metadata: {
-        vehicle_plates: vehiclePlates,
-        ticket_holders: tickets.map((ticket) => ({
-          vehicle_plate: ticket.vehiclePlate,
-          holder_is_buyer: ticket.holderIsBuyer,
-        })),
-      },
-    }).select("id").single();
-    if (orderError || !order) {
-      console.error("Erro ao criar pedido:", orderError);
-      throw new Error(orderError?.message || "Não foi possível reservar o ingresso.");
-    }
-    createdOrderId = order.id;
-    let payableCents = Number(lot.price_cents) * tickets.length;
-    let appliedCouponCode: string | null = null;
-    if (couponCode) {
-      const { data: couponResult, error: couponError } = await serviceClient.rpc("reserve_ticket_purchase_coupon", {
-        p_order_id: order.id, p_user_id: user.id, p_code: couponCode,
-      });
-      if (couponError || !couponResult) throw new Error(couponError?.message || "Não foi possível aplicar o cupom.");
-      payableCents = Number(couponResult.payable_cents);
-      appliedCouponCode = String(couponResult.code);
-    }
-
-    const ticketRows = await Promise.all(tickets.map(async (ticket) => {
-      const qrToken = crypto.randomUUID() + crypto.randomUUID();
-      return {
-        order_id: order.id,
-        event_id: event.id,
-        owner_user_id: user.id,
-        qr_token: qrToken,
-        qr_token_hash: await sha256(qrToken),
-        status: "reserved",
-        driver_name: ticket.driverName,
-        driver_tax_id: ticket.driverTaxId,
-        driver_phone: ticket.driverPhone,
-        vehicle_plate: ticket.vehiclePlate,
-        vehicle_make: ticket.vehicleMake,
-        vehicle_model: ticket.vehicleModel,
-        instagram_handle: ticket.instagramHandle,
-      };
-    }));
-    const { error: ticketError } = await serviceClient.from("tickets").insert(ticketRows);
-    if (ticketError) {
-      console.error("Erro ao criar ingresso:", ticketError);
-      throw new Error(ticketError.message || "Não foi possível gerar o ingresso.");
-    }
+    const { data: reservation, error: reservationError } = await serviceClient.rpc("service_reserve_typed_tickets", {
+      p_user_id:user.id, p_event_slug:eventSlug, p_lot_id:lotId || null,
+      p_buyer:{name:buyerName,email:user.email,tax_id:buyerTaxId,phone:buyerPhone},
+      p_tickets:tickets.map(ticket => ({ticket_kind:ticket.kind,driver_name:ticket.driverName,driver_tax_id:ticket.driverTaxId,driver_phone:ticket.driverPhone,vehicle_plate:ticket.vehiclePlate,vehicle_make:ticket.vehicleMake,vehicle_model:ticket.vehicleModel,instagram_handle:ticket.instagramHandle})),
+      p_coupon_code:couponCode,
+      p_expected_subtotal:Number.isInteger(body.expected_subtotal_cents) ? body.expected_subtotal_cents : null,
+    });
+    if(reservationError || !reservation) throw new Error(reservationError?.message || "Não foi possível reservar os ingressos.");
+    const order={id:reservation.order_id};
+    createdOrderId=order.id;
+    const payableCents=Number(reservation.total_cents);
+    const appliedCouponCode=reservation.coupon_code || null;
 
     const preferenceResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
@@ -210,8 +139,8 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         items: [{
-          id: `ticket-${lot.id}`,
-          title: tickets.length === 1 ? `${event.name} — ${lot.name}` : `${event.name} — ${tickets.length} ingressos ${lot.name}`,
+          id: `ticket-${order.id}`,
+          title: `${event.name} — ${tickets.length} ingresso(s): ${[...new Set(tickets.map(t => ({expo:"Expo",carona:"Carona Radical",combo:"Expo + Carona"}[t.kind] || t.kind)))].join(", ")}`,
           quantity: 1,
           currency_id: "BRL",
           unit_price: Number((payableCents / 100).toFixed(2)),

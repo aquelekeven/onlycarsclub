@@ -1,347 +1,57 @@
 (function () {
-  "use strict";
-
-  const root = document.querySelector("[data-event-page]");
-  const client = window.OnlySupabase;
-  if (!root) return;
-
-  const status = root.querySelector("[data-event-status]");
-  const buyButtons = [...root.querySelectorAll("[data-event-buy]")];
-  const lotPrice = root.querySelector(".event-current-lot strong");
-  const remaining = root.querySelector("[data-event-remaining]");
-  const lotName = root.querySelector(".event-current-lot span");
-  const progressLabel = root.querySelector("[data-lot-progress-label]");
-  const progressPercent = root.querySelector("[data-lot-progress-percent]");
-  const progressBar = root.querySelector("[data-lot-progress-bar]");
-  let countdownTimer = null;
-  const money = (cents) => new Intl.NumberFormat("pt-BR", {
-    style:"currency", currency:"BRL", minimumFractionDigits:2, maximumFractionDigits:2
-  }).format(Number(cents || 0) / 100);
-
-  function setSaleState(event) {
-    const currentLot = Array.isArray(event?.lots) ? event.lots.find((lot) => lot.active) : null;
-    const lotTemporarilyFull = currentLot && Number(currentLot.sold_or_reserved || 0) >= Number(currentLot.capacity || 0);
-    const isOpen = event?.status === "sales_open" && !!currentLot && Number(event.remaining_public || 0) > 0 && !lotTemporarilyFull;
-    const isSoldOut = Number(event?.remaining_public || 0) <= 0;
-
-    buyButtons.forEach((button) => {
-      button.disabled = !isOpen;
-      button.textContent = isOpen ? "Comprar ingresso Expo" : isSoldOut ? "Ingressos esgotados" : lotTemporarilyFull ? "Vagas em pagamento" : "Vendas em breve";
-      if (isOpen) button.dataset.saleOpen = "true";
-      else delete button.dataset.saleOpen;
+  'use strict';
+  const root=document.querySelector('[data-event-page]');
+  const client=window.OnlySupabase, model=window.OnlyTicketOptions;
+  if(!root || !model) return;
+  const selected={expo:0,carona:0,combo:0};
+  const buy=root.querySelector('[data-event-buy]');
+  const status=root.querySelector('[data-event-status]');
+  let catalog=null, retry=false;
+  function render() {
+    const count=model.count(selected);
+    model.kinds.forEach(kind=>{
+      root.querySelector(`[data-option-quantity="${kind}"]`).textContent=selected[kind];
+      root.querySelector(`[data-ticket-option="${kind}"]`).classList.toggle('is-selected',selected[kind]>0);
+      root.querySelector(`[data-option-price="${kind}"]`).textContent=catalog ? ((kind==='expo'||kind==='combo')&&!catalog.lot ? 'Indisponível' : model.money(catalog.prices[kind])) : '—';
+      root.querySelector(`[data-option-status="${kind}"]`).textContent=!catalog ? 'Disponibilidade não confirmada' : !catalog.enabled[kind] ? 'Indisponível no momento' : kind==='carona' ? 'Ingresso individual' : catalog.lot.name;
+      root.querySelectorAll(`[data-quantity-kind="${kind}"]`).forEach(button=>{
+        const delta=Number(button.dataset.quantityDelta);
+        button.disabled=delta<0 ? selected[kind]===0 : !catalog?.enabled[kind] || count>=model.limit || (kind!=='carona' && selected.expo+selected.combo>=catalog.expoRemaining);
+      });
     });
-
-    if (status) {
-      status.textContent = `${isOpen
-        ? `${event.remaining_public} vagas públicas disponíveis`
-        : isSoldOut
-          ? "Capacidade Expo esgotada"
-          : lotTemporarilyFull
-            ? "As vagas deste lote estão temporariamente reservadas"
-            : "Aguardando a liberação segura das vendas"}`;
-    }
-    if (remaining && Number.isFinite(Number(event?.remaining_public))) {
-      remaining.textContent = `${event.remaining_public} vagas públicas disponíveis`;
-    }
+    root.querySelector('[data-selection-count]').textContent=count ? `${count} ${count===1?'ingresso selecionado':'ingressos selecionados'}`:'Nenhum ingresso selecionado';
+    root.querySelector('[data-selection-total]').textContent=model.money(catalog?model.total(selected,catalog.prices):0);
+    buy.disabled=!retry && (!catalog || !!model.validate(selected,catalog));
+    buy.textContent=retry?'Tentar novamente':count?'Continuar compra':'Selecione um ingresso';
+    if(!retry) status.textContent=count && catalog ? model.validate(selected,catalog) : '';
   }
-
-  function renderCurrentLot(lots) {
-    const current = Array.isArray(lots) ? lots.find((lot) => lot.active) : null;
-    if (!current) return;
-    if (lotPrice) lotPrice.textContent = money(current.price_cents);
-    if (lotName) lotName.textContent = current.name;
-    const occupied = Math.max(0, Number(current.sold_or_reserved || 0));
-    const capacity = Math.max(1, Number(current.capacity || 1));
-    const percent = Math.min(100, Math.round((occupied / capacity) * 100));
-    if (progressLabel) progressLabel.textContent = `${current.name} em andamento`;
-    if (progressPercent) progressPercent.textContent = `${percent}%`;
-    if (progressBar) progressBar.style.width = `${percent}%`;
+  async function load(){
+    retry=false;buy.disabled=true;status.textContent='Consultando disponibilidade…';
+    try{
+      if(!client) throw Error();
+      const event=await client.publicRest('rpc/public_event_summary',{method:'POST',body:{target_slug:root.dataset.eventSlug}});
+      if(!event) throw Error();
+      catalog=model.catalog(event);
+    }catch(_){catalog=null;retry=true;status.textContent='Não foi possível consultar os ingressos. Tente novamente.';}
+    render();
   }
-
-  function startCountdown(startsAt) {
-    const target = new Date(startsAt).getTime();
-    if (!Number.isFinite(target)) return;
-    const fields = {
-      days:root.querySelector("[data-countdown-days]"),
-      hours:root.querySelector("[data-countdown-hours]"),
-      minutes:root.querySelector("[data-countdown-minutes]"),
-      seconds:root.querySelector("[data-countdown-seconds]")
-    };
-    const update = () => {
-      const difference = Math.max(0, target - Date.now());
-      const days = Math.floor(difference / 86400000);
-      const hours = Math.floor((difference % 86400000) / 3600000);
-      const minutes = Math.floor((difference % 3600000) / 60000);
-      const seconds = Math.floor((difference % 60000) / 1000);
-      if (fields.days) fields.days.textContent = String(days).padStart(2, "0");
-      if (fields.hours) fields.hours.textContent = String(hours).padStart(2, "0");
-      if (fields.minutes) fields.minutes.textContent = String(minutes).padStart(2, "0");
-      if (fields.seconds) fields.seconds.textContent = String(seconds).padStart(2, "0");
-      if (!difference && countdownTimer) clearInterval(countdownTimer);
-    };
-    update();
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(update, 1000);
-  }
-
-  function initializeMemoryCarousel() {
-    const carousel = root.querySelector("[data-event-carousel]");
-    const track = carousel?.querySelector("[data-carousel-track]");
-    if (!carousel || !track) return;
-
-    const originalSlides = [...track.querySelectorAll("[data-carousel-slide]")];
-    for (let index = originalSlides.length - 1; index > 0; index -= 1) {
-      const randomIndex = Math.floor(Math.random() * (index + 1));
-      [originalSlides[index], originalSlides[randomIndex]] = [originalSlides[randomIndex], originalSlides[index]];
-    }
-    originalSlides.forEach((slide) => track.appendChild(slide));
-
-    const slides = [...track.querySelectorAll("[data-carousel-slide]")];
-    const dots = carousel.querySelector("[data-carousel-dots]");
-    const currentLabel = carousel.querySelector("[data-carousel-current]");
-    const totalLabel = carousel.querySelector("[data-carousel-total]");
-    const previous = carousel.querySelector("[data-carousel-previous]");
-    const next = carousel.querySelector("[data-carousel-next]");
-    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let activeIndex = 0;
-    let autoplayTimer = null;
-    let scrollTimer = null;
-
-    if (totalLabel) totalLabel.textContent = String(slides.length).padStart(2, "0");
-
-    const controls = slides.map((_, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.setAttribute("aria-label", `Ver foto ${index + 1}`);
-      button.addEventListener("click", () => show(index, true));
-      dots?.appendChild(button);
-      return button;
-    });
-
-    function updateState(index) {
-      activeIndex = (index + slides.length) % slides.length;
-      slides.forEach((slide, slideIndex) => {
-        const isActive = slideIndex === activeIndex;
-        slide.classList.toggle("is-active", isActive);
-        slide.setAttribute("aria-hidden", String(!isActive));
-      });
-      controls.forEach((control, controlIndex) => {
-        const isActive = controlIndex === activeIndex;
-        control.classList.toggle("is-active", isActive);
-        control.setAttribute("aria-current", isActive ? "true" : "false");
-      });
-      if (currentLabel) currentLabel.textContent = String(activeIndex + 1).padStart(2, "0");
-    }
-
-    function restartAutoplay() {
-      if (autoplayTimer) clearInterval(autoplayTimer);
-      if (reduceMotion || document.hidden) return;
-      autoplayTimer = setInterval(() => show(activeIndex + 1), 5000);
-    }
-
-    function show(index, manual = false) {
-      const targetIndex = (index + slides.length) % slides.length;
-      const targetSlide = slides[targetIndex];
-      if (targetSlide) {
-        const targetLeft = targetSlide.offsetLeft - ((track.clientWidth - targetSlide.offsetWidth) / 2);
-        track.scrollTo({
-          left: Math.max(0, targetLeft),
-          behavior: reduceMotion ? "auto" : "smooth"
-        });
-      }
-      updateState(targetIndex);
-      if (manual) restartAutoplay();
-    }
-
-    previous?.addEventListener("click", () => show(activeIndex - 1, true));
-    next?.addEventListener("click", () => show(activeIndex + 1, true));
-    track.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        show(activeIndex - 1, true);
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        show(activeIndex + 1, true);
-      }
-    });
-    track.addEventListener("scroll", () => {
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        const trackCenter = track.scrollLeft + track.clientWidth / 2;
-        let closestIndex = 0;
-        let closestDistance = Infinity;
-        slides.forEach((slide, index) => {
-          const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
-          const distance = Math.abs(trackCenter - slideCenter);
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIndex = index;
-          }
-        });
-        updateState(closestIndex);
-        restartAutoplay();
-      }, 120);
-    }, { passive:true });
-    document.addEventListener("visibilitychange", restartAutoplay);
-
-    updateState(0);
-    requestAnimationFrame(() => show(0));
-    restartAutoplay();
-  }
-
-  function initializeFlowProgress() {
-    const flow = root.querySelector("[data-event-flow]");
-    const steps = flow ? [...flow.querySelectorAll("li")] : [];
-    if (!flow || !steps.length) return;
-
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const rect = flow.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      let progress;
-
-      if (matchMedia("(max-width: 700px)").matches) {
-        const marker = viewportHeight * 0.58;
-        const first = steps[0].querySelector("i").getBoundingClientRect();
-        const last = steps[steps.length - 1].querySelector("i").getBoundingClientRect();
-        const firstCenter = first.top + first.height / 2;
-        const lastCenter = last.top + last.height / 2;
-        progress = (marker - firstCenter) / Math.max(1, lastCenter - firstCenter);
-      } else {
-        progress = ((viewportHeight * 0.72) - rect.top) / Math.max(1, rect.height * 0.72);
-      }
-
-      progress = Math.min(1, Math.max(0, progress));
-      flow.style.setProperty("--flow-progress", progress.toFixed(4));
-      const reachedIndex = Math.min(steps.length - 1, Math.floor(progress * steps.length));
-      steps.forEach((step, index) => step.classList.toggle("is-reached", progress > 0 && index <= reachedIndex));
-    };
-
-    const requestUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    addEventListener("scroll", requestUpdate, { passive:true });
-    addEventListener("resize", requestUpdate, { passive:true });
-    update();
-  }
-
-  function initializeScheduleProgress() {
-    const schedule = root.querySelector("[data-event-schedule]");
-    const steps = schedule ? [...schedule.querySelectorAll("ol > li")] : [];
-    if (!schedule || !steps.length) return;
-
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const marker = viewportHeight * 0.6;
-      const points = steps.map((step) => {
-        const dot = step.querySelector("i").getBoundingClientRect();
-        return dot.top + dot.height / 2;
-      });
-      const progress = Math.min(1, Math.max(0, (marker - points[0]) / Math.max(1, points[points.length - 1] - points[0])));
-      schedule.style.setProperty("--schedule-progress", progress.toFixed(4));
-      const blurProgress = Math.min(1, Math.max(0, (progress - 0.6) / 0.4));
-      schedule.style.setProperty("--schedule-blur", blurProgress.toFixed(4));
-      steps.forEach((step, index) => {
-        const reached = points[index] <= marker;
-        step.classList.toggle("is-reached", reached);
-        const clock = step.querySelector("[data-schedule-minute]");
-        const display = clock?.querySelector("b");
-        if (!clock || !display) return;
-        const targetMinute = Number(clock.dataset.scheduleMinute);
-        const previousMinute = index ? Number(steps[index - 1].querySelector("[data-schedule-minute]")?.dataset.scheduleMinute || targetMinute) : targetMinute;
-        const segmentStart = index ? (index - 1) / (steps.length - 1) : 0;
-        const segmentEnd = index / (steps.length - 1);
-        const localProgress = index ? Math.min(1, Math.max(0, (progress - segmentStart) / Math.max(.001, segmentEnd - segmentStart))) : 1;
-        const currentMinute = Math.round(previousMinute + ((targetMinute - previousMinute) * localProgress));
-        display.textContent = `${String(Math.floor(currentMinute / 60)).padStart(2, "0")}:${String(currentMinute % 60).padStart(2, "0")}`;
-        clock.classList.toggle("is-counting", localProgress > 0 && localProgress < 1 && targetMinute !== previousMinute);
-      });
-    };
-
-    const requestUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    addEventListener("scroll", requestUpdate, { passive:true });
-    addEventListener("resize", requestUpdate, { passive:true });
-    update();
-  }
-
-  function initializeVenueMapZoom() {
-    const section = root.querySelector("[data-event-venue-map]");
-    if (!section) return;
-
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const rect = section.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const travel = Math.min(1, Math.max(0, (viewportHeight - rect.top) / Math.max(1, viewportHeight + rect.height)));
-      const intensity = Math.sin(Math.PI * travel);
-      const maxZoom = matchMedia("(max-width: 720px)").matches ? 0.12 : 0.19;
-      section.style.setProperty("--venue-map-zoom", (1 + intensity * maxZoom).toFixed(4));
-      section.style.setProperty("--venue-map-shift", `${((travel - 0.5) * intensity * -30).toFixed(2)}px`);
-    };
-
-    const requestUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    addEventListener("scroll", requestUpdate, { passive:true });
-    addEventListener("resize", requestUpdate, { passive:true });
-    update();
-  }
-
-  function showLoadError() {
-    if (status) status.textContent = "Não foi possível consultar os ingressos. Tente novamente.";
-    if (progressLabel) progressLabel.textContent = "Disponibilidade não confirmada";
-    buyButtons.forEach((button) => {
-      delete button.dataset.saleOpen;
-      button.dataset.retry = "true";
-      button.disabled = false;
-      button.textContent = "Tentar novamente";
-    });
-  }
-
-  async function loadEvent() {
-    if (!client) { showLoadError(); return; }
-    buyButtons.forEach((button) => { button.disabled = true; delete button.dataset.retry; });
-    try {
-      const result = await client.publicRest("rpc/public_event_summary", {
-        method:"POST",
-        body:{ target_slug:root.dataset.eventSlug }
-      });
-      if (!result) throw new Error("Evento indisponível");
-      root.dataset.eventId = result.id;
-      setSaleState(result);
-      renderCurrentLot(result.lots);
-      startCountdown(result.starts_at);
-    } catch (_) {
-      showLoadError();
-    }
-  }
-
-  buyButtons.forEach((button) => button.addEventListener("click", async () => {
-    if (button.dataset.retry === "true") { await loadEvent(); return; }
-    if (button.dataset.saleOpen !== "true") return;
-    if (!client) return;
-    const session = await client.getSession().catch(() => null);
-    const destination = `ingresso.html?event=${encodeURIComponent(root.dataset.eventSlug)}`;
-    if (!session) {
-      sessionStorage.setItem("onlycars.afterLogin", destination);
-      location.href = "login.html?next=ingresso";
-      return;
-    }
-    location.href = destination;
+  root.querySelectorAll('[data-quantity-kind]').forEach(button=>button.addEventListener('click',()=>{
+    if(button.disabled) return;
+    selected[button.dataset.quantityKind]+=Number(button.dataset.quantityDelta);render();
   }));
-
-  root.querySelector(".ticket-more")?.addEventListener("toggle", () => window.dispatchEvent(new Event("resize")));
-
-  initializeMemoryCarousel();
-  initializeFlowProgress();
-  initializeScheduleProgress();
-  initializeVenueMapZoom();
-  loadEvent();
+  buy.addEventListener('click',async()=>{
+    if(retry){await load();return;}
+    if(!catalog || model.validate(selected,catalog))return;
+    buy.disabled=true;buy.textContent='Conferindo ingressos…';
+    const oldTotal=model.total(selected,catalog.prices);
+    await load();
+    if(!catalog || model.validate(selected,catalog))return;
+    if(oldTotal!==model.total(selected,catalog.prices)){status.textContent='O lote mudou. Confira o novo total e clique em continuar.';return;}
+    const params=new URLSearchParams({event:root.dataset.eventSlug,...selected});
+    const destination=`ingresso.html?${params}`;
+    const session=await client.getSession().catch(()=>null);
+    if(!session){sessionStorage.setItem('onlycars.afterLogin',destination);location.href='login.html?next=ingresso';}
+    else location.href=destination;
+  });
+  load();
 })();

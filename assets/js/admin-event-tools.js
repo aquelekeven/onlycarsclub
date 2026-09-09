@@ -112,20 +112,23 @@
     currentTicket = ticket;
     const result = qs("[data-ticket-result]");
     const statusLabels = { reserved:"Reservado", active:"Ativo", checked_in:"Dentro do evento", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
-    const allowed = ["reserved", "active", "checked_in"].includes(ticket.status);
+    const paidActive = ["active", "checked_in"].includes(ticket.status);
+    const allowed = paidActive && ticket.ticket_kind !== "carona";
+    const hasCarona = ["carona", "combo"].includes(ticket.ticket_kind);
     const isInside = ticket.status === "checked_in" && ticket.last_entry_at && (!ticket.last_exit_at || new Date(ticket.last_entry_at) > new Date(ticket.last_exit_at));
     const hasExited = ticket.last_entry_at && ticket.last_exit_at && new Date(ticket.last_exit_at) >= new Date(ticket.last_entry_at);
     const displayStatus = hasExited ? "Fora do evento" : (statusLabels[ticket.status] || ticket.status);
     const entryAction = hasExited ? "reentry" : "entry";
     const entryLabel = hasExited ? "Confirmar reentrada" : "Confirmar entrada";
     result.innerHTML = `<article class="admin-ticket-detail" data-status="${escapeHtml(ticket.status)}">
-      <header><div><span>Ingresso encontrado</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(displayStatus)}</b></header>
+      <header><div><span>${escapeHtml(({expo:"Expo",carona:"Carona Radical",combo:"Expo + Carona Radical"})[ticket.ticket_kind || "expo"])}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(displayStatus)}</b></header>
       <div class="admin-ticket-driver"><i>${escapeHtml(String(ticket.driver_name || "O").charAt(0).toUpperCase())}</i><div><span>Titular do ingresso</span><strong>${escapeHtml(ticket.driver_name)}</strong><small>${escapeHtml(ticket.driver_phone || "Telefone não informado")}</small></div></div>
-      <dl><div><dt>Veículo</dt><dd>${escapeHtml([ticket.vehicle_make,ticket.vehicle_model,ticket.vehicle_year].filter(Boolean).join(" "))}</dd></div><div><dt>Placa</dt><dd class="plate">${escapeHtml(ticket.vehicle_plate)}</dd></div><div><dt>Evento</dt><dd>${escapeHtml(ticket.event_name)}</dd></div><div><dt>Última entrada</dt><dd>${dateTime(ticket.last_entry_at)}</dd></div><div><dt>Última saída</dt><dd>${dateTime(ticket.last_exit_at)}</dd></div></dl>
+      <dl><div><dt>Veículo</dt><dd>${ticket.ticket_kind === "carona" ? "Não inclui vaga Expo" : escapeHtml([ticket.vehicle_make,ticket.vehicle_model,ticket.vehicle_year].filter(Boolean).join(" "))}</dd></div><div><dt>Placa</dt><dd class="plate">${escapeHtml(ticket.vehicle_plate)}</dd></div><div><dt>Evento</dt><dd>${escapeHtml(ticket.event_name)}</dd></div><div><dt>Última entrada</dt><dd>${dateTime(ticket.last_entry_at)}</dd></div><div><dt>Última saída</dt><dd>${dateTime(ticket.last_exit_at)}</dd></div></dl>
       <div class="admin-ticket-checkin-actions">
         <button class="primary" type="button" data-ticket-action="${entryAction}" ${allowed && !isInside ? "" : "disabled"}>${entryLabel}</button>
         <button type="button" data-ticket-action="exit" ${isInside ? "" : "disabled"}>Registrar saída</button>
-      </div><p data-ticket-action-feedback></p>
+        ${hasCarona ? `<button class="primary" type="button" data-ticket-action="carona" ${paidActive && !ticket.carona_redeemed_at ? "" : "disabled"}>${ticket.carona_redeemed_at ? "Carona já utilizada" : "Validar uso da Carona"}</button>` : ""}
+      </div>${hasCarona ? `<p>${ticket.carona_redeemed_at ? "Utilizada em "+dateTime(ticket.carona_redeemed_at) : "A validação da Carona é independente da entrada Expo."}</p>` : ""}<p data-ticket-action-feedback></p>
     </article>`;
   }
 
@@ -297,7 +300,7 @@
     const normalized = query.trim().toLowerCase();
     const rows = ticketSales.filter((item) => !normalized || `${item.ticket_code} ${item.driver_name} ${item.vehicle_plate} ${item.vehicle_make} ${item.vehicle_model} ${item.customer_email}`.toLowerCase().includes(normalized));
     root.className = "admin-ticket-sales-list";
-    root.innerHTML = rows.length ? rows.map((item) => `<article class="admin-ticket-sale" data-ticket-sale-id="${escapeHtml(item.ticket_id)}"><button type="button" data-ticket-sale-toggle><span><strong>${escapeHtml(item.driver_name)}</strong><small>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.customer_email)}</small></span><span><strong>${escapeHtml(item.vehicle_plate)}</strong><small>${escapeHtml([item.vehicle_make,item.vehicle_model].filter(Boolean).join(" "))}</small></span><span><strong>${money(item.total_cents)}</strong><small>${item.coupon_code ? `Cupom ${escapeHtml(item.coupon_code)}` : "Sem cupom"}</small></span><b>Detalhes ↓</b></button><div class="admin-ticket-sale-detail" hidden><div><span>Pagamento</span><strong>${money(item.total_cents)} · ${escapeHtml(item.payment_method || "Não informado")}</strong></div><div><span>Preço e desconto</span><strong>${money(item.subtotal_cents)} − ${money(item.discount_cents)}</strong></div><div><span>Pago em</span><strong>${dateTime(item.paid_at)}</strong></div><div><span>Titular do ingresso</span><strong>${escapeHtml(item.driver_name)}<br>${escapeHtml(item.driver_tax_id)}<br>${escapeHtml(item.driver_phone)}</strong></div><div><span>Veículo</span><strong>${escapeHtml([item.vehicle_make,item.vehicle_model,item.vehicle_year].filter(Boolean).join(" "))}<br>${escapeHtml(item.vehicle_plate)}</strong></div><div><span>Instagram</span><strong>${escapeHtml(item.instagram_handle || "Não informado")}</strong></div>${item.photo ? `<div class="admin-ticket-sale-photo" data-ticket-sale-photo><span>Foto de confirmado · ${Number(item.photo.submission_count||1)}/2 envios</span><strong>Carregando foto...</strong></div>` : '<div class="admin-ticket-sale-photo"><span>Foto de confirmado</span><strong>Ainda não enviada</strong></div>'}</div></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum ingresso vendido encontrado.</div>';
+    root.innerHTML = rows.length ? rows.map((item) => `<article class="admin-ticket-sale" data-ticket-sale-id="${escapeHtml(item.ticket_id)}"><button type="button" data-ticket-sale-toggle><span><strong>${escapeHtml(item.driver_name)}</strong><small>${escapeHtml(item.ticket_code)} · ${escapeHtml(({expo:"Expo",carona:"Carona Radical",combo:"Expo + Carona"})[item.ticket_kind || "expo"])} · ${escapeHtml(item.customer_email)}</small></span><span><strong>${escapeHtml(item.vehicle_plate)}</strong><small>${escapeHtml([item.vehicle_make,item.vehicle_model].filter(Boolean).join(" "))}</small></span><span><strong>${money(item.total_cents)}</strong><small>${item.coupon_code ? `Cupom ${escapeHtml(item.coupon_code)}` : "Sem cupom"}</small></span><b>Detalhes ↓</b></button><div class="admin-ticket-sale-detail" hidden><div><span>Pagamento</span><strong>${money(item.total_cents)} · ${escapeHtml(item.payment_method || "Não informado")}</strong></div><div><span>Preço e desconto</span><strong>${money(item.subtotal_cents)} − ${money(item.discount_cents)}</strong></div><div><span>Pago em</span><strong>${dateTime(item.paid_at)}</strong></div><div><span>Titular do ingresso</span><strong>${escapeHtml(item.driver_name)}<br>${escapeHtml(item.driver_tax_id)}<br>${escapeHtml(item.driver_phone)}</strong></div><div><span>Veículo</span><strong>${escapeHtml([item.vehicle_make,item.vehicle_model,item.vehicle_year].filter(Boolean).join(" "))}<br>${escapeHtml(item.vehicle_plate)}</strong></div><div><span>Instagram</span><strong>${escapeHtml(item.instagram_handle || "Não informado")}</strong></div>${item.photo ? `<div class="admin-ticket-sale-photo" data-ticket-sale-photo><span>Foto de confirmado · ${Number(item.photo.submission_count||1)}/2 envios</span><strong>Carregando foto...</strong></div>` : '<div class="admin-ticket-sale-photo"><span>Foto de confirmado</span><strong>Ainda não enviada</strong></div>'}</div></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum ingresso vendido encontrado.</div>';
   }
 
   async function loadTicketSales() {
@@ -534,7 +537,8 @@
       button.disabled = true;
       feedback.textContent = "Registrando movimentação...";
       try {
-        const updated = await client.rest("rpc/admin_checkin_event_ticket", { method:"POST", body:{ p_qr_token:lastToken, p_action:button.dataset.ticketAction, p_reason:null } });
+        const ride = button.dataset.ticketAction === "carona";
+        const updated = await client.rest(ride ? "rpc/admin_redeem_carona" : "rpc/admin_checkin_event_ticket", { method:"POST", body:ride ? {p_qr_token:lastToken} : { p_qr_token:lastToken, p_action:button.dataset.ticketAction, p_reason:null } });
         renderTicket(updated);
         qs("[data-ticket-action-feedback]").textContent = "Movimentação registrada e sincronizada para todos os administradores.";
         await loadTicketStats();
