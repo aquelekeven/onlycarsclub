@@ -50,7 +50,7 @@
     const params=new URLSearchParams({event:root.dataset.eventSlug,...selected});
     const destination=`ingresso.html?${params}`;
     const session=await client.getSession().catch(()=>null);
-    if(!session){sessionStorage.setItem('onlycars.afterLogin',destination);location.href='login.html?next=ingresso';}
+    if(!session){try{sessionStorage.setItem('onlycars.afterLogin',destination);}catch(_){}location.href=`login.html?next=${encodeURIComponent(destination)}`;}
     else location.href=destination;
   });
   load();
