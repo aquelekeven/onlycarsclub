@@ -25,7 +25,7 @@ async function testEventPage(){
  const ctx={window:{OnlyTicketOptions:model,OnlySupabase:{publicRest:async()=>{if(fail)throw Error();return event;},getSession:async()=>null}},document:{querySelector:()=>root},URLSearchParams,Number,sessionStorage:{setItem(k,v){this[k]=v}},location:{}};
  vm.runInNewContext(fs.readFileSync('assets/js/event.js','utf8'),ctx);await new Promise(setImmediate);
  el('expo1').click();el('combo1').click();assert.equal(el('[data-selection-total]').textContent,model.money(22850));
- await el('[data-event-buy]').click();assert.equal(ctx.location.href,'login.html?next=ingresso');assert.match(ctx.sessionStorage['onlycars.afterLogin'],/expo=1&carona=0&combo=1/);
+ await el('[data-event-buy]').click();assert.equal(new URLSearchParams(ctx.location.href.split('?')[1]).get('next'),ctx.sessionStorage['onlycars.afterLogin']);assert.match(ctx.sessionStorage['onlycars.afterLogin'],/expo=1&carona=0&combo=1/);
  fail=true;await el('[data-event-buy]').click();assert.equal(el('[data-event-buy]').textContent,'Tentar novamente');
  fail=false;await el('[data-event-buy]').click();assert.equal(el('[data-event-buy]').disabled,false);
 }

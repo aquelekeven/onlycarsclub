@@ -120,6 +120,21 @@
     });
   }
 
+  // Restrict return destinations to known pages on this site; never accept an external URL.
+  function loginDestination() {
+    const requested = new URLSearchParams(location.search).get("next");
+    let saved = "";
+    try { saved = sessionStorage.getItem("onlycars.afterLogin") || ""; } catch (_) {}
+    const candidate = requested === "ingresso" ? saved || "ingresso.html" : requested || saved;
+    if (!candidate) return "minha-conta.html";
+    try {
+      const url = new URL(candidate, location.href);
+      const allowed = ["/ingresso.html", "/ingresso-retorno.html", "/proximo-evento.html", "/entrega.html", "/carrinho.html", "/minha-conta.html"];
+      if (url.origin !== location.origin || url.username || url.password || !allowed.includes(url.pathname)) return "minha-conta.html";
+      return `${url.pathname.slice(1)}${url.search}${url.hash}`;
+    } catch (_) { return "minha-conta.html"; }
+  }
+
   function setupLogin() {
     const form = qs("[data-login-form]");
     if (!form) return;
@@ -133,8 +148,9 @@
           email: form.email.value.trim(),
           password: form.password.value
         });
-        const requestedNext = new URLSearchParams(location.search).get("next");
-        location.replace(requestedNext === "entrega.html" ? "entrega.html" : "minha-conta.html");
+        const destination = loginDestination();
+        try { sessionStorage.removeItem("onlycars.afterLogin"); } catch (_) {}
+        location.replace(destination);
       } catch (error) {
         setFeedback(form, friendlyError(error));
         setSubmitting(form, false);
@@ -855,6 +871,13 @@
     const redirect = client.consumeAuthRedirect();
     setupPasswordToggles();
     setupMasks();
+    const destination = loginDestination();
+    if (destination !== "minha-conta.html" && qs("[data-login-form],[data-signup-form],[data-confirmation-page]")) {
+      try { sessionStorage.setItem("onlycars.afterLogin", destination); } catch (_) {}
+      qsa('a[href="login.html"],a[href="cadastro.html"]').forEach(link => {
+        link.href = `${link.getAttribute("href")}?next=${encodeURIComponent(destination)}`;
+      });
+    }
     setupLogin();
     setupPolicyModals();
     setupSignup();
