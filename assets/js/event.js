@@ -15,13 +15,13 @@
   const progressBar = root.querySelector("[data-lot-progress-bar]");
   let countdownTimer = null;
   const money = (cents) => new Intl.NumberFormat("pt-BR", {
-    style:"currency", currency:"BRL", maximumFractionDigits:0
+    style:"currency", currency:"BRL", minimumFractionDigits:2, maximumFractionDigits:2
   }).format(Number(cents || 0) / 100);
 
   function setSaleState(event) {
     const currentLot = Array.isArray(event?.lots) ? event.lots.find((lot) => lot.active) : null;
     const lotTemporarilyFull = currentLot && Number(currentLot.sold_or_reserved || 0) >= Number(currentLot.capacity || 0);
-    const isOpen = event?.status === "sales_open" && Number(event.remaining_public || 0) > 0 && !lotTemporarilyFull;
+    const isOpen = event?.status === "sales_open" && !!currentLot && Number(event.remaining_public || 0) > 0 && !lotTemporarilyFull;
     const isSoldOut = Number(event?.remaining_public || 0) <= 0;
 
     buyButtons.forEach((button) => {
@@ -32,7 +32,7 @@
     });
 
     if (status) {
-      status.innerHTML = `<i aria-hidden="true"></i>${isOpen
+      status.textContent = `${isOpen
         ? `${event.remaining_public} vagas públicas disponíveis`
         : isSoldOut
           ? "Capacidade Expo esgotada"
@@ -49,7 +49,7 @@
     const current = Array.isArray(lots) ? lots.find((lot) => lot.active) : null;
     if (!current) return;
     if (lotPrice) lotPrice.textContent = money(current.price_cents);
-    if (lotName) lotName.textContent = `${current.name} aberto`;
+    if (lotName) lotName.textContent = current.name;
     const occupied = Math.max(0, Number(current.sold_or_reserved || 0));
     const capacity = Math.max(1, Number(current.capacity || 1));
     const percent = Math.min(100, Math.round((occupied / capacity) * 100));
@@ -294,25 +294,37 @@
     update();
   }
 
+  function showLoadError() {
+    if (status) status.textContent = "Não foi possível consultar os ingressos. Tente novamente.";
+    if (progressLabel) progressLabel.textContent = "Disponibilidade não confirmada";
+    buyButtons.forEach((button) => {
+      delete button.dataset.saleOpen;
+      button.dataset.retry = "true";
+      button.disabled = false;
+      button.textContent = "Tentar novamente";
+    });
+  }
+
   async function loadEvent() {
-    if (!client) return;
+    if (!client) { showLoadError(); return; }
+    buyButtons.forEach((button) => { button.disabled = true; delete button.dataset.retry; });
     try {
       const result = await client.publicRest("rpc/public_event_summary", {
         method:"POST",
         body:{ target_slug:root.dataset.eventSlug }
       });
-      if (!result) return;
+      if (!result) throw new Error("Evento indisponível");
       root.dataset.eventId = result.id;
       setSaleState(result);
       renderCurrentLot(result.lots);
       startCountdown(result.starts_at);
     } catch (_) {
-      // The static launch page remains usable while the event is still a draft
-      // or before the database migration is applied.
+      showLoadError();
     }
   }
 
   buyButtons.forEach((button) => button.addEventListener("click", async () => {
+    if (button.dataset.retry === "true") { await loadEvent(); return; }
     if (button.dataset.saleOpen !== "true") return;
     if (!client) return;
     const session = await client.getSession().catch(() => null);
@@ -324,6 +336,8 @@
     }
     location.href = destination;
   }));
+
+  root.querySelector(".ticket-more")?.addEventListener("toggle", () => window.dispatchEvent(new Event("resize")));
 
   initializeMemoryCarousel();
   initializeFlowProgress();

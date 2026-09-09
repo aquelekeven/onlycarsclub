@@ -35,46 +35,49 @@
   <link rel="stylesheet" href="assets/css/drift-wall.css?v=20260817-v1">
   <script src="assets/js/main.js?v=20260824-account-right-v147" defer></script>
   <script src="assets/js/supabase-client.js?v=20260812-event-v1" defer></script>
-  <script src="assets/js/event.js?v=20260824-lot-status-v13" defer></script>
+  <script src="assets/js/event.js?v=20260909-event-v1" defer></script>
   <script src="assets/js/drift-wall.js?v=20260817-v1" defer></script>
+  <link rel="stylesheet" href="assets/css/ticket-redesign.css?v=20260909-v1">
 </head>
-<body data-page="proximo-evento" class="next-event-page">
-  <header class="header">
-    <a href="/" class="brand" aria-label="Only Cars Club — início">
-      <img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club">
-    </a>
-  </header>
-
+<body data-page="proximo-evento" class="next-event-page ticket-detail-page">
+  <header class="header"><a href="/" class="brand" aria-label="Only Cars Club — início"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a></header>
   <nav class="bottom-nav" aria-label="Navegação principal"></nav>
-
-  <main class="event-launch" data-event-page data-event-slug="only-cars-meeting-2026">
-    <section class="event-hero" aria-labelledby="next-event-title">
-      <div class="event-hero-glow" aria-hidden="true"></div>
-      <div class="event-hero-copy">
-        <h1 id="next-event-title">Only Cars<br><em>Meeting.</em></h1>
-        <p class="event-hero-lead">Uma noite de exposição automotiva e drift no coração de São Paulo.</p>
-        <div class="event-current-lot" aria-label="Lote atual"><span>Lote 1 aberto</span><strong>R$ 35</strong><small>por carro Expo</small></div>
-        <div class="event-lot-progress" data-event-lot-progress aria-live="polite">
-          <div><span data-lot-progress-label>Carregando lote atual...</span><strong data-lot-progress-percent>0%</strong></div>
-          <i><b data-lot-progress-bar></b></i>
-        </div>
-        <div class="event-hero-actions">
-          <button class="button primary" type="button" data-event-buy disabled>Vendas em breve</button>
-          <a class="event-text-link" href="#detalhes">Ver todos os detalhes <span>↓</span></a>
-        </div>
+  <main class="ticket-detail" data-event-page data-event-slug="only-cars-meeting-2026">
+    <section class="ticket-event-header" aria-labelledby="next-event-title">
+      <div class="ticket-poster" aria-label="Only Cars Meeting, 23 de outubro de 2026">
+        <img class="ticket-poster-photo" src="assets/images/events/flyer-drift-background.webp" alt="Carros em apresentação de drift à noite" fetchpriority="high">
+        <div class="ticket-poster-art"><span>ONLY CARS CLUB APRESENTA</span><img src="assets/images/events/only-meeting-logo.png" alt="Only Cars Meeting"><div><strong>23 OUTUBRO</strong><span>CENTRO DE ESPORTES RADICAIS • SP</span><small>EXPOSIÇÃO AUTOMOTIVA + DRIFT</small></div></div>
       </div>
-      <aside class="event-date-card" aria-label="Data do evento">
-        <span>OUT</span>
-        <strong>23</strong>
-        <small>SEXTA • 2026</small>
-      </aside>
+      <div class="ticket-event-info">
+        <div><p class="ticket-kicker">EXPOSIÇÃO AUTOMOTIVA · SÃO PAULO</p><h1 id="next-event-title">Only Cars Meeting</h1><p class="ticket-intro">Carros, cultura e uma noite para reunir a comunidade.</p></div>
+        <ul class="ticket-event-meta">
+          <li><span class="ticket-meta-icon" aria-hidden="true">◷</span><span><time datetime="2026-10-23T20:00:00-03:00" data-event-date>23 de outubro de 2026 · 20h00</time><small>Horário de São Paulo</small></span></li>
+          <li><span class="ticket-meta-icon" aria-hidden="true">⌖</span><a href="#location_details"><strong>Centro de Esportes Radicais</strong><small>Av. Presidente Castelo Branco, 5700 — Bom Retiro, São Paulo/SP</small></a></li>
+          <li><span class="ticket-rating" aria-hidden="true">L</span><span>Classificação livre<small>Compra na conta de um responsável com 18 anos ou mais.</small></span></li>
+        </ul>
+        <div class="ticket-hero-purchase"><span>Entrada de pedestres <strong>gratuita</strong></span><a href="#ingressos" class="ticket-primary">Ver ingressos</a><small>Ingresso Expo necessário apenas para veículos.</small></div>
+      </div>
     </section>
-
-    <section class="event-film" aria-labelledby="event-film-title">
+    <div class="ticket-detail-columns">
+      <div class="ticket-editorial">
+        <section class="ticket-about" id="detalhes"><h2>Sobre o evento</h2><p><strong>Original ou mexido, todos fazem parte.</strong></p><p>O Only Cars Meeting reúne a comunidade automotiva em uma noite dedicada a carros, cultura e experiências. Teremos uma área de exposição para projetos de diferentes estilos, apresentação de drift e um ambiente preparado para aproximar proprietários, entusiastas, marcas e apaixonados pelo universo automotivo.</p><p>Não existe seleção prévia de veículos: qualquer projeto poderá participar da exposição mediante a compra do ingresso Expo e disponibilidade de vagas.</p><p><strong>Pedestres e motorista têm entrada gratuita.</strong> O ingresso é cobrado pelo veículo na área de exposição.</p></section>
+        <section class="ticket-producer"><h2>Produzido por</h2><div><img src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club" loading="lazy"><div><strong>Only Cars Club</strong><a href="sobre.html">Conheça o clube ↗</a></div></div></section>
+            <section class="event-location" id="location_details">
+      <div>
+        <p class="eyebrow">Onde vai acontecer</p>
+        <h2>Centro de Esportes Radicais</h2>
+        <p>Av. Presidente Castelo Branco, 5700<br>Bom Retiro • São Paulo/SP</p>
+        <div class="event-route-actions"><a class="button secondary" href="https://www.google.com/maps/search/?api=1&query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/><path fill="#34A853" d="M7.1 4.1 10.3 6.5A3 3 0 0 0 9 9.3H4.7a7.3 7.3 0 0 1 2.4-5.2Z"/><path fill="#FBBC04" d="M9 9.3c0 1.1.6 2.1 1.5 2.6l-2.6 3.4c-1.7-2.3-3.2-4.5-3.2-6H9Z"/></svg><span>Google Maps ↗</span></a><a class="button secondary waze" href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/><path d="M8.6 13c1.8 1.4 4.4 1.4 6.1 0" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="17.4" r="1.8" fill="#fff" stroke="#111"/><circle cx="16.8" cy="17.2" r="1.8" fill="#fff" stroke="#111"/></svg><span>Abrir no Waze ↗</span></a></div>
+      </div>
+      <div class="event-map" aria-label="Mapa interativo do Centro de Esportes Radicais">
+        <iframe title="Mapa do Centro de Esportes Radicais" src="https://www.google.com/maps?q=Centro+de+Esportes+Radicais,+Av.+Presidente+Castelo+Branco,+5700,+S%C3%A3o+Paulo&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+        <div class="event-map-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/></svg><span>Google Maps ↗</span></a><a href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/></svg><span>Waze ↗</span></a></div>
+      </div>
+    </section>
+        <details class="ticket-more"><summary>Vídeo, programação e mapa do evento <span aria-hidden="true">+</span></summary><div class="ticket-extra-content">    <section class="event-film" aria-labelledby="event-film-title">
       <header><p class="eyebrow">Aperte o play</p><h2 id="event-film-title">Sinta o clima<br>antes de chegar.</h2><span>Carros, cultura e a energia que vai tomar São Paulo.</span></header>
       <div class="event-film-player"><iframe src="https://www.youtube-nocookie.com/embed/o_gNiwyZEzo?rel=0&amp;modestbranding=1" title="Vídeo oficial do Only Cars Meeting" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
     </section>
-
     <section class="event-countdown" data-event-countdown aria-label="Contagem regressiva para o evento">
       <header><p class="eyebrow">Contagem regressiva</p><h2>Falta pouco para<br>acender as luzes.</h2></header>
       <div>
@@ -84,25 +87,6 @@
         <article><strong data-countdown-seconds>00</strong><span>segundos</span></article>
       </div>
     </section>
-
-    <section class="event-facts" aria-label="Informações principais">
-      <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></i><span>Horário</span><strong>20h00 — 23h50</strong></article>
-      <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg></i><span>Local</span><strong>Centro de Esportes Radicais</strong><small>Bom Retiro • São Paulo/SP</small></article>
-      <article><i class="event-fact-icon event-fact-car" aria-hidden="true"><svg viewBox="0 0 32 20"><path d="M3 14.5h2.5l1.8-5.2h15.2l3.8 5.2H29v2.2h-2.2"/><path d="M9.2 16.7h11.9M9.5 9.3l3-4h6l4 4"/><circle cx="7.4" cy="16.1" r="2.3"/><circle cx="24.4" cy="16.1" r="2.3"/></svg></i><span>Ingresso Expo</span><strong>R$ 35 no Lote 1</strong><small>Lote 2: R$ 45 · Último lote e porta: R$ 60</small></article>
-      <article><i class="event-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 16 1-5h12l1 5"/><path d="M3 16h18v3H3zM8 11l1-3h6l1 3"/></svg></i><span>Atração</span><strong>Apresentação de drift</strong></article>
-      <article class="event-fact-rating"><i class="event-rating-badge" aria-hidden="true">L</i><span>Classificação</span><strong>Livre para todos os públicos</strong><small>Ingresso: compre na conta de um responsável com 18 anos ou mais</small></article>
-    </section>
-
-    <section class="event-story" id="detalhes">
-      <div>
-        <h2>Original ou mexido,<br>todos fazem parte.</h2>
-      </div>
-      <div class="event-story-copy">
-        <p>O Only Cars Meeting reúne a comunidade automotiva em uma noite dedicada a carros, cultura e experiências. Teremos uma área de exposição para projetos de diferentes estilos, apresentação de drift e um ambiente preparado para aproximar proprietários, entusiastas, marcas e apaixonados pelo universo automotivo.</p>
-        <p>Não existe seleção prévia de veículos: qualquer projeto poderá participar da exposição mediante a compra do ingresso Expo e disponibilidade de vagas.</p>
-      </div>
-    </section>
-
     <section class="event-memory event-memory-drift" aria-labelledby="event-memory-title">
       <header>
         <div>
@@ -116,7 +100,6 @@
       </div>
       <p class="drift-wall-note">Toque ou passe o cursor sobre uma foto para destacá-la.</p>
     </section>
-
     <section class="event-flow" aria-labelledby="event-flow-title" data-event-flow>
       <header><p class="eyebrow">Do site à portaria</p><h2 id="event-flow-title">Seu ingresso, sempre com você.</h2></header>
       <ol>
@@ -126,7 +109,6 @@
         <li><i>04</i><div><strong>Valide na entrada</strong><span>A equipe confere o veículo e ativa sua credencial.</span></div></li>
       </ol>
     </section>
-
     <section class="event-schedule" aria-labelledby="event-schedule-title" data-event-schedule>
       <header>
         <div><p class="eyebrow">Cronograma do evento</p><h2 id="event-schedule-title">Da abertura ao<br>último ronco.</h2></div>
@@ -155,7 +137,6 @@
         </li>
       </ol>
     </section>
-
     <section class="event-venue-map" aria-labelledby="event-venue-map-title" data-event-venue-map>
       <header>
         <p class="eyebrow">Antes de chegar</p>
@@ -171,22 +152,8 @@
           <span><i class="reference" aria-hidden="true"></i>Pontos de referência</span>
         </figcaption>
       </figure>
-    </section>
-
-    <section class="event-location">
-      <div>
-        <p class="eyebrow">Onde vai acontecer</p>
-        <h2>Centro de Esportes Radicais</h2>
-        <p>Av. Presidente Castelo Branco, 5700<br>Bom Retiro • São Paulo/SP</p>
-        <div class="event-route-actions"><a class="button secondary" href="https://www.google.com/maps/search/?api=1&query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/><path fill="#34A853" d="M7.1 4.1 10.3 6.5A3 3 0 0 0 9 9.3H4.7a7.3 7.3 0 0 1 2.4-5.2Z"/><path fill="#FBBC04" d="M9 9.3c0 1.1.6 2.1 1.5 2.6l-2.6 3.4c-1.7-2.3-3.2-4.5-3.2-6H9Z"/></svg><span>Google Maps ↗</span></a><a class="button secondary waze" href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/><path d="M8.6 13c1.8 1.4 4.4 1.4 6.1 0" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="17.4" r="1.8" fill="#fff" stroke="#111"/><circle cx="16.8" cy="17.2" r="1.8" fill="#fff" stroke="#111"/></svg><span>Abrir no Waze ↗</span></a></div>
-      </div>
-      <div class="event-map" aria-label="Mapa interativo do Centro de Esportes Radicais">
-        <iframe title="Mapa do Centro de Esportes Radicais" src="https://www.google.com/maps?q=Centro+de+Esportes+Radicais,+Av.+Presidente+Castelo+Branco,+5700,+S%C3%A3o+Paulo&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
-        <div class="event-map-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=Centro+de+Esportes+Radicais+Av+Presidente+Castelo+Branco+5700" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 2a7.3 7.3 0 0 0-7.3 7.3c0 5.2 6.2 11.8 6.5 12.1a1.1 1.1 0 0 0 1.6 0c.3-.3 6.5-6.9 6.5-12.1A7.3 7.3 0 0 0 12 2Z"/><circle cx="12" cy="9.3" r="3" fill="#4285F4"/></svg><span>Google Maps ↗</span></a><a href="https://www.waze.com/ul?q=Centro%20de%20Esportes%20Radicais%2C%20Av.%20Presidente%20Castelo%20Branco%2C%205700%2C%20S%C3%A3o%20Paulo&amp;navigate=yes" target="_blank" rel="noopener noreferrer"><svg class="event-route-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 11.1A8.8 8.8 0 0 0 3.5 8.8v2.6c0 1.8-1.2 3-2.2 3.8 1.1.7 2.3 1 3.6 1h.7a8.8 8.8 0 0 0 15.2-5.1Z" fill="#33CCFF" stroke="#111" stroke-width="1.2"/><circle cx="8.4" cy="10" r="1"/><circle cx="14.8" cy="10" r="1"/></svg><span>Waze ↗</span></a></div>
-      </div>
-    </section>
-
-    <section class="event-faq">
+    </section></div></details>
+            <section class="event-faq">
       <header><p class="eyebrow">Antes de comprar</p><h2>Perguntas rápidas.</h2></header>
       <div>
         <details><summary>Pedestre precisa comprar ingresso?<i></i></summary><p>Não. A entrada de pedestres será gratuita. O ingresso Expo é cobrado somente para o veículo.</p></details>
@@ -196,13 +163,20 @@
         <details><summary>Como solicito cancelamento ou reembolso?<i></i></summary><p>Em Minha conta, abra o ingresso e acesse “Ajuda com este ingresso”. A solicitação será analisada pela equipe antes da devolução do pagamento.</p></details>
       </div>
     </section>
-
-    <section class="event-final-cta">
-      <p class="eyebrow">Only Cars Meeting • 23.10.2026</p>
-      <h2>Prepare o carro.<br>O encontro está chegando.</h2>
-      <button class="button primary" type="button" data-event-buy disabled>Vendas em breve</button>
-      <small>Dúvidas? <a href="mailto:contato@onlycarsclub.com.br">contato@onlycarsclub.com.br</a></small>
-    </section>
+      </div>
+      <aside class="ticket-selection" id="ingressos" aria-labelledby="ticket-selection-title">
+        <h2 id="ticket-selection-title">Ingressos</h2>
+        <div class="ticket-expo-row"><span class="ticket-tag">EXPOSIÇÃO</span><h3>Ingresso Expo · Veículo</h3><p>Um veículo na exposição, com QR Code individual.</p><div class="event-current-lot"><span>Consultando lote</span><strong>—</strong></div></div>
+        <div class="event-lot-progress" data-event-lot-progress><div><span data-lot-progress-label>Consultando disponibilidade…</span><strong data-lot-progress-percent>—</strong></div><i><b data-lot-progress-bar></b></i></div>
+        <p class="ticket-sale-status" data-event-status role="status">Carregando ingressos…</p>
+        <button class="ticket-primary" type="button" data-event-buy disabled>Carregando ingressos…</button>
+        <p class="ticket-payment-note">Pagamento pelo Mercado Pago.<br>Seu ingresso fica disponível em Minha conta.</p>
+        <div class="ticket-free-row"><div><strong>Pedestres</strong><small>Não precisa comprar ingresso.</small></div><span>Grátis</span></div>
+        <a class="ticket-account-link" href="minha-conta.html">Já comprou? Acesse seu ingresso ↗</a>
+        <noscript><p>Ative o JavaScript para consultar os lotes e comprar seu ingresso.</p></noscript>
+      </aside>
+    </div>
+    <footer class="ticket-support">Dúvidas sobre o evento? <a href="mailto:contato@onlycarsclub.com.br">contato@onlycarsclub.com.br</a></footer>
   </main>
 </body>
 </html>
