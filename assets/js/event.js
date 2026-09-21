@@ -13,7 +13,7 @@
       root.querySelector(`[data-option-quantity="${kind}"]`).textContent=selected[kind];
       root.querySelector(`[data-ticket-option="${kind}"]`).classList.toggle('is-selected',selected[kind]>0);
       root.querySelector(`[data-option-price="${kind}"]`).textContent=catalog ? ((kind==='expo'||kind==='combo')&&!catalog.lot ? 'Indisponível' : model.money(catalog.prices[kind])) : '—';
-      root.querySelector(`[data-option-status="${kind}"]`).textContent=!catalog ? 'Disponibilidade não confirmada' : !catalog.enabled[kind] ? 'Indisponível no momento' : kind==='carona' ? 'Ingresso individual' : catalog.lot.name;
+      root.querySelector(`[data-option-status="${kind}"]`).textContent=!catalog ? 'Disponibilidade não confirmada' : kind!=='expo' && catalog.ridePaused ? 'Disponível em breve' : !catalog.enabled[kind] ? 'Indisponível no momento' : kind==='carona' ? 'Ingresso individual' : catalog.lot.name;
       root.querySelectorAll(`[data-quantity-kind="${kind}"]`).forEach(button=>{
         const delta=Number(button.dataset.quantityDelta);
         button.disabled=delta<0 ? selected[kind]===0 : !catalog?.enabled[kind] || count>=model.limit || (kind!=='carona' && selected.expo+selected.combo>=catalog.expoRemaining);
