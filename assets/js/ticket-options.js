@@ -18,7 +18,7 @@
     const ride = Number(event?.carona_price_cents || 18000);
     const discount = Number(event?.combo_discount_percent ?? 10);
     const expo = Number(lot?.price_cents || 0);
-    return {lot, expoRemaining, open, prices:{expo,carona:ride,combo:Math.round((expo+ride)*(100-discount)/100)},
+    return {lot, expoRemaining, open, ridePaused:event?.carona_sales_enabled===false, prices:{expo,carona:ride,combo:Math.round((expo+ride)*(100-discount)/100)},
       enabled:{expo:open && expoRemaining>0,carona:open && event?.carona_sales_enabled===true,combo:open && expoRemaining>0 && event?.carona_sales_enabled===true}};
   }
   const count = selection => kinds.reduce((n,kind)=>n+selection[kind],0);
