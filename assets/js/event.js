@@ -4,6 +4,7 @@
   const client=window.OnlySupabase, model=window.OnlyTicketOptions;
   if(!root || !model) return;
   const selected={expo:0,carona:0,combo:0};
+  const sharedCoupon=(new URLSearchParams(location.search).get('coupon')||'').trim().toUpperCase().slice(0,30);
   const buy=root.querySelector('[data-event-buy]');
   const status=root.querySelector('[data-event-status]');
   let catalog=null, retry=false;
@@ -48,6 +49,7 @@
     if(!catalog || model.validate(selected,catalog))return;
     if(oldTotal!==model.total(selected,catalog.prices)){status.textContent='O lote mudou. Confira o novo total e clique em continuar.';return;}
     const params=new URLSearchParams({event:root.dataset.eventSlug,...selected});
+    if(sharedCoupon)params.set('coupon',sharedCoupon);
     const destination=`ingresso.html?${params}`;
     const session=await client.getSession().catch(()=>null);
     if(!session){try{sessionStorage.setItem('onlycars.afterLogin',destination);}catch(_){}location.href=`login.html?next=${encodeURIComponent(destination)}`;}
