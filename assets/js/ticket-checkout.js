@@ -43,10 +43,9 @@
     root.querySelector('[data-ticket-quantity]').textContent=`${model.count(selection)} ingresso(s)`;
     root.querySelector('[data-ticket-order-description]').textContent=selection.combo?'O valor do combo já inclui 10% de desconto sobre Expo + Carona.':'Confira seus ingressos antes de pagar.';
     root.querySelector('[data-expo-photo-note]').hidden=selection.expo+selection.combo===0;
-    // XINA15 also applies to Carona and combo; other coupons remain Expo-only.
-    const rideOrder=selection.carona+selection.combo>0;
-    root.querySelector('[data-ticket-coupon]').hidden=rideOrder && sharedCoupon!=='XINA15';
-    if(rideOrder && sharedCoupon==='XINA15')couponInput.value='XINA15';
+    // Keep the coupon field visible for all modalities; only XINA15 supports rides and combo.
+    root.querySelector('[data-ticket-coupon]').hidden=false;
+    if(sharedCoupon)couponInput.value=sharedCoupon;
     clearCoupon();
   }
   async function applyCoupon(){
