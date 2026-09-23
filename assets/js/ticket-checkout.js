@@ -5,6 +5,7 @@
   const form=root.querySelector('[data-ticket-form]'),submit=root.querySelector('[data-ticket-submit]'),error=root.querySelector('[data-ticket-error]');
   const vehicles=root.querySelector('[data-ticket-vehicles]'),template=vehicles.firstElementChild.cloneNode(true);
   const selection=model.selection(location.search);
+  const sharedCoupon=(new URLSearchParams(location.search).get('coupon')||'').trim().toUpperCase().slice(0,30);
   if(!model.kinds.some(kind=>new URLSearchParams(location.search).has(kind)))selection.expo=1;
   let eventData=null,catalog=null,buyerProfile=null,appliedCoupon=null;
   const digits=value=>String(value||'').replace(/\D/g,'');
@@ -42,18 +43,23 @@
     root.querySelector('[data-ticket-quantity]').textContent=`${model.count(selection)} ingresso(s)`;
     root.querySelector('[data-ticket-order-description]').textContent=selection.combo?'O valor do combo já inclui 10% de desconto sobre Expo + Carona.':'Confira seus ingressos antes de pagar.';
     root.querySelector('[data-expo-photo-note]').hidden=selection.expo+selection.combo===0;
-    // Existing purchase coupons apply to Expo-only orders; combo already has its automatic discount.
-    root.querySelector('[data-ticket-coupon]').hidden=selection.carona+selection.combo>0;
+    // XINA15 also applies to Carona and combo; other coupons remain Expo-only.
+    const rideOrder=selection.carona+selection.combo>0;
+    root.querySelector('[data-ticket-coupon]').hidden=rideOrder && sharedCoupon!=='XINA15';
+    if(rideOrder && sharedCoupon==='XINA15')couponInput.value='XINA15';
     clearCoupon();
   }
   async function applyCoupon(){
     clearCoupon();const code=couponInput.value.trim().toUpperCase();couponInput.value=code;
     if(!code){couponFeedback.textContent='Digite o código do cupom.';return;}
-    if(!eventData||selection.carona+selection.combo>0)return;
+    if(!eventData)return;
+    if(selection.carona+selection.combo>0 && code!=='XINA15'){
+      couponFeedback.textContent='Somente XINA15 é válido para pedidos com Carona ou combo.';return;
+    }
     couponButton.disabled=true;couponFeedback.textContent='Validando cupom…';
     try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;root.querySelector('[data-ticket-coupon-label]').textContent=result.code;root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(result.discount_cents)}`;root.querySelector('[data-ticket-discount-line]').hidden=false;root.querySelector('[data-ticket-total]').textContent=model.money(result.payable_cents);couponFeedback.textContent=result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
   }
-  couponButton.addEventListener('click',applyCoupon);couponInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyCoupon();}});couponInput.addEventListener('input',()=>{if(appliedCoupon){clearCoupon();couponFeedback.textContent='Aplique novamente após alterar o código.';}});
+  couponButton.addEventListener('click',async()=>{await applyCoupon();if(sharedCoupon && appliedCoupon?.code===sharedCoupon){error.textContent='';if(catalog)submit.disabled=false;}});couponInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyCoupon();}});couponInput.addEventListener('input',()=>{if(appliedCoupon){clearCoupon();couponFeedback.textContent='Aplique novamente após alterar o código.';}});
   async function initialize(){
     try{
       if(!model.count(selection)||model.count(selection)>model.limit)throw Error('Seleção inválida. Volte ao evento para escolher seus ingressos.');
@@ -65,11 +71,19 @@
       if(!Number.isFinite(birth.getTime())||age<18)throw Error('A compra deve ser feita na conta de um responsável com 18 anos ou mais.');
       eventData=await client.publicRest('rpc/public_event_summary',{method:'POST',body:{target_slug:root.dataset.eventSlug}});catalog=model.catalog(eventData);
       const issue=model.validate(selection,catalog);if(issue)throw Error(issue);
-      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent='Opções e valores conferidos.';submit.disabled=false;
+      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent='Opções e valores conferidos.';
+      if(sharedCoupon){couponInput.value=sharedCoupon;await applyCoupon();
+        if(appliedCoupon?.code!==sharedCoupon){
+          error.textContent='Não foi possível aplicar o cupom do link. Confira o código antes de continuar.';
+          submit.disabled=true;return;
+        }
+      }
+      submit.disabled=false;
     }catch(e){error.textContent=e.message||'Não foi possível carregar os ingressos. Atualize a página para tentar novamente.';root.querySelector('[data-ticket-loading]').textContent='Compra indisponível. Confira a mensagem abaixo do formulário.';}
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();if(!catalog||submit.disabled||!form.reportValidity())return;
+    if(sharedCoupon && appliedCoupon?.code!==sharedCoupon){error.textContent='Aplique o cupom XINA15 antes de prosseguir.';return;}
     const buyer={name:form.elements.buyer_name.value.trim(),tax_id:digits(form.elements.buyer_tax_id.value),phone:digits(form.elements.buyer_phone.value)};
     const tickets=[...vehicles.querySelectorAll('[data-ticket-vehicle]')].map(card=>{
       const other=card.querySelector('[data-ticket-other-holder]').checked;
