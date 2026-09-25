@@ -23,7 +23,7 @@
       ['name','tax-id','phone'].forEach(field=>{const input=card.querySelector(`[data-ticket-holder-${field}]`);input.name=`holder_${field.replace('-','_')}_${index}`;input.required=false;input.disabled=true;});
       const vehicleFields=card.querySelector('.ticket-vehicle-fields');vehicleFields.hidden=kind==='carona';
       vehicleFields.querySelectorAll('input').forEach(input=>{input.disabled=kind==='carona';input.required=kind!=='carona'&&input.name!=='instagram_handle';});
-      const note=document.createElement('p');note.className='ticket-kind-note';note.textContent=kind==='carona'?'Informe o participante da Carona. Não é necessário cadastrar veículo.':kind==='combo'?'A Carona deste combo será utilizada pelo titular informado abaixo.':'Cadastre o veículo que entrará na exposição.';
+      const note=document.createElement('p');note.className='ticket-kind-note';note.textContent=kind==='carona'?'Informe o participante. O carro e o piloto da Carona Radical serão definidos pela organização na hora. Não é necessário cadastrar veículo.':kind==='combo'?'Cadastre apenas o veículo da exposição. O carro e o piloto da Carona serão definidos pela organização na hora.':'Cadastre o veículo que entrará na exposição.';
       card.querySelector('legend').after(note);vehicles.append(card);
     }});
   }
