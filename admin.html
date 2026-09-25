@@ -23,13 +23,13 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260825-ticket-holders-v127">
-  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260909-finalizacao-v2">
+  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260925-gestao-cupons-v1">
   <link rel="stylesheet" href="assets/css/admin-clean.css?v=20260817-qa-badge-v5">
   <script src="assets/js/main.js?v=20260825-promo-header-v148" defer></script>
   <script src="assets/js/supabase-client.js?v=20260815-ticket-media-v126" defer></script>
   <script src="assets/js/admin.js?v=20260817-qa-badge-v142" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
-  <script src="assets/js/admin-event-tools.js?v=20260909-finalizacao-v2" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260925-gestao-cupons-v1" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -152,7 +152,11 @@
           <div class="admin-section-heading admin-events-heading"><div><p class="eyebrow">Eventos e portaria</p><h2 data-admin-events-title>Seus eventos</h2><p data-admin-events-description>Escolha um evento para abrir o leitor, os números e a atividade daquela edição.</p></div><div class="admin-events-heading-actions"><button type="button" data-admin-event-back hidden>← Voltar aos eventos</button><button type="button" data-ticket-refresh>Atualizar</button></div></div>
           <div class="admin-event-selector" data-admin-event-selector></div>
           <div data-admin-event-gate hidden>
-          <nav class="admin-event-view-nav" aria-label="Áreas do evento"><button type="button" class="active" data-event-view-button="gate"><strong>Portaria</strong><span>Leitor e movimentações</span></button><button type="button" data-event-view-button="management"><strong>Gestão do evento</strong><span>Vendas, cupons e conteúdo</span></button></nav>
+          <nav class="admin-event-view-nav" aria-label="Áreas do evento">
+            <button type="button" class="active" data-event-view-button="gate" aria-pressed="true"><strong>Portaria</strong><span>Leitor e movimentações</span></button>
+            <button type="button" data-event-view-button="management" aria-pressed="false"><strong>Gestão do evento</strong><span>Vendas e conteúdo</span></button>
+            <button type="button" data-event-view-button="coupons" aria-pressed="false"><strong>Cupons</strong><span>Campanhas e receita</span></button>
+          </nav>
           <div class="admin-ticket-stats" data-event-view="management" hidden>
             <article><span>Ingressos ativos</span><strong data-ticket-stat-active>0</strong><small>aptos para o evento</small></article>
             <article><span>Dentro do evento</span><strong data-ticket-stat-inside>0</strong><small>entrada já registrada</small></article>
@@ -160,7 +164,43 @@
             <article><span>Ingressos vendidos</span><strong data-ticket-stat-sold>0</strong><small>pagamentos aprovados</small></article>
             <article><span>Faturamento líquido</span><strong data-ticket-stat-revenue>R$ 0,00</strong><small data-ticket-stat-discount>R$ 0,00 em descontos</small></article>
           </div>
-          <section class="admin-coupons" data-event-view="management" hidden><header><div><p class="eyebrow">Vendas</p><h3>Cupons de ingresso</h3><span>Crie campanhas e acompanhe usos, receita e descontos.</span></div><button type="button" class="primary" data-new-ticket-coupon>Novo cupom</button></header><form data-ticket-coupon-form hidden><input type="hidden" name="coupon_id"><div class="admin-coupon-fields"><label>Código<input name="code" required maxlength="30" placeholder="EX.: ONLY10"></label><label>Descrição<input name="description" maxlength="120" placeholder="Campanha ou parceiro"></label><label>Tipo<select name="discount_type"><option value="percent">Porcentagem</option><option value="fixed">Valor em reais</option></select></label><label>Desconto<input name="discount_value" type="number" min="1" step="1" required></label><label>Limite total<input name="max_redemptions" type="number" min="1" placeholder="Sem limite"></label><label>Por pessoa<input name="max_redemptions_per_user" type="number" min="1" value="1" required></label><label>Início<input name="starts_at" type="datetime-local"></label><label>Fim<input name="ends_at" type="datetime-local"></label></div><label class="admin-coupon-active"><input name="active" type="checkbox" checked> Cupom ativo</label><footer><button type="button" data-cancel-ticket-coupon>Cancelar</button><button type="submit" class="primary">Salvar cupom</button></footer></form><p data-ticket-coupon-admin-feedback role="status"></p><div data-ticket-coupons></div></section>
+          <section class="admin-coupons" data-event-view="coupons" hidden>
+            <header>
+              <div>
+                <p class="eyebrow">Configurações do evento</p>
+                <h3>Gerenciamento de cupons</h3>
+                <span>Crie campanhas para <strong data-coupon-event-name>este evento</strong> e acompanhe o resultado de cada código.</span>
+              </div>
+              <button type="button" class="primary" data-new-ticket-coupon>+ Criar cupom</button>
+            </header>
+            <div class="admin-coupon-overview" data-ticket-coupon-overview aria-live="polite"></div>
+            <div class="admin-coupon-toolbar">
+              <div class="admin-coupon-filters" role="group" aria-label="Filtrar cupons">
+                <button type="button" class="active" aria-pressed="true" data-ticket-coupon-filter="current">Atuais</button>
+                <button type="button" aria-pressed="false" data-ticket-coupon-filter="archived">Excluídos</button>
+                <button type="button" aria-pressed="false" data-ticket-coupon-filter="all">Todos</button>
+              </div>
+              <small>Usos e receita consideram apenas pedidos pagos. Exclusões preservam o histórico.</small>
+            </div>
+            <form data-ticket-coupon-form hidden>
+              <div class="admin-coupon-form-heading"><h4 data-ticket-coupon-form-title>Novo cupom</h4><p>Cupons são válidos para as modalidades disponíveis deste evento. No combo, o desconto é adicional ao desconto automático.</p></div>
+              <input type="hidden" name="coupon_id">
+              <div class="admin-coupon-fields">
+                <label>Código<input name="code" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_-]{3,30}" autocomplete="off" spellcheck="false" placeholder="EX.: ONLY10"></label>
+                <label>Descrição<input name="description" maxlength="120" placeholder="Ex.: Campanha de parceiro"></label>
+                <label>Tipo de desconto<select name="discount_type"><option value="percent">Porcentagem (%)</option><option value="fixed">Valor em reais (R$)</option></select></label>
+                <label><span data-ticket-coupon-discount-label>Desconto (%)</span><input name="discount_value" type="number" min="1" max="100" step="1" required></label>
+                <label>Usos totais<input name="max_redemptions" type="number" min="1" step="1" placeholder="Sem limite"></label>
+                <label>Usos por pessoa<input name="max_redemptions_per_user" type="number" min="1" step="1" value="1" required></label>
+                <label>Início<input name="starts_at" type="datetime-local"></label>
+                <label>Fim<input name="ends_at" type="datetime-local"></label>
+              </div>
+              <label class="admin-coupon-active"><input name="active" type="checkbox" checked> Deixar cupom ativo</label>
+              <footer><button type="button" data-cancel-ticket-coupon>Cancelar</button><button type="submit" class="primary">Salvar cupom</button></footer>
+            </form>
+            <p data-ticket-coupon-admin-feedback role="status" aria-live="polite"></p>
+            <div data-ticket-coupons></div>
+          </section>
           <section class="admin-ticket-sales" data-event-view="management" hidden><header><div><p class="eyebrow">Participantes</p><h3>Ingressos vendidos</h3><span>Resumo completo de pagamentos, veículos, cupons e fotos.</span></div><div class="admin-ticket-sales-filters"><label>Modalidade<select data-ticket-sales-kind><option value="all">Todas as modalidades</option><option value="expo">Expo</option><option value="carona">Carona Radical</option><option value="combo">Expo + Carona</option></select></label><label>Buscar ingresso<input type="search" data-ticket-sales-search placeholder="Nome, placa ou ingresso"></label></div></header><p data-ticket-sales-count role="status" aria-live="polite"></p><p data-ticket-sales-feedback role="status"></p><div data-ticket-sales-list></div></section>
           <div class="admin-ticket-layout" data-event-view="gate">
             <section class="admin-scanner-card">
