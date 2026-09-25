@@ -264,35 +264,120 @@
     if (qs("[data-scanner-stop]")) qs("[data-scanner-stop]").disabled = true;
   }
 
+
   let ticketCoupons = [];
+  let couponFilter = "current";
   let ticketSales = [];
-  const localDateTime = (value) => value ? new Date(value).toISOString().slice(0,16) : "";
+  const localDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    const pad = (number) => String(number).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+  const couponState = (coupon) => {
+    if (coupon.archived_at) return ["archived", "Excluído"];
+    if (!coupon.active) return ["inactive", "Inativo"];
+    const now = Date.now();
+    if (coupon.starts_at && new Date(coupon.starts_at).getTime() > now) return ["upcoming", "Programado"];
+    if (coupon.ends_at && new Date(coupon.ends_at).getTime() <= now) return ["expired", "Expirado"];
+    if (coupon.max_redemptions != null && Number(coupon.paid_uses || 0) + Number(coupon.reserved_uses || 0) >= Number(coupon.max_redemptions)) return ["exhausted", "Esgotado"];
+    return ["active", "Ativo"];
+  };
+
+  function updateCouponValueField() {
+    const form = qs("[data-ticket-coupon-form]");
+    if (!form) return;
+    const fixed = form.elements.discount_type.value === "fixed";
+    const input = form.elements.discount_value;
+    const label = qs("[data-ticket-coupon-discount-label]", form);
+    input.min = "1";
+    input.step = fixed ? "0.01" : "1";
+    if (fixed) input.removeAttribute("max"); else input.max = "100";
+    if (label) label.textContent = fixed ? "Desconto (R$)" : "Desconto (%)";
+  }
 
   function openCouponForm(coupon = null) {
+    if (coupon?.archived_at) return;
     const form = qs("[data-ticket-coupon-form]");
-    form.hidden = false;
+    if (!form) return;
     form.reset();
     form.elements.coupon_id.value = coupon?.id || "";
     form.elements.code.value = coupon?.code || "";
     form.elements.description.value = coupon?.description || "";
     form.elements.discount_type.value = coupon?.discount_type || "percent";
     form.elements.discount_value.value = coupon ? (coupon.discount_type === "fixed" ? Number(coupon.discount_value) / 100 : coupon.discount_value) : 10;
-    form.elements.max_redemptions.value = coupon?.max_redemptions || "";
-    form.elements.max_redemptions_per_user.value = coupon?.max_redemptions_per_user || 1;
+    form.elements.max_redemptions.value = coupon?.max_redemptions ?? "";
+    form.elements.max_redemptions_per_user.value = coupon?.max_redemptions_per_user ?? 1;
     form.elements.starts_at.value = localDateTime(coupon?.starts_at);
     form.elements.ends_at.value = localDateTime(coupon?.ends_at);
     form.elements.active.checked = coupon?.active ?? true;
+    qs("[data-ticket-coupon-form-title]", form).textContent = coupon ? `Editar cupom ${coupon.code}` : "Criar novo cupom";
+    qs("[data-ticket-coupon-admin-feedback]").textContent = "";
+    updateCouponValueField();
+    form.hidden = false;
     form.scrollIntoView({ behavior:"smooth", block:"center" });
   }
 
-  async function loadTicketCoupons() {
-    if (!selectedEventId || !qs("[data-ticket-coupons]")) return;
+  function renderTicketCoupons() {
     const root = qs("[data-ticket-coupons]");
+    const overview = qs("[data-ticket-coupon-overview]");
+    if (!root || !overview) return;
+    const current = ticketCoupons.filter((coupon) => !coupon.archived_at);
+    const paidUses = ticketCoupons.reduce((total, coupon) => total + Number(coupon.paid_uses || 0), 0);
+    const paidTickets = ticketCoupons.reduce((total, coupon) => total + Number(coupon.paid_tickets || 0), 0);
+    const revenue = ticketCoupons.reduce((total, coupon) => total + Number(coupon.revenue_cents || 0), 0);
+    const discount = ticketCoupons.reduce((total, coupon) => total + Number(coupon.discount_granted_cents || 0), 0);
+    const active = current.filter((coupon) => couponState(coupon)[0] === "active").length;
+    overview.innerHTML =
+      `<article><span>Cupons ativos</span><strong>${active}</strong><small>${current.length} cadastrados neste evento</small></article>` +
+      `<article><span>Usos pagos</span><strong>${paidUses.toLocaleString("pt-BR")}</strong><small>${paidTickets.toLocaleString("pt-BR")} ingresso(s) vendidos com cupom</small></article>` +
+      `<article><span>Receita com cupons</span><strong>${money(revenue)}</strong><small>Pedidos pagos · inclusive campanhas excluídas</small></article>` +
+      `<article><span>Descontos concedidos</span><strong>${money(discount)}</strong><small>Em pedidos pagos</small></article>`;
+    qsa("[data-ticket-coupon-filter]").forEach((button) => {
+      const activeFilter = button.dataset.ticketCouponFilter === couponFilter;
+      button.classList.toggle("active", activeFilter);
+      button.setAttribute("aria-pressed", String(activeFilter));
+    });
+    const rows = ticketCoupons.filter((coupon) => couponFilter === "all" || (couponFilter === "archived" ? Boolean(coupon.archived_at) : !coupon.archived_at));
+    root.innerHTML = rows.length
+      ? `<div class="admin-coupon-list">${rows.map((coupon) => {
+        const [state, stateLabel] = couponState(coupon);
+        const paid = Number(coupon.paid_uses || 0);
+        const pending = Number(coupon.reserved_uses || 0);
+        const tickets = Number(coupon.paid_tickets || 0);
+        const discountLabel = coupon.discount_type === "percent" ? `${coupon.discount_value}%` : money(coupon.discount_value);
+        const limitLabel = coupon.max_redemptions == null ? "Sem limite de usos" : `${paid + pending} / ${coupon.max_redemptions} usos comprometidos`;
+        const dateLabel = coupon.ends_at ? `Até ${dateTime(coupon.ends_at)}` : "Sem vencimento";
+        const actions = coupon.archived_at
+          ? `<button type="button" data-restore-ticket-coupon>Restaurar</button>`
+          : `<button type="button" data-edit-ticket-coupon>Editar</button><button type="button" data-toggle-ticket-coupon="${coupon.active ? "false" : "true"}">${coupon.active ? "Desativar" : "Ativar"}</button><button type="button" data-archive-ticket-coupon>Excluir</button>`;
+        return `<article class="admin-coupon-card" data-coupon-id="${escapeHtml(coupon.id)}" data-active="${Boolean(coupon.active)}" data-archived="${Boolean(coupon.archived_at)}">
+          <div><span data-status="${state}">${stateLabel}</span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description || "Sem descrição")} · ${dateLabel}</small></div>
+          <div><span>Desconto</span><strong>${discountLabel}</strong><small>${limitLabel}</small></div>
+          <div><span>Usos pagos</span><strong>${paid.toLocaleString("pt-BR")}</strong><small>${tickets} ingresso(s) · ${pending} reserva(s) pendentes</small></div>
+          <div><span>Receita gerada</span><strong>${money(coupon.revenue_cents)}</strong><small>${money(coupon.discount_granted_cents)} em descontos</small></div>
+          <div class="admin-coupon-card-actions">${actions}</div>
+        </article>`;
+      }).join("")}</div>`
+      : `<div class="admin-coupon-empty"><strong>${couponFilter === "archived" ? "Nenhum cupom excluído." : "Nenhum cupom por aqui."}</strong>${couponFilter === "archived" ? "Os cupons excluídos aparecerão aqui, com seus resultados históricos." : "Crie um cupom para iniciar uma campanha neste evento."}</div>`;
+  }
+
+  async function loadTicketCoupons() {
+    const eventId = selectedEventId;
+    const root = qs("[data-ticket-coupons]");
+    if (!eventId || !root) return;
+    root.innerHTML = '<div class="admin-coupon-empty">Carregando cupons...</div>';
     try {
-      ticketCoupons = await client.rest("rpc/admin_ticket_purchase_coupons", { method:"POST", body:{ p_event_id:selectedEventId } }) || [];
-      root.innerHTML = ticketCoupons.length ? `<div class="admin-coupon-list">${ticketCoupons.map((coupon) => `<article class="admin-coupon-card" data-coupon-id="${escapeHtml(coupon.id)}" data-active="${coupon.active}"><div><span>Código</span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description || (coupon.active ? "Ativo" : "Inativo"))}</small></div><div><span>Desconto</span><strong>${coupon.discount_type === "percent" ? `${coupon.discount_value}%` : money(coupon.discount_value)}</strong><small>${coupon.max_redemptions ? `${Number(coupon.paid_uses || 0)}/${coupon.max_redemptions} usos pagos` : `${Number(coupon.paid_uses || 0)} usos pagos`}</small></div><div><span>Receita gerada</span><strong>${money(coupon.revenue_cents)}</strong><small>${money(coupon.discount_granted_cents)} concedidos</small></div><div><span>Validade</span><strong>${coupon.ends_at ? dateTime(coupon.ends_at) : "Sem vencimento"}</strong><small>${Number(coupon.reserved_uses || 0)} reservados agora</small></div><div class="admin-coupon-card-actions"><button type="button" data-edit-ticket-coupon>Editar</button><button type="button" data-toggle-ticket-coupon="${coupon.active ? "false" : "true"}">${coupon.active ? "Desativar" : "Ativar"}</button></div></article>`).join("")}</div>` : '<div class="admin-ticket-activity-empty">Nenhum cupom criado para este evento.</div>';
-      qs("[data-ticket-coupon-admin-feedback]").textContent = "";
-    } catch (loadError) { root.innerHTML = ""; qs("[data-ticket-coupon-admin-feedback]").textContent = loadError.message || "Não foi possível carregar os cupons."; }
+      const result = await client.rest("rpc/admin_ticket_purchase_coupons_v2", { method:"POST", body:{ p_event_id:eventId } });
+      if (selectedEventId !== eventId) return;
+      ticketCoupons = Array.isArray(result) ? result : [];
+      renderTicketCoupons();
+    } catch (error) {
+      if (selectedEventId !== eventId) return;
+      root.innerHTML = "";
+      qs("[data-ticket-coupon-admin-feedback]").textContent = error.message || "Não foi possível carregar os cupons.";
+    }
   }
 
   function renderTicketSales(query = "") {
@@ -313,13 +398,18 @@
   }
 
   function switchEventView(view) {
-    const management = view === "management";
     qsa("[data-event-view]").forEach((section) => { section.hidden = section.dataset.eventView !== view; });
-    qsa("[data-event-view-button]").forEach((button) => button.classList.toggle("active", button.dataset.eventViewButton === view));
-    qs("[data-admin-events-description]").textContent = management
-      ? "Indicadores, cupons, conteúdo e atendimento desta edição."
+    qsa("[data-event-view-button]").forEach((button) => {
+      const active = button.dataset.eventViewButton === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    qs("[data-admin-events-description]").textContent = view === "coupons"
+      ? "Crie, edite e acompanhe as campanhas de cupons desta edição."
+      : view === "management" ? "Indicadores, ingressos, conteúdo e atendimento desta edição."
       : "Modo portaria: leitor, ingresso consultado e movimentações recentes.";
-    if (management) stopScanner();
+    if (view !== "gate") stopScanner();
+    if (view === "coupons" && selectedEventId) loadTicketCoupons();
   }
 
   async function loadTicketStats() {
