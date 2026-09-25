@@ -77,7 +77,7 @@ begin
   end if;
   return saved_id;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.admin_toggle_ticket_purchase_coupon(p_id uuid, p_active boolean)
  RETURNS boolean
@@ -91,7 +91,7 @@ begin
   if not found then raise exception 'Cupom não encontrado.'; end if;
   return p_active;
 end;
-$function$
+$function$;
 
 -- All newly created event coupons work for Expo, Carona and combo; payment amount remains server-calculated.
 CREATE OR REPLACE FUNCTION public.service_reserve_typed_tickets(p_user_id uuid, p_event_slug text, p_lot_id uuid, p_buyer jsonb, p_tickets jsonb, p_coupon_code text DEFAULT NULL::text, p_expected_subtotal integer DEFAULT NULL::integer)
@@ -147,7 +147,7 @@ begin
   values(order_id,e.id,p_user_id,token,encode(extensions.digest(convert_to(token,'UTF8'),'sha256'),'hex'),'reserved',left(item->>'driver_name',120),item->>'driver_tax_id',item->>'driver_phone',case when kind='carona' then '' else upper(regexp_replace(item->>'vehicle_plate','[^A-Za-z0-9]','','g')) end,case when kind='carona' then '' else left(item->>'vehicle_make',60) end,case when kind='carona' then '' else left(item->>'vehicle_model',80) end,nullif(left(item->>'instagram_handle',40),''),kind,item_prices[i]);
  end loop;
  return jsonb_build_object('order_id',order_id,'total_cents',payable,'subtotal_cents',subtotal,'coupon_code',coupon->>'code','ticket_count',qty,'event_name',e.name);
-end $function$
+end $function$;
 
 REVOKE ALL ON FUNCTION public.admin_ticket_purchase_coupons_v2(uuid) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.admin_archive_ticket_purchase_coupon(uuid,uuid) FROM PUBLIC,anon,authenticated;
