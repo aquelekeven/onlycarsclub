@@ -510,6 +510,12 @@
         const button = clickEvent.target.closest("[data-gate-event]");
         if (!button) return;
         selectedEventId = button.dataset.gateEvent;
+        couponFilter = "current";
+        ticketCoupons = [];
+        qs("[data-ticket-coupon-form]").hidden = true;
+        qs("[data-ticket-coupon-admin-feedback]").textContent = "";
+        const couponEventLabel = qs("[data-coupon-event-name]");
+        if (couponEventLabel) couponEventLabel.textContent = button.dataset.gateEventName || "este evento";
         qsa("[data-gate-event]", root).forEach((item) => item.classList.toggle("active", item === button));
         panel?.classList.add("is-event-open");
         qs("[data-admin-events-title]").textContent = button.dataset.gateEventName || "Operação do evento";
@@ -541,25 +547,84 @@
     qsa("[data-event-view-button]").forEach((button) => button.addEventListener("click", () => switchEventView(button.dataset.eventViewButton)));
     qs("[data-new-ticket-coupon]")?.addEventListener("click", () => openCouponForm());
     qs("[data-cancel-ticket-coupon]")?.addEventListener("click", () => { qs("[data-ticket-coupon-form]").hidden = true; });
+    qs("[data-ticket-coupon-form]")?.elements.discount_type.addEventListener("change", updateCouponValueField);
+    qsa("[data-ticket-coupon-filter]").forEach((button) => button.addEventListener("click", () => {
+      couponFilter = button.dataset.ticketCouponFilter;
+      renderTicketCoupons();
+    }));
     qs("[data-ticket-coupon-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = event.currentTarget, data = new FormData(form), feedback = qs("[data-ticket-coupon-admin-feedback]");
+      const submitButton = form.querySelector('[type="submit"]');
+      const eventId = selectedEventId;
+      if (!eventId) return;
       const type = String(data.get("discount_type"));
       const rawValue = Number(data.get("discount_value"));
-      feedback.textContent = "Salvando cupom...";
+      const code = String(data.get("code") || "").trim().toUpperCase();
+      const start = data.get("starts_at") ? new Date(String(data.get("starts_at"))) : null;
+      const end = data.get("ends_at") ? new Date(String(data.get("ends_at"))) : null;
       try {
-        await client.rest("rpc/admin_save_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:selectedEventId, p_id:data.get("coupon_id") || null, p_code:String(data.get("code") || "").trim().toUpperCase(), p_description:String(data.get("description") || "").trim() || null, p_discount_type:type, p_discount_value:type === "fixed" ? Math.round(rawValue * 100) : Math.round(rawValue), p_max_redemptions:data.get("max_redemptions") ? Number(data.get("max_redemptions")) : null, p_max_redemptions_per_user:Number(data.get("max_redemptions_per_user") || 1), p_starts_at:data.get("starts_at") ? new Date(String(data.get("starts_at"))).toISOString() : null, p_ends_at:data.get("ends_at") ? new Date(String(data.get("ends_at"))).toISOString() : null, p_active:data.get("active") === "on" } });
-        form.hidden = true; feedback.textContent = "Cupom salvo com sucesso."; await loadTicketCoupons();
-      } catch (saveError) { feedback.textContent = saveError.message || "Não foi possível salvar o cupom."; }
+        if (!/^[A-Z0-9_-]{3,30}$/.test(code)) throw Error("O código deve ter 3 a 30 letras, números, hífen ou underline.");
+        if (type === "percent" && (!Number.isInteger(rawValue) || rawValue < 1 || rawValue > 100)) throw Error("Informe um percentual inteiro de 1% a 100%.");
+        if (type === "fixed" && (!Number.isFinite(rawValue) || rawValue < 1)) throw Error("O desconto fixo deve ser de pelo menos R$ 1,00.");
+        if (start && !Number.isFinite(start.getTime()) || end && !Number.isFinite(end.getTime())) throw Error("Confira a data de início e de término.");
+        if (start && end && end <= start) throw Error("O término deve ser posterior ao início.");
+        const maxUses = data.get("max_redemptions") ? Number(data.get("max_redemptions")) : null;
+        const perUser = Number(data.get("max_redemptions_per_user") || 1);
+        if (maxUses !== null && (!Number.isSafeInteger(maxUses) || maxUses < 1) || !Number.isSafeInteger(perUser) || perUser < 1) throw Error("Informe limites inteiros maiores que zero.");
+        submitButton.disabled = true;
+        feedback.textContent = "Salvando cupom...";
+        await client.rest("rpc/admin_save_ticket_purchase_coupon", { method:"POST", body:{
+          p_event_id:eventId, p_id:data.get("coupon_id") || null, p_code:code,
+          p_description:String(data.get("description") || "").trim() || null,
+          p_discount_type:type,
+          p_discount_value:type === "fixed" ? Math.round(rawValue * 100) : rawValue,
+          p_max_redemptions:maxUses, p_max_redemptions_per_user:perUser,
+          p_starts_at:start ? start.toISOString() : null, p_ends_at:end ? end.toISOString() : null,
+          p_active:data.get("active") === "on"
+        } });
+        if (eventId !== selectedEventId) return;
+        form.hidden = true;
+        await loadTicketCoupons();
+        feedback.textContent = `Cupom ${code} salvo com sucesso.`;
+      } catch (saveError) {
+        feedback.textContent = saveError.message || "Não foi possível salvar o cupom.";
+      } finally {
+        submitButton.disabled = false;
+      }
     });
     qs("[data-ticket-coupons]")?.addEventListener("click", async (event) => {
-      const card = event.target.closest("[data-coupon-id]"); if (!card) return;
-      const coupon = ticketCoupons.find((item) => item.id === card.dataset.couponId); if (!coupon) return;
-      if (event.target.closest("[data-edit-ticket-coupon]")) return openCouponForm(coupon);
-      const toggle = event.target.closest("[data-toggle-ticket-coupon]"); if (!toggle) return;
-      toggle.disabled = true;
-      try { await client.rest("rpc/admin_toggle_ticket_purchase_coupon", { method:"POST", body:{ p_id:coupon.id, p_active:toggle.dataset.toggleTicketCoupon === "true" } }); await loadTicketCoupons(); }
-      catch (toggleError) { qs("[data-ticket-coupon-admin-feedback]").textContent = toggleError.message || "Não foi possível atualizar o cupom."; toggle.disabled = false; }
+      const button = event.target.closest("button"), card = button?.closest("[data-coupon-id]");
+      if (!card || !selectedEventId) return;
+      const coupon = ticketCoupons.find((item) => item.id === card.dataset.couponId);
+      if (!coupon) return;
+      if (button.hasAttribute("data-edit-ticket-coupon")) return openCouponForm(coupon);
+      const isArchive = button.hasAttribute("data-archive-ticket-coupon");
+      const isRestore = button.hasAttribute("data-restore-ticket-coupon");
+      const isToggle = button.hasAttribute("data-toggle-ticket-coupon");
+      if (!isArchive && !isRestore && !isToggle) return;
+      if (isArchive && !window.confirm(`Excluir o cupom ${coupon.code}? Ele deixará de aceitar novas compras. Usos e receita serão preservados no histórico, e você poderá restaurá-lo depois.`)) return;
+      const eventId = selectedEventId;
+      button.disabled = true;
+      const feedback = qs("[data-ticket-coupon-admin-feedback]");
+      feedback.textContent = isArchive ? "Excluindo cupom..." : isRestore ? "Restaurando cupom..." : "Atualizando cupom...";
+      try {
+        if (isArchive) {
+          await client.rest("rpc/admin_archive_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:eventId, p_id:coupon.id } });
+          const form = qs("[data-ticket-coupon-form]");
+          if (form?.elements.coupon_id.value === coupon.id) form.hidden = true;
+        } else if (isRestore) {
+          await client.rest("rpc/admin_restore_ticket_purchase_coupon", { method:"POST", body:{ p_event_id:eventId, p_id:coupon.id } });
+        } else {
+          await client.rest("rpc/admin_toggle_ticket_purchase_coupon", { method:"POST", body:{ p_id:coupon.id, p_active:button.dataset.toggleTicketCoupon === "true" } });
+        }
+        if (eventId !== selectedEventId) return;
+        await loadTicketCoupons();
+        feedback.textContent = isArchive ? "Cupom excluído. Histórico de vendas preservado." : isRestore ? "Cupom restaurado como inativo. Ative-o para liberar novas compras." : "Cupom atualizado.";
+      } catch (couponError) {
+        feedback.textContent = couponError.message || "Não foi possível atualizar o cupom.";
+        button.disabled = false;
+      }
     });
     qs("[data-refund-requests]")?.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-refund-status]");
@@ -614,6 +679,9 @@
     qs("[data-admin-event-back]")?.addEventListener("click", () => {
       stopScanner();
       selectedEventId = null;
+      ticketCoupons = [];
+      couponFilter = "current";
+      qs("[data-ticket-coupon-form]").hidden = true;
       currentTicket = null;
       confirmationPhotos = [];
       lastToken = "";
