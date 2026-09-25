@@ -43,7 +43,7 @@
     root.querySelector('[data-ticket-quantity]').textContent=`${model.count(selection)} ingresso(s)`;
     root.querySelector('[data-ticket-order-description]').textContent=selection.combo?'O valor do combo já inclui 10% de desconto sobre Expo + Carona.':'Confira seus ingressos antes de pagar.';
     root.querySelector('[data-expo-photo-note]').hidden=selection.expo+selection.combo===0;
-    // Keep the coupon field visible for all modalities; only XINA15 supports rides and combo.
+    // All event coupons can be applied to Expo, Carona and combo; server verifies the payable total.
     root.querySelector('[data-ticket-coupon]').hidden=false;
     if(sharedCoupon)couponInput.value=sharedCoupon;
     clearCoupon();
@@ -52,9 +52,6 @@
     clearCoupon();const code=couponInput.value.trim().toUpperCase();couponInput.value=code;
     if(!code){couponFeedback.textContent='Digite o código do cupom.';return;}
     if(!eventData)return;
-    if(selection.carona+selection.combo>0 && code!=='XINA15'){
-      couponFeedback.textContent='Somente XINA15 é válido para pedidos com Carona ou combo.';return;
-    }
     couponButton.disabled=true;couponFeedback.textContent='Validando cupom…';
     try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;root.querySelector('[data-ticket-coupon-label]').textContent=result.code;root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(result.discount_cents)}`;root.querySelector('[data-ticket-discount-line]').hidden=false;root.querySelector('[data-ticket-total]').textContent=model.money(result.payable_cents);couponFeedback.textContent=result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
   }
