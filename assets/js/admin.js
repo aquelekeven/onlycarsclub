@@ -740,6 +740,7 @@
     content.hidden = false;
     document.body.classList.remove("admin-access-pending");
     bindInteractions();
+    document.dispatchEvent(new CustomEvent("only:admin-ready", {detail:{user}}));
 
     try {
       await loadData();

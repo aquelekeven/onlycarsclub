@@ -25,11 +25,14 @@
   <link rel="stylesheet" href="assets/css/style.css?v=20260825-ticket-holders-v127">
   <link rel="stylesheet" href="assets/css/admin-events.css?v=20260925-gestao-cupons-v1">
   <link rel="stylesheet" href="assets/css/admin-clean.css?v=20260817-qa-badge-v5">
-  <script src="assets/js/main.js?v=20260825-promo-header-v148" defer></script>
+  <script src="assets/js/main.js?v=20260927-club" defer></script>
   <script src="assets/js/supabase-client.js?v=20260815-ticket-media-v126" defer></script>
-  <script src="assets/js/admin.js?v=20260817-qa-badge-v142" defer></script>
+  <script src="assets/js/admin.js?v=20260927-club" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
   <script src="assets/js/admin-event-tools.js?v=20260925-gestao-cupons-v1" defer></script>
+  <script src="assets/js/club-config.js?v=20260927" ></script>
+  <link rel="stylesheet" href="assets/css/club.css?v=20260927">
+<script src="assets/js/club.js?v=20260927" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -41,7 +44,7 @@
   <main class="admin-page">
     <div class="admin-shell">
       <section class="account-state" data-admin-loading>
-        <strong>Carregando o painel...</strong><span>Validando seu acesso de administrador.</span>
+        <div class="only-ignition" role="status" aria-live="polite"><div class="only-ignition-dial" aria-hidden="true"></div><div class="only-ignition-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong>Preparando o próximo rolê.</strong><span>Ajustando os espelhos. Já vamos sair.</span></div>
       </section>
 
       <div data-admin-content hidden>
@@ -58,9 +61,12 @@
           <button type="button" data-admin-tab="inventory"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></svg></i><span>Estoque</span></button>
           <button type="button" data-admin-tab="reports"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></i><span>Relatórios</span></button>
           <button type="button" data-admin-tab="tickets"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 6v12M12 10h4M12 14h3"/></svg></i><span>Eventos</span></button>
+          <button type="button" data-admin-tab="loyalty"><i aria-hidden="true">★</i><span>Fidelidade</span></button><button type="button" data-admin-tab="users" data-owner-only hidden><i aria-hidden="true">◎</i><span>Administradores</span></button>
           <a href="loja.html"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-9 9M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></i><span>Ver loja</span></a>
         </nav>
 
+        <section class="admin-panel" data-admin-panel="users" hidden><div class="admin-section-heading"><div><p class="eyebrow">Acesso exclusivo · proprietário</p><h2>Usuários e administradores</h2><p>Gerencie quem ajuda a cuidar do Only. Sua conta permanece protegida.</p></div></div><label for="club-user-search">Buscar por nome ou e-mail</label><input class="club-search" id="club-user-search" data-club-user-search type="search" maxlength="120" placeholder="Encontre uma pessoa"><p data-club-users-status role="status"></p><div class="club-user-list" data-club-users></div><div><button class="club-button club-secondary" type="button" data-club-users-prev>Anterior</button> <button class="club-button club-secondary" type="button" data-club-users-next>Próxima página</button></div></section>
+        <section class="admin-panel" data-admin-panel="loyalty" hidden><div class="admin-section-heading"><div><p class="eyebrow">Only Crew · somente admins</p><h2>Ranking de presença</h2><p>Uma presença por evento. Contas de teste ficam fora do ranking.</p></div><button type="button" class="club-button club-secondary" data-club-ranking-refresh>Atualizar</button></div><div data-club-ranking></div></section>
         <section class="admin-panel active" data-admin-panel="dashboard">
           <div class="admin-stat-grid">
             <article class="admin-stat admin-stat-featured"><span>Faturamento aprovado</span><strong data-stat-revenue>R$ 0,00</strong><small data-stat-revenue-caption>todos os pedidos pagos</small></article>

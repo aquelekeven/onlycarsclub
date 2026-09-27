@@ -325,6 +325,7 @@
   }
 
   function showAccountView(name) {
+    if (window.OnlyClubConfig?.storeEnabled === false && ["orders", "address"].includes(name)) name = "overview";
     qsa("[data-account-tab]").forEach((button) => button.classList.toggle("active", button.dataset.accountTab === name));
     qsa("[data-account-view]").forEach((view) => {
       const active = view.dataset.accountView === name;
@@ -366,11 +367,11 @@
     }
 
     try {
-      await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
+      if (window.OnlyClubConfig?.storeEnabled !== false) await client.invokeFunction("mercado-pago-pedido", { action:"cleanup" }).catch(() => null);
       const [profiles, addresses, orders, ticketOrders, isAdmin] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id,birth_date`),
-        client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
+        window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
+        window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
         client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => []),
         client.rest("rpc/is_admin", { method:"POST", body:{} }).then((result) => result === true).catch(() => false)
       ]);
@@ -836,6 +837,7 @@
 
       loading.hidden = true;
       content.hidden = false;
+      document.dispatchEvent(new CustomEvent("only:account-ready", {detail:{user,isAdmin}}));
     } catch (error) {
       loading.innerHTML = `<strong>Não foi possível carregar sua conta.</strong><span>${friendlyError(error)}</span>`;
     }

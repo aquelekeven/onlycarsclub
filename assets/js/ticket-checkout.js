@@ -7,14 +7,23 @@
   const selection=model.selection(location.search);
   const sharedCoupon=(new URLSearchParams(location.search).get('coupon')||'').trim().toUpperCase().slice(0,30);
   if(!model.kinds.some(kind=>new URLSearchParams(location.search).has(kind)))selection.expo=1;
-  let eventData=null,catalog=null,buyerProfile=null,appliedCoupon=null;
+  let eventData=null,catalog=null,buyerProfile=null,appliedCoupon=null,loyaltyPercent=0;
   const digits=value=>String(value||'').replace(/\D/g,'');
   const cpf=value=>digits(value).slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
   const phone=value=>digits(value).slice(0,11).replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{4,5})(\d{4})$/,'$1-$2');
   const useAccount=root.querySelector('[data-ticket-use-account]'),accountLabel=root.querySelector('[data-ticket-account-data]');
   const couponInput=root.querySelector('[data-ticket-coupon-code]'),couponButton=root.querySelector('[data-ticket-coupon-apply]'),couponFeedback=root.querySelector('[data-ticket-coupon-feedback]');
   const subtotal=()=>catalog?model.total(selection,catalog.prices):0;
-  function clearCoupon(){appliedCoupon=null;root.querySelector('[data-ticket-discount-line]').hidden=true;root.querySelector('[data-ticket-total]').textContent=catalog?model.money(subtotal()):'—';}
+  function renderDiscount(){
+    const loyaltyDiscount=Math.round(subtotal()*loyaltyPercent/100);
+    const couponDiscount=Number(appliedCoupon?.discount_cents||0);
+    const discount=Math.max(loyaltyDiscount,couponDiscount);
+    root.querySelector('[data-ticket-discount-line]').hidden=discount===0;
+    root.querySelector('[data-ticket-coupon-label]').textContent=loyaltyDiscount>=couponDiscount?`Fidelidade Only · ${loyaltyPercent}%`:appliedCoupon.code;
+    root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(discount)}`;
+    root.querySelector('[data-ticket-total]').textContent=catalog?model.money(subtotal()-discount):'—';
+  }
+  function clearCoupon(){appliedCoupon=null;renderDiscount();}
   function buildTickets(){
     vehicles.replaceChildren();let index=0;
     model.kinds.forEach(kind=>{for(let i=0;i<selection[kind];i++){
@@ -53,7 +62,7 @@
     if(!code){couponFeedback.textContent='Digite o código do cupom.';return;}
     if(!eventData)return;
     couponButton.disabled=true;couponFeedback.textContent='Validando cupom…';
-    try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;root.querySelector('[data-ticket-coupon-label]').textContent=result.code;root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(result.discount_cents)}`;root.querySelector('[data-ticket-discount-line]').hidden=false;root.querySelector('[data-ticket-total]').textContent=model.money(result.payable_cents);couponFeedback.textContent=result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
+    try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;renderDiscount();couponFeedback.textContent=Math.round(subtotal()*loyaltyPercent/100)>=result.discount_cents?'Sua fidelidade oferece o maior desconto e será aplicada automaticamente.':result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
   }
   couponButton.addEventListener('click',async()=>{await applyCoupon();if(sharedCoupon && appliedCoupon?.code===sharedCoupon){error.textContent='';if(catalog)submit.disabled=false;}});couponInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyCoupon();}});couponInput.addEventListener('input',()=>{if(appliedCoupon){clearCoupon();couponFeedback.textContent='Aplique novamente após alterar o código.';}});
   async function initialize(){
@@ -67,7 +76,9 @@
       if(!Number.isFinite(birth.getTime())||age<18)throw Error('A compra deve ser feita na conta de um responsável com 18 anos ou mais.');
       eventData=await client.publicRest('rpc/public_event_summary',{method:'POST',body:{target_slug:root.dataset.eventSlug}});catalog=model.catalog(eventData);
       const issue=model.validate(selection,catalog);if(issue)throw Error(issue);
-      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent='Opções e valores conferidos.';
+      const loyalty=await client.rest('rpc/customer_loyalty',{method:'POST',body:{}});
+      loyaltyPercent=Number(loyalty.discount_percent)||0;
+      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent=loyaltyPercent?`Opções conferidas. Sua fidelidade garante ${loyaltyPercent}% de desconto; com cupom, vale o maior benefício.`:'Opções e valores conferidos.';
       if(sharedCoupon){couponInput.value=sharedCoupon;await applyCoupon();
         if(appliedCoupon?.code!==sharedCoupon){
           error.textContent='Não foi possível aplicar o cupom do link. Confira o código antes de continuar.';

@@ -2639,11 +2639,13 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTypingReplay();
   setupStats();
   setupCarousel();
+  if (window.OnlyClubConfig?.storeEnabled !== false) {
   setupShop();
   setupProductPage();
   setupCartPage();
   setupCheckoutSteps();
   setupCheckoutFlow();
+  }
   setupAdminCards();
   setupValuesStack();
   setupPageHeroParallax();

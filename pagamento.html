@@ -28,11 +28,13 @@
   <link rel="manifest" href="manifest.webmanifest?v=20260729-v63">
   <link rel="stylesheet" href="assets/css/style.css?v=20260825-ticket-holders-v127">
   <script src="assets/js/supabase-client.js?v=20260807-v91" defer></script>
-  <script src="assets/js/main.js?v=20260825-promo-header-v148" defer></script>
+  <script src="assets/js/main.js?v=20260927-club" defer></script>
+  <script src="assets/js/club-config.js?v=20260927" ></script>
+  <link rel="stylesheet" href="assets/css/club.css?v=20260927">
 </head>
 <body data-page="loja">
 <header class="header"><a href="/" class="brand"><img decoding="async" class="brand-logo" src="assets/images/logotipo-only-branco-color.png" alt="Only Cars Club"></a><a class="cart-shortcut active" href="carrinho.html" aria-label="Abrir carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span data-cart-count>0</span></a></header>
-<main class="checkout-page">
+<template data-store-legacy><main class="checkout-page">
   <section class="checkout-heading">
     <p class="eyebrow">Etapa 4 de 4</p>
     <h1>Como você quer pagar?</h1>
@@ -60,6 +62,7 @@
     <p class="checkout-legal-notice">Ao continuar, você declara que leu e está ciente dos <a href="termos.html" target="_blank" rel="noopener">Termos de Compra</a> e da <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
     <a class="checkout-back" href="entrega.html">Voltar para entrega</a>
   </form>
-</main>
+</main></template>
+<main class="club-empty" data-store-placeholder><div class="club-shirt" aria-hidden="true">ONLY<br>CREW</div><span class="club-kicker">O estilo continua no rolê.</span><h1>Nada por aqui.</h1><p>Solicite sua peita do Only pelo Instagram!</p><a class="club-button" href="https://ig.me/m/onlycars.club" target="_blank" rel="noopener noreferrer">Chamar no direct <span aria-hidden="true">↗</span></a><a class="club-button club-secondary" href="https://www.instagram.com/onlycars.club/" target="_blank" rel="noopener noreferrer">Abrir perfil do Only</a></main>
 </body>
 </html>

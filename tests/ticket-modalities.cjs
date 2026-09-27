@@ -36,7 +36,7 @@ async function edgeScenario({authenticated=true,rpcError=false,mpError=false}={}
  const client={auth:{getUser:async()=>({data:{user:authenticated?{id:'user',email:'qa@example.invalid'}:null},error:null})},from:query,rpc:async(name,args)=>{calls.push({name,args});return rpcError?{error:{message:'Preço alterado'}}:{data:{order_id:'order',total_cents:19350,ticket_count:1,event_name:'Only Cars Meeting'}}}};
  let payment;
  const ctx={Deno:{env:{get:()=> 'test-only'},serve:fn=>handler=fn},createClient:()=>client,Response,Request,console:{log(){},error(){}},fetch:async(_,req)=>{payment=JSON.parse(req.body);return new Response(JSON.stringify(mpError?{message:'Recusado'}:{id:'preference',init_point:'https://mercadopago.example/checkout'}),{status:mpError?400:200});}};
- const ts=fs.readFileSync('supabase/functions/mercado-pago-ingresso/index.ts','utf8').replace(/^import .*\n/,'');vm.runInNewContext(stripTypeScriptTypes(ts),ctx);
+ const ts=fs.readFileSync('supabase/functions/mercado-pago-ingresso/index.ts','utf8').replace(/^import [^\r\n]*\r?\n/,'');vm.runInNewContext(stripTypeScriptTypes(ts),ctx);
  const response=await handler(new Request('https://edge.example',{method:'POST',headers:{authorization:'Bearer test','content-type':'application/json'},body:JSON.stringify({event_slug:'only-cars-meeting-2026',lot_id:event.lots[0].id,buyer_name:'QA',buyer_tax_id:'00000000000',buyer_phone:'11999999999',expected_subtotal_cents:19350,tickets:[{ticket_kind:'combo',vehicle_plate:'QAT0A01',vehicle_make:'QA',vehicle_model:'TEST',price_cents:1}]})}));
  return {response,data:await response.json(),calls,payment,cleanup};
 }
