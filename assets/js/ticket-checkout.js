@@ -14,12 +14,14 @@
   const useAccount=root.querySelector('[data-ticket-use-account]'),accountLabel=root.querySelector('[data-ticket-account-data]');
   const couponInput=root.querySelector('[data-ticket-coupon-code]'),couponButton=root.querySelector('[data-ticket-coupon-apply]'),couponFeedback=root.querySelector('[data-ticket-coupon-feedback]');
   const subtotal=()=>catalog?model.total(selection,catalog.prices):0;
+  const loyaltyDiscount=()=>Math.round(Math.max(0,...model.kinds.filter(kind=>selection[kind]>0).map(kind=>catalog?.prices[kind]||0))*loyaltyPercent/100);
+  const payable=()=>subtotal()-Math.max(loyaltyDiscount(),Number(appliedCoupon?.discount_cents||0));
   function renderDiscount(){
-    const loyaltyDiscount=Math.round(subtotal()*loyaltyPercent/100);
+    const loyaltyAmount=loyaltyDiscount();
     const couponDiscount=Number(appliedCoupon?.discount_cents||0);
-    const discount=Math.max(loyaltyDiscount,couponDiscount);
+    const discount=Math.max(loyaltyAmount,couponDiscount);
     root.querySelector('[data-ticket-discount-line]').hidden=discount===0;
-    root.querySelector('[data-ticket-coupon-label]').textContent=loyaltyDiscount>=couponDiscount?`Fidelidade Only · ${loyaltyPercent}%`:appliedCoupon.code;
+    root.querySelector('[data-ticket-coupon-label]').textContent=loyaltyAmount>=couponDiscount?`Fidelidade Only · ${loyaltyPercent}% em 1 ingresso`:appliedCoupon.code;
     root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(discount)}`;
     root.querySelector('[data-ticket-total]').textContent=catalog?model.money(subtotal()-discount):'—';
   }
@@ -62,7 +64,7 @@
     if(!code){couponFeedback.textContent='Digite o código do cupom.';return;}
     if(!eventData)return;
     couponButton.disabled=true;couponFeedback.textContent='Validando cupom…';
-    try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;renderDiscount();couponFeedback.textContent=Math.round(subtotal()*loyaltyPercent/100)>=result.discount_cents?'Sua fidelidade oferece o maior desconto e será aplicada automaticamente.':result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
+    try{const result=await client.rest('rpc/preview_ticket_purchase_coupon',{method:'POST',body:{p_event_id:eventData.id,p_code:code,p_subtotal_cents:subtotal()}});appliedCoupon=result;renderDiscount();couponFeedback.textContent=loyaltyDiscount()>=result.discount_cents?'Sua fidelidade oferece o maior desconto e será aplicada automaticamente.':result.description||'Cupom aplicado.';}catch(e){couponFeedback.textContent=e.message||'Cupom indisponível.';}finally{couponButton.disabled=false;}
   }
   couponButton.addEventListener('click',async()=>{await applyCoupon();if(sharedCoupon && appliedCoupon?.code===sharedCoupon){error.textContent='';if(catalog)submit.disabled=false;}});couponInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyCoupon();}});couponInput.addEventListener('input',()=>{if(appliedCoupon){clearCoupon();couponFeedback.textContent='Aplique novamente após alterar o código.';}});
   async function initialize(){
@@ -76,9 +78,9 @@
       if(!Number.isFinite(birth.getTime())||age<18)throw Error('A compra deve ser feita na conta de um responsável com 18 anos ou mais.');
       eventData=await client.publicRest('rpc/public_event_summary',{method:'POST',body:{target_slug:root.dataset.eventSlug}});catalog=model.catalog(eventData);
       const issue=model.validate(selection,catalog);if(issue)throw Error(issue);
-      const loyalty=await client.rest('rpc/customer_loyalty',{method:'POST',body:{}});
+      const loyalty=await client.rest('rpc/customer_event_loyalty',{method:'POST',body:{p_event_id:eventData.id}});
       loyaltyPercent=Number(loyalty.discount_percent)||0;
-      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent=loyaltyPercent?`Opções conferidas. Sua fidelidade garante ${loyaltyPercent}% de desconto; com cupom, vale o maior benefício.`:'Opções e valores conferidos.';
+      buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent=loyaltyPercent?`Fidelidade: ${loyaltyPercent}% em apenas 1 ingresso por conta neste evento, aplicado ao de maior valor. Os demais ingressos ficam no preço normal. Com cupom, vale o maior benefício.`:loyalty.event_used?'Seu desconto de fidelidade já foi usado ou está reservado em outro pedido deste evento. Este pedido fica no preço normal.':loyalty.bonus_reserved?'Seu bônus de 40% está reservado em outro pagamento. Finalize ou cancele o pedido anterior para continuar o ciclo.':'Opções e valores conferidos. A fidelidade vale para 1 ingresso por conta, por evento.';
       if(sharedCoupon){couponInput.value=sharedCoupon;await applyCoupon();
         if(appliedCoupon?.code!==sharedCoupon){
           error.textContent='Não foi possível aplicar o cupom do link. Confira o código antes de continuar.';
@@ -109,7 +111,9 @@
       if(issue)throw Error(issue);
       if(subtotal()!==model.total(selection,latest.prices)){catalog=latest;eventData=fresh;renderSummary();throw Error('O lote mudou. Confira o novo total e continue novamente.');}
       catalog=latest;submit.textContent='Abrindo Mercado Pago…';
-      const response=await client.invokeFunction('mercado-pago-ingresso',{event_slug:root.dataset.eventSlug,lot_id:catalog.lot?.id||null,buyer_name:buyer.name,buyer_tax_id:buyer.tax_id,buyer_phone:buyer.phone,tickets,coupon_code:appliedCoupon?.code||null,expected_subtotal_cents:subtotal()});
+      const currentLoyalty=await client.rest('rpc/customer_event_loyalty',{method:'POST',body:{p_event_id:eventData.id}});
+      if(Number(currentLoyalty.discount_percent)!==loyaltyPercent){loyaltyPercent=Number(currentLoyalty.discount_percent)||0;renderDiscount();throw Error('A disponibilidade do seu desconto mudou. Confira o novo total antes de continuar.');}
+      const response=await client.invokeFunction('mercado-pago-ingresso',{event_slug:root.dataset.eventSlug,lot_id:catalog.lot?.id||null,buyer_name:buyer.name,buyer_tax_id:buyer.tax_id,buyer_phone:buyer.phone,tickets,coupon_code:appliedCoupon?.code||null,expected_subtotal_cents:subtotal(),expected_payable_cents:payable()});
       if(!response?.checkout_url)throw Error('O pagamento não retornou um link. Tente novamente.');
       location.assign(response.checkout_url);
     }catch(err){error.textContent=err.message||'Não foi possível iniciar o pagamento.';submit.disabled=false;submit.textContent='Continuar para o Mercado Pago';}

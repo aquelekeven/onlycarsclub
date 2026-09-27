@@ -41,7 +41,7 @@ begin
   values(event_id,uid,token,encode(extensions.digest(token,'sha256'),'hex'),'checked_in',true,owner_id,'QA Club','00000000000','11999999999','QAL0A01','QA','TEST',now()-interval '30 days') returning id into ticket_id;
   result:=public.customer_loyalty();
   if (result->>'events_count')::int<>n then raise exception 'Attendance count mismatch at %',n;end if;
-  if (result->>'discount_percent')::int<>(case when n>=10 then 30 when n>=5 then 20 else 0 end) then raise exception 'Discount threshold at %',n;end if;
+  if (result->>'discount_percent')::int<>(case when n>=10 then 40 when n>=5 then 30 else n*5 end) then raise exception 'Discount threshold at %',n;end if;
   if (result->>'shirts_earned')::int<>n/5 or (result->>'hoodies_earned')::int<>n/10 then raise exception 'Recurring gift count at %',n;end if;
  end loop;
  -- Duplicate tickets and re-entry never add another event.
@@ -57,8 +57,8 @@ begin
  buyer:='{"name":"QA Club","email":"qa-club@example.invalid","tax_id":"00000000000","phone":"11999999999"}';
  ticket:='{"ticket_kind":"carona","driver_name":"QA Club","driver_tax_id":"00000000000","driver_phone":"11999999999"}';
  result:=public.service_reserve_typed_tickets(uid,'only-cars-meeting-2026',null,buyer,jsonb_build_array(ticket));
- if (result->>'total_cents')::int<>12600 then raise exception 'Server loyalty pricing failed: %',result;end if;
- if not exists(select 1 from public.ticket_orders where id=(result->>'order_id')::uuid and payable_cents=12600 and discount_cents=5400) then raise exception 'Stored payment total mismatch';end if;
+ if (result->>'total_cents')::int<>10800 then raise exception 'Server loyalty pricing failed: %',result;end if;
+ if not exists(select 1 from public.ticket_orders where id=(result->>'order_id')::uuid and payable_cents=10800 and discount_cents=7200) then raise exception 'Stored payment total mismatch';end if;
  if has_function_privilege('anon','public.customer_loyalty()','execute') then raise exception 'Anonymous loyalty exposure';end if;
  if has_function_privilege('authenticated','only_club_internal.discount_for(uuid)','execute') then raise exception 'Arbitrary user lookup exposed';end if;
 end $$;

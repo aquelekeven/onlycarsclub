@@ -30,9 +30,9 @@
   <script src="assets/js/admin.js?v=20260927-club" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
   <script src="assets/js/admin-event-tools.js?v=20260925-gestao-cupons-v1" defer></script>
-  <script src="assets/js/club-config.js?v=20260927" ></script>
-  <link rel="stylesheet" href="assets/css/club.css?v=20260927">
-<script src="assets/js/club.js?v=20260927" defer></script>
+  <script src="assets/js/club-config.js?v=20260927-progressive-v2" ></script>
+  <link rel="stylesheet" href="assets/css/club.css?v=20260927-progressive-v2">
+<script src="assets/js/club.js?v=20260927-progressive-v2" defer></script>
 </head>
 <body class="admin-access-pending" data-page="admin" data-admin-page>
   <header class="header">
@@ -65,7 +65,7 @@
           <a href="loja.html"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-9 9M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></i><span>Ver loja</span></a>
         </nav>
 
-        <section class="admin-panel" data-admin-panel="users" hidden><div class="admin-section-heading"><div><p class="eyebrow">Acesso exclusivo · proprietário</p><h2>Usuários e administradores</h2><p>Gerencie quem ajuda a cuidar do Only. Sua conta permanece protegida.</p></div></div><label for="club-user-search">Buscar por nome ou e-mail</label><input class="club-search" id="club-user-search" data-club-user-search type="search" maxlength="120" placeholder="Encontre uma pessoa"><p data-club-users-status role="status"></p><div class="club-user-list" data-club-users></div><div><button class="club-button club-secondary" type="button" data-club-users-prev>Anterior</button> <button class="club-button club-secondary" type="button" data-club-users-next>Próxima página</button></div></section>
+        <section class="admin-panel" data-admin-panel="users" hidden><div class="admin-section-heading"><div><p class="eyebrow">Acesso exclusivo · proprietário</p><h2>Usuários e administradores</h2><p>Gerencie quem ajuda a cuidar do Only. Sua conta permanece protegida.</p></div></div><div class="club-directory-controls"><label for="club-user-search">Buscar por nome ou e-mail<input class="club-search" id="club-user-search" data-club-user-search type="search" maxlength="120" placeholder="Encontre uma pessoa"></label><label for="club-user-sort">Ordenar usuários<select id="club-user-sort" data-club-user-sort><option value="newest">Cadastro: mais recentes</option><option value="oldest">Cadastro: mais antigos</option><option value="name_asc">Nome: A–Z</option><option value="name_desc">Nome: Z–A</option></select></label></div><section class="club-admin-group" aria-labelledby="club-admins-title"><h3 id="club-admins-title">Equipe de administradores</h3><p>Administradores ativos, também presentes na lista geral abaixo.</p><div class="club-user-list" data-club-admins></div></section><h3>Todos os usuários</h3><p data-club-users-status role="status"></p><div class="club-user-list" data-club-users></div><div><button class="club-button club-secondary" type="button" data-club-users-prev>Anterior</button> <button class="club-button club-secondary" type="button" data-club-users-next>Próxima página</button></div></section>
         <section class="admin-panel" data-admin-panel="loyalty" hidden><div class="admin-section-heading"><div><p class="eyebrow">Only Crew · somente admins</p><h2>Ranking de presença</h2><p>Uma presença por evento. Contas de teste ficam fora do ranking.</p></div><button type="button" class="club-button club-secondary" data-club-ranking-refresh>Atualizar</button></div><div data-club-ranking></div></section>
         <section class="admin-panel active" data-admin-panel="dashboard">
           <div class="admin-stat-grid">

@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = "https://onlycarsclub.com.br";
-const FUNCTION_VERSION = "ticket-checkout-v11-modalities";
+const FUNCTION_VERSION = "ticket-checkout-v12-progressive-loyalty";
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -117,9 +117,12 @@ Deno.serve(async (request) => {
     if (event.status !== "sales_open") throw new Error("As vendas deste evento ainda não estão abertas.");
     if (new Date(event.sales_end_at).getTime() <= Date.now()) throw new Error("As vendas deste evento foram encerradas.");
 
+    if (!Number.isInteger(body.expected_payable_cents) || body.expected_payable_cents < 0) {
+      throw new Error("Atualize a página para conferir seu desconto e o total antes de pagar.");
+    }
     const { data: reservation, error: reservationError } = await serviceClient.rpc("service_reserve_typed_tickets", {
       p_user_id:user.id, p_event_slug:eventSlug, p_lot_id:lotId || null,
-      p_buyer:{name:buyerName,email:user.email,tax_id:buyerTaxId,phone:buyerPhone},
+      p_buyer:{name:buyerName,email:user.email,tax_id:buyerTaxId,phone:buyerPhone,expected_payable_cents:body.expected_payable_cents},
       p_tickets:tickets.map(ticket => ({ticket_kind:ticket.kind,driver_name:ticket.driverName,driver_tax_id:ticket.driverTaxId,driver_phone:ticket.driverPhone,vehicle_plate:ticket.vehiclePlate,vehicle_make:ticket.vehicleMake,vehicle_model:ticket.vehicleModel,instagram_handle:ticket.instagramHandle})),
       p_coupon_code:couponCode,
       p_expected_subtotal:Number.isInteger(body.expected_subtotal_cents) ? body.expected_subtotal_cents : null,
