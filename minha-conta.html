@@ -22,7 +22,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Minha conta — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260928-cortesias-v1">
-  <link rel="stylesheet" href="assets/css/account-clean.css?v=20260928-nicmont-credit-v1">
+  <link rel="stylesheet" href="assets/css/account-clean.css?v=20260928-owner-credit-preview-v1">
   <style>
     body[data-page="conta"] .account-loading-state {
       min-height:calc(100vh - 190px);
@@ -167,7 +167,7 @@
   <script src="assets/js/supabase-client.js?v=20260817-attestation-v96" defer></script>
   <script src="assets/js/account-guard.js?v=20260818-v1" defer></script>
   <script src="assets/js/qrcode.min.js?v=20260812-v1" defer></script>
-  <script src="assets/js/auth.js?v=20260928-nicmont-credit-v1" defer></script>
+  <script src="assets/js/auth.js?v=20260928-owner-credit-preview-v1" defer></script>
   <script src="assets/js/club-config.js?v=20260927-progressive-v2" ></script>
   <link rel="stylesheet" href="assets/css/club.css?v=20260927-progressive-v2">
 <script src="assets/js/club-view.js?v=20260927-progressive-v2" defer></script>
@@ -222,7 +222,7 @@
         <section class="account-view" data-account-view="loyalty" hidden><header class="account-view-heading"><div><p class="eyebrow">Only Crew</p><h1>Quem cola, conquista.</h1><p>Cada encontro faz parte da sua história.</p></div></header><div data-club-loyalty><p class="club-status" role="status">Carregando sua fidelidade…</p></div></section>
         <section class="account-view" data-account-view="orders" hidden><header class="account-view-heading"><div><p class="eyebrow">Histórico</p><h1>Meus pedidos</h1><p>Acompanhe pagamentos, produção, postagem e entrega.</p></div></header><div class="orders-list" data-orders-list></div></section>
 
-        <section class="account-view" data-account-view="tickets" hidden><header class="account-view-heading"><div><p class="eyebrow">Agenda Only</p><h1>Meus eventos</h1><p>Escolha um evento para abrir seus ingressos, credenciais e fotos de confirmação.</p></div></header><div class="account-credit-balance" data-account-ticket-credit hidden><span>Crédito para ingressos</span><strong data-account-credit-amount></strong><p data-account-credit-description></p></div><div class="account-tickets" data-account-tickets></div></section>
+        <section class="account-view" data-account-view="tickets" hidden><header class="account-view-heading"><div><p class="eyebrow">Agenda Only</p><h1>Meus eventos</h1><p>Escolha um evento para abrir seus ingressos, credenciais e fotos de confirmação.</p></div></header><div class="account-credit-balance" data-account-ticket-credit hidden><span>Crédito para ingressos</span><strong data-account-credit-amount></strong><small class="account-credit-preview" data-account-credit-preview hidden>Prévia visual</small><p data-account-credit-description></p></div><div class="account-tickets" data-account-tickets></div></section>
 
         <section class="account-view" data-account-view="profile" hidden><header class="account-view-heading"><div><p class="eyebrow">Perfil</p><h1>Meus dados</h1><p>Informações usadas para contato, pagamento e emissão dos pedidos.</p></div></header><section class="account-card"><form class="account-form" data-profile-form><div class="field"><label for="display_name">Nome completo</label><input id="display_name" name="display_name" autocomplete="name" required></div><div class="account-fields"><div class="field"><label for="phone">Telefone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" data-mask="phone"></div><div class="field"><label for="tax_id">CPF</label><input id="tax_id" name="tax_id" inputmode="numeric" data-mask="cpf"></div><div class="field"><label for="account_birth_date">Data de nascimento</label><input id="account_birth_date" name="birth_date" type="date" autocomplete="bday" required><small>Ingressos: compra por responsável com 18 anos ou mais.</small></div></div><label class="account-age-attestation"><input name="birth_date_attestation" type="checkbox"><span>Confirmo que a data de nascimento é verdadeira e assumo responsabilidade pelas informações cadastradas. Esta confirmação é obrigatória ao alterar a data.</span></label><p class="form-feedback" data-form-feedback></p><div class="account-form-actions"><button class="account-secondary-button" type="reset">Descartar alterações</button><button class="auth-submit" type="submit">Salvar dados</button></div></form></section></section>
 
