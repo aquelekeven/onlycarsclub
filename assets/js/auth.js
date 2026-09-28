@@ -180,7 +180,8 @@
           email: signupEmail,
           password,
           birth_date: birthDate,
-          birth_date_attested: true
+          birth_date_attested: true,
+          returnTo: loginDestination() === 'minha-conta.html' ? null : loginDestination()
         });
         const success = qs("[data-signup-success]");
         const signupLinks = qs("[data-signup-links]");
@@ -294,6 +295,12 @@
     loading.hidden = true;
     if (redirect?.session && ["signup", "email"].includes(redirect.type)) {
       success.hidden = false;
+      const destination = loginDestination();
+      if (destination !== 'minha-conta.html') {
+        const continueLink = qs('.confirmation-actions .button.primary', success);
+        continueLink.href = destination;
+        continueLink.textContent = 'Continuar compra';
+      }
       return;
     }
 
@@ -371,12 +378,13 @@
       let courtesyClaimError = null;
       try { await client.rest("rpc/customer_claim_courtesy_invites", { method:"POST", body:{} }); }
       catch (claimError) { courtesyClaimError = claimError.message || "Não foi possível consultar suas cortesias agora."; }
-      const [profiles, addresses, orders, ticketOrders, isAdmin] = await Promise.all([
+      const [profiles, addresses, orders, ticketOrders, isAdmin, ticketCredit] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id,birth_date`),
         window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
         window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
         client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => []),
-        client.rest("rpc/is_admin", { method:"POST", body:{} }).then((result) => result === true).catch(() => false)
+        client.rest("rpc/is_admin", { method:"POST", body:{} }).then((result) => result === true).catch(() => false),
+        client.rest("rpc/customer_ticket_credit_status", { method:"POST", body:{} }).catch(() => null)
       ]);
       const profile = profiles?.[0] || {};
       savedAddresses = Array.isArray(addresses) ? addresses : [];
@@ -447,6 +455,14 @@
       qs("[data-account-pending-orders]").textContent = pendingOrders.length;
       qs("[data-account-order-badge]").textContent = (orders || []).length;
       const tickets = Array.isArray(ticketOrders) ? ticketOrders : [];
+      const creditBox = qs("[data-account-ticket-credit]");
+      if (creditBox && Number(ticketCredit?.balance_cents) > 0) {
+        qs("[data-account-credit-amount]", creditBox).textContent = formatMoney(ticketCredit.balance_cents);
+        qs("[data-account-credit-description]", creditBox).textContent = ticketCredit.reserved
+          ? "Crédito reservado em um pagamento pendente para o próximo evento."
+          : "Para o próximo evento Only, em qualquer ingresso. Acumula com cupom de desconto.";
+        creditBox.hidden = false;
+      }
       const photoTickets = tickets.filter(ticket => ticket.ticket_kind !== "carona" && ["active", "checked_in"].includes(ticket.ticket_status));
       const photoMedia = photoTickets.length ? await client.rest(`ticket_media?select=ticket_id,submission_count&ticket_id=in.(${photoTickets.map(ticket => ticket.id).join(",")})`).catch(() => []) : [];
       const photoCounts = new Map((photoMedia || []).map(item => [item.ticket_id, Number(item.submission_count || 0)]));
