@@ -108,8 +108,9 @@
     return session;
   }
 
-  async function signUp({ name, email, password, birth_date, birth_date_attested }) {
-    const redirectTo = `${location.origin}/confirmacao-email.html`;
+  async function signUp({ name, email, password, birth_date, birth_date_attested, returnTo }) {
+    const redirectTo = new URL('confirmacao-email.html', location.origin);
+    if (returnTo) redirectTo.searchParams.set('next', returnTo);
     const result = await request(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
       method: "POST",
       body: { email, password, data: { name, birth_date, birth_date_attested:Boolean(birth_date_attested) } }

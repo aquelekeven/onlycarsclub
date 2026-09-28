@@ -7,7 +7,7 @@
   const selection=model.selection(location.search);
   const sharedCoupon=(new URLSearchParams(location.search).get('coupon')||'').trim().toUpperCase().slice(0,30);
   if(!model.kinds.some(kind=>new URLSearchParams(location.search).has(kind)))selection.expo=1;
-  let eventData=null,catalog=null,buyerProfile=null,appliedCoupon=null,loyaltyPercent=0;
+  let eventData=null,catalog=null,buyerProfile=null,appliedCoupon=null,loyaltyPercent=0,creditAvailable=0;
   const digits=value=>String(value||'').replace(/\D/g,'');
   const cpf=value=>digits(value).slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
   const phone=value=>digits(value).slice(0,11).replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{4,5})(\d{4})$/,'$1-$2');
@@ -15,7 +15,8 @@
   const couponInput=root.querySelector('[data-ticket-coupon-code]'),couponButton=root.querySelector('[data-ticket-coupon-apply]'),couponFeedback=root.querySelector('[data-ticket-coupon-feedback]');
   const subtotal=()=>catalog?model.total(selection,catalog.prices):0;
   const loyaltyDiscount=()=>Math.round(Math.max(0,...model.kinds.filter(kind=>selection[kind]>0).map(kind=>catalog?.prices[kind]||0))*loyaltyPercent/100);
-  const payable=()=>subtotal()-Math.max(loyaltyDiscount(),Number(appliedCoupon?.discount_cents||0));
+  const creditApplied=()=>Math.min(creditAvailable,Math.max(0,subtotal()-Math.max(loyaltyDiscount(),Number(appliedCoupon?.discount_cents||0))-100));
+  const payable=()=>subtotal()-Math.max(loyaltyDiscount(),Number(appliedCoupon?.discount_cents||0))-creditApplied();
   function renderDiscount(){
     const loyaltyAmount=loyaltyDiscount();
     const couponDiscount=Number(appliedCoupon?.discount_cents||0);
@@ -23,7 +24,9 @@
     root.querySelector('[data-ticket-discount-line]').hidden=discount===0;
     root.querySelector('[data-ticket-coupon-label]').textContent=loyaltyAmount>=couponDiscount?`Fidelidade Only · ${loyaltyPercent}% em 1 ingresso`:appliedCoupon.code;
     root.querySelector('[data-ticket-discount]').textContent=`− ${model.money(discount)}`;
-    root.querySelector('[data-ticket-total]').textContent=catalog?model.money(subtotal()-discount):'—';
+    root.querySelector('[data-ticket-account-credit-line]').hidden=creditApplied()===0;
+    root.querySelector('[data-ticket-account-credit]').textContent=`− ${model.money(creditApplied())}`;
+    root.querySelector('[data-ticket-total]').textContent=catalog?model.money(payable()):'—';
   }
   function clearCoupon(){appliedCoupon=null;renderDiscount();}
   function buildTickets(){
@@ -78,9 +81,14 @@
       if(!Number.isFinite(birth.getTime())||age<18)throw Error('A compra deve ser feita na conta de um responsável com 18 anos ou mais.');
       eventData=await client.publicRest('rpc/public_event_summary',{method:'POST',body:{target_slug:root.dataset.eventSlug}});catalog=model.catalog(eventData);
       const issue=model.validate(selection,catalog);if(issue)throw Error(issue);
-      const loyalty=await client.rest('rpc/customer_event_loyalty',{method:'POST',body:{p_event_id:eventData.id}});
+      const [loyalty,credit]=await Promise.all([
+        client.rest('rpc/customer_event_loyalty',{method:'POST',body:{p_event_id:eventData.id}}),
+        client.rest('rpc/customer_ticket_credit_status',{method:'POST',body:{p_event_id:eventData.id}})
+      ]);
       loyaltyPercent=Number(loyalty.discount_percent)||0;
+      creditAvailable=Number(credit.available_cents)||0;
       buildTickets();renderSummary();root.querySelector('[data-ticket-loading]').textContent=loyaltyPercent?`Fidelidade: ${loyaltyPercent}% em apenas 1 ingresso por conta neste evento, aplicado ao de maior valor. Os demais ingressos ficam no preço normal. Com cupom, vale o maior benefício.`:loyalty.event_used?'Seu desconto de fidelidade já foi usado ou está reservado em outro pedido deste evento. Este pedido fica no preço normal.':loyalty.bonus_reserved?'Seu bônus de 40% está reservado em outro pagamento. Finalize ou cancele o pedido anterior para continuar o ciclo.':'Opções e valores conferidos. A fidelidade vale para 1 ingresso por conta, por evento.';
+      if(creditAvailable)root.querySelector('[data-ticket-loading]').textContent+=' Seu crédito da conta acumula com o cupom e aparece no total abaixo.';
       if(sharedCoupon){couponInput.value=sharedCoupon;await applyCoupon();
         if(appliedCoupon?.code!==sharedCoupon){
           error.textContent='Não foi possível aplicar o cupom do link. Confira o código antes de continuar.';
