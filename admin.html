@@ -23,13 +23,14 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Painel administrativo — Only Cars Club</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20260825-ticket-holders-v127">
-  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260925-gestao-cupons-v1">
+  <link rel="stylesheet" href="assets/css/admin-events.css?v=20260928-cortesias-v1">
   <link rel="stylesheet" href="assets/css/admin-clean.css?v=20260817-qa-badge-v5">
   <script src="assets/js/main.js?v=20260927-club" defer></script>
   <script src="assets/js/supabase-client.js?v=20260815-ticket-media-v126" defer></script>
   <script src="assets/js/admin.js?v=20260927-club" defer></script>
   <script src="assets/js/jsQR.js?v=1.4.0" defer></script>
-  <script src="assets/js/admin-event-tools.js?v=20260925-gestao-cupons-v1" defer></script>
+  <script src="assets/js/admin-event-tools.js?v=20260928-cortesias-v1" defer></script>
+  <script src="assets/js/admin-courtesy.js?v=20260928-cortesias-v1" defer></script>
   <script src="assets/js/club-config.js?v=20260927-progressive-v2" ></script>
   <link rel="stylesheet" href="assets/css/club.css?v=20260927-progressive-v2">
 <script src="assets/js/club.js?v=20260927-progressive-v2" defer></script>
@@ -162,6 +163,7 @@
             <button type="button" class="active" data-event-view-button="gate" aria-pressed="true"><strong>Portaria</strong><span>Leitor e movimentações</span></button>
             <button type="button" data-event-view-button="management" aria-pressed="false"><strong>Gestão do evento</strong><span>Vendas e conteúdo</span></button>
             <button type="button" data-event-view-button="coupons" aria-pressed="false"><strong>Cupons</strong><span>Campanhas e receita</span></button>
+            <button type="button" data-event-view-button="courtesy" aria-pressed="false"><strong>Cortesias</strong><span>Convidados e ingressos</span></button>
           </nav>
           <div class="admin-ticket-stats" data-event-view="management" hidden>
             <article><span>Ingressos ativos</span><strong data-ticket-stat-active>0</strong><small>aptos para o evento</small></article>
@@ -206,6 +208,20 @@
             </form>
             <p data-ticket-coupon-admin-feedback role="status" aria-live="polite"></p>
             <div data-ticket-coupons></div>
+          </section>
+          <section class="admin-courtesy" data-event-view="courtesy" hidden>
+            <header><div><p class="eyebrow">Configurações do evento</p><h3>Cortesias e convidados</h3><p>Cadastre o e-mail do convidado. Depois que ele confirmar a conta e acessar Minha conta, a cortesia aparecerá para finalizar os dados e liberar o QR Code.</p></div><button type="button" class="primary" data-new-courtesy>+ Nova cortesia</button></header>
+            <p class="admin-courtesy-usage" data-courtesy-usage></p>
+            <form data-courtesy-form hidden><input type="hidden" name="invite_id"><div class="admin-courtesy-fields">
+              <label>Parceiro ou grupo (opcional)<input name="partner" maxlength="80" placeholder="Ex.: FTG"></label>
+              <label>Nome do convidado<input name="recipient_name" required maxlength="120" autocomplete="off"></label>
+              <label>E-mail da conta<input name="email" type="email" required maxlength="254" autocomplete="off"></label>
+              <label>Modalidade<select name="ticket_kind"><option value="expo">Expo</option><option value="carona">Carona Radical</option><option value="combo">Expo + Carona</option></select></label>
+              <label>Quantidade<input name="quantity" type="number" min="1" max="10" step="1" value="1" required></label></div>
+              <p>O mesmo e-mail recebe todos os ingressos deste cadastro. Para convidados diferentes, cadastre um e-mail para cada um.</p>
+              <footer><button type="button" data-cancel-courtesy-form>Voltar</button><button type="submit" class="primary">Salvar cortesia</button></footer>
+            </form>
+            <p data-courtesy-feedback role="status"></p><div data-courtesy-list></div>
           </section>
           <section class="admin-ticket-sales" data-event-view="management" hidden><header><div><p class="eyebrow">Participantes</p><h3>Ingressos vendidos</h3><span>Resumo completo de pagamentos, veículos, cupons e fotos.</span></div><div class="admin-ticket-sales-filters"><label>Modalidade<select data-ticket-sales-kind><option value="all">Todas as modalidades</option><option value="expo">Expo</option><option value="carona">Carona Radical</option><option value="combo">Expo + Carona</option></select></label><label>Buscar ingresso<input type="search" data-ticket-sales-search placeholder="Nome, placa ou ingresso"></label></div></header><p data-ticket-sales-count role="status" aria-live="polite"></p><p data-ticket-sales-feedback role="status"></p><div data-ticket-sales-list></div></section>
           <div class="admin-ticket-layout" data-event-view="gate">

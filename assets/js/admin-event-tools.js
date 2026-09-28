@@ -404,7 +404,7 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    qs("[data-admin-events-description]").textContent = view === "coupons"
+    qs("[data-admin-events-description]").textContent = view === "courtesy" ? "Convites e cortesias reservadas para esta edição." : view === "coupons"
       ? "Crie, edite e acompanhe as campanhas de cupons desta edição."
       : view === "management" ? "Indicadores, ingressos, conteúdo e atendimento desta edição."
       : "Modo portaria: leitor, ingresso consultado e movimentações recentes.";
@@ -510,6 +510,7 @@
         const button = clickEvent.target.closest("[data-gate-event]");
         if (!button) return;
         selectedEventId = button.dataset.gateEvent;
+        document.dispatchEvent(new CustomEvent("only:admin-event-selected", { detail:{ id:selectedEventId, name:button.dataset.gateEventName } }));
         couponFilter = "current";
         ticketCoupons = [];
         qs("[data-ticket-coupon-form]").hidden = true;
