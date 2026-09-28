@@ -284,6 +284,12 @@
     if (coupon.max_redemptions != null && Number(coupon.paid_uses || 0) + Number(coupon.reserved_uses || 0) >= Number(coupon.max_redemptions)) return ["exhausted", "Esgotado"];
     return ["active", "Ativo"];
   };
+  const couponShareUrl = (code) => {
+    const url = new URL("proximo-evento.html", location.href);
+    url.searchParams.set("coupon", code);
+    url.hash = "ingressos";
+    return url.href;
+  };
 
   function updateCouponValueField() {
     const form = qs("[data-ticket-coupon-form]");
@@ -353,7 +359,7 @@
           ? `<button type="button" data-restore-ticket-coupon>Restaurar</button>`
           : `<button type="button" data-edit-ticket-coupon>Editar</button><button type="button" data-toggle-ticket-coupon="${coupon.active ? "false" : "true"}">${coupon.active ? "Desativar" : "Ativar"}</button><button type="button" data-archive-ticket-coupon>Excluir</button>`;
         return `<article class="admin-coupon-card" data-coupon-id="${escapeHtml(coupon.id)}" data-active="${Boolean(coupon.active)}" data-archived="${Boolean(coupon.archived_at)}">
-          <div><span data-status="${state}">${stateLabel}</span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description || "Sem descrição")} · ${dateLabel}</small></div>
+          <div><span data-status="${state}">${stateLabel}</span><div class="admin-coupon-code"><strong>${escapeHtml(coupon.code)}</strong>${coupon.archived_at ? "" : '<button type="button" data-copy-ticket-coupon aria-label="Copiar link do cupom ' + escapeHtml(coupon.code) + '">Copiar link ↗</button>'}</div><small>${escapeHtml(coupon.description || "Sem descrição")} · ${dateLabel}</small></div>
           <div><span>Desconto</span><strong>${discountLabel}</strong><small>${limitLabel}</small></div>
           <div><span>Usos pagos</span><strong>${paid.toLocaleString("pt-BR")}</strong><small>${tickets} ingresso(s) · ${pending} reserva(s) pendentes</small></div>
           <div><span>Receita gerada</span><strong>${money(coupon.revenue_cents)}</strong><small>${money(coupon.discount_granted_cents)} em descontos</small></div>
@@ -599,6 +605,16 @@
       if (!card || !selectedEventId) return;
       const coupon = ticketCoupons.find((item) => item.id === card.dataset.couponId);
       if (!coupon) return;
+      if (button.hasAttribute("data-copy-ticket-coupon")) {
+        const url = couponShareUrl(coupon.code);
+        try {
+          await navigator.clipboard.writeText(url);
+          qs("[data-ticket-coupon-admin-feedback]").textContent = `Link do cupom ${coupon.code} copiado. Ao escolher os ingressos, o desconto será aplicado na compra.`;
+        } catch (_) {
+          window.prompt("Copie o link do cupom:", url);
+        }
+        return;
+      }
       if (button.hasAttribute("data-edit-ticket-coupon")) return openCouponForm(coupon);
       const isArchive = button.hasAttribute("data-archive-ticket-coupon");
       const isRestore = button.hasAttribute("data-restore-ticket-coupon");
