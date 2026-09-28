@@ -89,6 +89,11 @@ body[data-page="conta"] .account-ticket-photo>button { border-color:var(--acc-in
 body[data-page="conta"] .account-ticket-consent,body[data-page="conta"] .account-ticket-photo p { grid-column:1/-1; }
 body[data-page="conta"] .account-ticket-consent { display:flex; align-items:flex-start; gap:7px; font-size:8px; line-height:1.5; }
 body[data-page="conta"] .account-ticket-photo p { margin:0; font-weight:800; }
+body[data-page="conta"] .account-ticket-photo [hidden] { display:none!important; }
+body[data-page="conta"] .account-ticket-photo>.account-ticket-photo-success { grid-column:1/-1; display:flex; align-items:center; flex-wrap:wrap; gap:9px; padding:13px; border:1px solid #9bc5a7; border-radius:10px; background:#edf8ef; color:#153d24; }
+body[data-page="conta"] .account-ticket-photo-success strong { font-size:12px; }
+body[data-page="conta"] .account-ticket-photo-success span { flex:1; min-width:180px; color:#315a3c; font-size:10px; }
+body[data-page="conta"] .account-ticket-photo-success button { padding:8px 10px; border:1px solid #207740; border-radius:8px; background:#fff; color:#153d24; font:inherit; font-size:10px; font-weight:800; cursor:pointer; }
 body[data-page="conta"] .account-security-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 body[data-page="conta"] .account-security-grid article { min-height:155px; padding:22px; border:1px solid var(--acc-line); border-radius:21px; background:#fafaf7; }
 body[data-page="conta"] .account-security-grid .wide { grid-column:1/-1; }

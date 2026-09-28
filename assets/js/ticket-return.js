@@ -28,6 +28,18 @@
     finish.textContent = sent === cards.length ? 'Concluir e ver meus ingressos' : 'Enviar as fotos depois';
   }
 
+  function showPhotoConfirmation(card) {
+    const count = Number(card.dataset.submissionCount);
+    const success = card.querySelector('[data-ticket-photo-success]');
+    card.querySelector('fieldset').hidden = count > 0;
+    success.hidden = count === 0;
+    if (!count) return;
+    success.querySelector('[data-ticket-photo-success-detail]').textContent = count >= 2
+      ? 'A foto foi recebida e está aguardando revisão. O limite de 2 envios foi atingido.'
+      : 'A foto foi recebida e está aguardando revisão da equipe Only.';
+    success.querySelector('[data-ticket-photo-replace]').hidden = count >= 2;
+  }
+
   function renderPhotos(tickets) {
     const eligible = tickets.filter(ticket => (ticket.ticket_kind || 'expo') !== 'carona' && ['active', 'checked_in'].includes(ticket.ticket_status));
     photos.hidden = !eligible.length;
@@ -44,8 +56,8 @@
       card.querySelector('[data-photo-ticket-vehicle]').textContent = [ticket.vehicle_make, ticket.vehicle_model, ticket.vehicle_plate].filter(Boolean).join(' · ');
       const feedback = card.querySelector('[data-ticket-return-photo-feedback]');
       const count = Number(card.dataset.submissionCount);
-      if (count) feedback.textContent = count >= 2 ? 'Foto já enviada. Limite de 2 envios atingido.' : 'Foto já enviada. Você pode substituir mais uma vez.';
-      if (count >= 2) card.querySelector('fieldset').disabled = true;
+      if (count) feedback.textContent = 'Foto recebida para revisão.';
+      showPhotoConfirmation(card);
       list.append(card);
     }
     updateCompletion();
@@ -110,6 +122,16 @@
     if (valid) { const url = URL.createObjectURL(file); previews.set(card, url); preview.src = url; }
   });
 
+  list.addEventListener('click', event => {
+    const button = event.target.closest('[data-ticket-photo-replace]');
+    if (!button) return;
+    const card = button.closest('[data-ticket-return-photo]');
+    card.querySelector('[data-ticket-photo-success]').hidden = true;
+    card.querySelector('fieldset').hidden = false;
+    card.querySelector('[data-ticket-return-photo-feedback]').textContent = '';
+    card.querySelector('input[type=file]').focus();
+  });
+
   list.addEventListener('submit', async event => {
     const form = event.target.closest('[data-ticket-return-photo]');
     if (!form) return;
@@ -135,10 +157,11 @@
       }
       const result = await client.rest('rpc/customer_submit_ticket_photo', { method: 'POST', body: { p_ticket_id: form.dataset.ticketId, p_storage_path: form.uploadedPath, p_publication_consent: true } });
       form.dataset.submissionCount = String(result.submission_count);
-      feedback.textContent = result.remaining ? 'Foto enviada para revisão! Você pode substituir mais uma vez, se precisar.' : 'Foto enviada para revisão! Limite de 2 envios atingido.';
+      feedback.textContent = '';
       form.elements.photo.value = ''; form.uploadedFile = null;
-      button.textContent = 'Substituir foto';
-      if (!result.remaining) form.querySelector('fieldset').disabled = true;
+      if (previews.has(form)) { URL.revokeObjectURL(previews.get(form)); previews.delete(form); }
+      form.querySelector('[data-photo-preview]').hidden = true;
+      showPhotoConfirmation(form);
       updateCompletion();
     } catch (error) { feedback.dataset.error = 'true'; feedback.textContent = error.message || 'Não foi possível enviar a foto. Tente novamente.'; }
     finally { button.disabled = false; }
