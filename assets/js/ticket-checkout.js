@@ -92,7 +92,7 @@
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();if(!catalog||submit.disabled||!form.reportValidity())return;
-    if(sharedCoupon && appliedCoupon?.code!==sharedCoupon){error.textContent='Aplique o cupom XINA15 antes de prosseguir.';return;}
+    if(sharedCoupon && appliedCoupon?.code!==sharedCoupon){error.textContent=`Aplique o cupom ${sharedCoupon} antes de prosseguir.`;return;}
     const buyer={name:form.elements.buyer_name.value.trim(),tax_id:digits(form.elements.buyer_tax_id.value),phone:digits(form.elements.buyer_phone.value)};
     const tickets=[...vehicles.querySelectorAll('[data-ticket-vehicle]')].map(card=>{
       const other=card.querySelector('[data-ticket-other-holder]').checked;

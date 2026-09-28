@@ -110,6 +110,9 @@
 .admin-coupon-card [data-status=upcoming]{background:#fff0c9;color:#805b04}
 .admin-coupon-card [data-status=archived]{background:#efe6e6;color:#9b3535}
 .admin-coupon-card>div:first-child strong{font-size:1.1rem;letter-spacing:.015em;overflow-wrap:anywhere}
+.admin-coupon-code{display:flex!important;align-items:center;justify-content:flex-start;gap:10px;flex-wrap:wrap}
+.admin-coupon-card .admin-coupon-code button{border:1px solid #d4bb31;border-radius:8px;padding:6px 9px;background:#fff9d5;color:#3d3413;font:inherit;font-size:.7rem;font-weight:800;white-space:nowrap;cursor:pointer}
+.admin-coupon-card .admin-coupon-code button:hover{background:#ffe971;border-color:#b79e19}
 .admin-coupon-card small{font-size:.74rem;line-height:1.45}
 .admin-coupon-card-actions{display:flex!important;flex-flow:row wrap;align-items:center;justify-content:flex-end;gap:6px}
 .admin-coupon-card-actions button{border:1px solid #dedcd3;border-radius:8px;padding:9px 10px;background:#fff;color:#282821;font:inherit;font-size:.73rem;font-weight:800;white-space:nowrap;cursor:pointer}
