@@ -78,6 +78,7 @@
     enhanceExchange(qs("[data-admin-exchange-id]", dialog));
   }
 
+  let gateOnly = true;
   let stream = null;
   let detector = null;
   let scanFrame = 0;
@@ -404,6 +405,7 @@
   }
 
   function switchEventView(view) {
+    if (gateOnly && view !== "gate") return;
     qsa("[data-event-view]").forEach((section) => { section.hidden = section.dataset.eventView !== view; });
     qsa("[data-event-view-button]").forEach((button) => {
       const active = button.dataset.eventViewButton === view;
@@ -419,7 +421,7 @@
   }
 
   async function loadTicketStats() {
-    if (!selectedEventId) return;
+    if (!selectedEventId || gateOnly) return;
     try {
       const data = await client.rest("rpc/admin_event_gate_summary_for_event", { method:"POST", body:{ p_event_id:selectedEventId } });
       qs("[data-ticket-stat-active]").textContent = data.active_tickets || 0;
@@ -504,6 +506,11 @@
     }
   }
 
+  async function refreshEventData() {
+    if (gateOnly) return;
+    await Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]);
+  }
+
   async function loadGateEvents() {
     const root = qs("[data-admin-event-selector]");
     const gate = qs("[data-admin-event-gate]");
@@ -533,7 +540,7 @@
         stopScanner();
         qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do titular e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
-        await Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]);
+        await refreshEventData();
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
     } catch (error) {
@@ -547,7 +554,7 @@
     qs("[data-scanner-stop]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); stopScanner(); });
     qs("[data-scanner-search]").addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); searchTickets(qs("[data-scanner-input]").value).catch((error) => setScannerFeedback(error.message, "error")); });
     qs("[data-scanner-input]").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); qs("[data-scanner-search]").click(); } });
-    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]) : loadGateEvents());
+    qs("[data-ticket-refresh]").addEventListener("click", () => selectedEventId ? refreshEventData() : loadGateEvents());
     qs("[data-ticket-sales-search]")?.addEventListener("input", (event) => renderTicketSales(event.target.value));
     qs("[data-ticket-sales-kind]")?.addEventListener("change", () => renderTicketSales(qs("[data-ticket-sales-search]")?.value || ""));
     qs("[data-ticket-sales-list]")?.addEventListener("click", async (event) => { const button=event.target.closest("[data-ticket-sale-toggle]"),card=button?.closest("[data-ticket-sale-id]"); if(!card)return; const detail=qs(".admin-ticket-sale-detail",card),opening=detail.hidden; detail.hidden=!opening; button.querySelector("b").textContent=opening?"Fechar ↑":"Detalhes ↓"; if(opening){const item=ticketSales.find(x=>x.ticket_id===card.dataset.ticketSaleId),photo=qs("[data-ticket-sale-photo]",card);if(item?.photo&&photo&&!photo.querySelector("img")){try{const url=await client.signedUrl("ticket-confirmations",item.photo.storage_path,3600);photo.innerHTML+=`<img src="${escapeHtml(url)}" alt="Foto de ${escapeHtml(item.vehicle_plate)}">`;}catch(_){photo.querySelector("strong").textContent="Não foi possível abrir a foto.";}}} });
@@ -719,7 +726,7 @@
         const ride = button.dataset.ticketAction === "carona";
         const updated = await client.rest(ride ? "rpc/admin_redeem_carona" : "rpc/admin_checkin_event_ticket", { method:"POST", body:ride ? {p_qr_token:lastToken} : { p_qr_token:lastToken, p_action:button.dataset.ticketAction, p_reason:null } });
         renderTicket(updated);
-        qs("[data-ticket-action-feedback]").textContent = "Movimentação registrada e sincronizada para todos os administradores.";
+        qs("[data-ticket-action-feedback]").textContent = "Movimentação registrada e sincronizada para a equipe.";
         await loadTicketStats();
       } catch (error) { feedback.textContent = error.message; button.disabled = false; }
     });
@@ -727,8 +734,9 @@
     loadGateEvents();
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    setupExchangeEnhancer();
+  document.addEventListener("only:gate-ready", (event) => {
+    gateOnly = event.detail.gateOnly;
+    if (!gateOnly) setupExchangeEnhancer();
     setupScanner();
-  });
+  }, {once:true});
 })();
