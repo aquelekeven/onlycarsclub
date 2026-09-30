@@ -73,7 +73,7 @@
   async function initialize(){
     try{
       if(!model.count(selection)||model.count(selection)>model.limit)throw Error('Seleção inválida. Volte ao evento para escolher seus ingressos.');
-      const user=await client.getUser().catch(()=>null);
+      const user=await client.getUser();
       if(!user){const destination=`${location.pathname.split('/').pop()}${location.search}`;try{sessionStorage.setItem('onlycars.afterLogin',destination);}catch(_){}location.replace(`login.html?next=${encodeURIComponent(destination)}`);return;}
       buyerProfile=(await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date,display_name,phone,tax_id`))?.[0];
       if(!buyerProfile?.birth_date)throw Error('Informe sua data de nascimento em Minha conta antes de comprar.');

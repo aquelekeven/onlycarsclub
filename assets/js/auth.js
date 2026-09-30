@@ -129,7 +129,7 @@
     if (!candidate) return "minha-conta.html";
     try {
       const url = new URL(candidate, location.href);
-      const allowed = ["/ingresso.html", "/ingresso-retorno.html", "/proximo-evento.html", "/entrega.html", "/carrinho.html", "/minha-conta.html"];
+      const allowed = ["/admin.html", "/pagamento.html", "/ingresso.html", "/ingresso-retorno.html", "/proximo-evento.html", "/entrega.html", "/carrinho.html", "/minha-conta.html"];
       if (url.origin !== location.origin || url.username || url.password || !allowed.includes(url.pathname)) return "minha-conta.html";
       return `${url.pathname.slice(1)}${url.search}${url.hash}`;
     } catch (_) { return "minha-conta.html"; }
@@ -332,7 +332,9 @@
   }
 
   function showAccountView(name) {
+    if (!qsa("[data-account-tab]").some(button => button.dataset.accountTab === name)) name = "overview";
     if (window.OnlyClubConfig?.storeEnabled === false && ["orders", "address"].includes(name)) name = "overview";
+    const url = new URL(location.href); url.searchParams.set("view", name); history.replaceState(null, "", url);
     qsa("[data-account-tab]").forEach((button) => button.classList.toggle("active", button.dataset.accountTab === name));
     qsa("[data-account-view]").forEach((view) => {
       const active = view.dataset.accountView === name;
@@ -925,8 +927,16 @@
       const target = event.target.closest("[data-account-go]");
       if (target) showAccountView(target.dataset.accountGo);
     });
-    const user = await client.getUser().catch(() => null);
+    let user;
+    try { user = await client.getUser(); }
+    catch (_) {
+      const loading = qs("[data-account-loading]");
+      loading.textContent = "Não foi possível verificar sua sessão. Confira a conexão e atualize a página para tentar novamente.";
+      return;
+    }
+    const savedView = new URL(location.href).searchParams.get("view");
     await loadAccount(user);
+    if (savedView) showAccountView(savedView);
     const logout = qs("[data-logout]");
     logout?.addEventListener("click", async () => {
       logout.disabled = true;

@@ -15,13 +15,14 @@
 
     const client = window.OnlySupabase;
     if (!client) {
-      location.replace("login.html");
+      location.replace(`login.html?next=${encodeURIComponent(location.pathname + location.search)}`);
       return;
     }
 
-    const user = await client.getUser().catch(() => null);
+    let user;
+    try { user = await client.getUser(); } catch (_) { return; }
     if (!user) {
-      location.replace("login.html");
+      location.replace(`login.html?next=${encodeURIComponent(location.pathname + location.search)}`);
       return;
     }
 
