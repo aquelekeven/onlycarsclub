@@ -30,6 +30,9 @@
   }
 
   function showTab(name) {
+    if (!qsa("[data-admin-tab]").some(button => button.dataset.adminTab === name)) name = "tickets";
+    const url = new URL(location.href); url.searchParams.set("tab", name); history.replaceState(null, "", url);
+
     qsa("[data-admin-tab]").forEach((button) => button.classList.toggle("active", button.dataset.adminTab === name));
     qsa("[data-admin-panel]").forEach((panel) => {
       const active = panel.dataset.adminPanel === name;
@@ -726,12 +729,14 @@
 
     try {
       user = await client.getUser();
-      if (!user) return location.replace("/");
+      if (!user) return location.replace(`login.html?next=${encodeURIComponent(location.pathname + location.search)}`);
       const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=role,display_name`);
       profile = profiles?.[0];
       if (!["admin", "gate"].includes(profile?.role)) return location.replace("/");
     } catch (_) {
-      return location.replace("/");
+      loading.innerHTML = '<strong>Não foi possível verificar sua sessão.</strong><p>Confira a conexão e tente novamente.</p><button type="button" data-retry-session>Tentar novamente</button>';
+      loading.querySelector("button").onclick = initialize;
+      return;
     }
 
     qs("[data-admin-name]").textContent = profile.display_name || "Administrador";
@@ -752,6 +757,7 @@
       return;
     }
     bindInteractions();
+    showTab(new URL(location.href).searchParams.get("tab") || qs("[data-admin-tab].active")?.dataset.adminTab || "tickets");
     document.dispatchEvent(new CustomEvent("only:gate-ready", {detail:{user, gateOnly:false}}));
     document.dispatchEvent(new CustomEvent("only:admin-ready", {detail:{user}}));
 

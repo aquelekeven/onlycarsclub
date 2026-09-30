@@ -79,6 +79,52 @@
   }
 
   let gateOnly = true;
+  let actionPending = false;
+  let syncPending = false;
+  let lookupVersion = 0;
+  let completedAction = "";
+  function saveGateLocation(view) {
+    const url = new URL(location.href);
+    if (selectedEventId) { url.searchParams.set("event", selectedEventId); url.searchParams.set("eventView", view || "gate"); }
+    else { url.searchParams.delete("event"); url.searchParams.delete("eventView"); }
+    history.replaceState(null, "", url);
+  }
+  function clearTicket() {
+    lookupVersion++;
+    currentTicket = null; lastToken = ""; completedAction = "";
+    const result = qs("[data-ticket-result]"); result.onclick = null;
+    result.innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Pronto para o próximo ingresso</strong><span>Leia um QR Code ou pesquise nome, placa ou código.</span></div>';
+    qs("[data-scanner-input]").value = "";
+  }
+  function askUndo(ticket) {
+    return new Promise(resolve => {
+      const dialog = document.createElement("dialog"); dialog.className = "admin-gate-dialog";
+      dialog.innerHTML = `<form method="dialog"><h3>Desfazer esta entrada?</h3><p>${escapeHtml(ticket.ticket_code)} · ${escapeHtml(ticket.driver_name)} · ${escapeHtml(ticket.vehicle_plate)}</p><p>O ingresso poderá ser validado novamente. A correção ficará registrada no histórico.</p><label>Motivo da correção<textarea required minlength="3" maxlength="500" name="reason" placeholder="Ex.: validei o veículo errado"></textarea></label><footer><button type="button" data-cancel-undo>Manter entrada</button><button class="primary" type="submit">Confirmar: desfazer entrada</button></footer></form>`;
+      document.body.append(dialog);
+      let reason = null;
+      dialog.querySelector("[data-cancel-undo]").onclick = () => dialog.close();
+      dialog.querySelector("form").onsubmit = event => { event.preventDefault(); const value=dialog.querySelector("textarea").value.trim(); if(value.length<3)return; reason=value; dialog.close(); };
+      dialog.addEventListener("close", () => { dialog.remove(); resolve(reason); }, {once:true});
+      dialog.showModal();
+    });
+  }
+  async function syncGate() {
+    if (syncPending || actionPending || document.hidden || !selectedEventId || qs('[data-admin-panel="tickets"]').hidden) return;
+    syncPending = true;
+    const token = lastToken, version = lookupVersion;
+    try {
+      await loadTicketStats();
+      if (token && currentTicket) {
+        const updated = await client.rest("rpc/admin_inspect_event_ticket", {method:"POST",body:{p_qr_token:token}});
+        if (!actionPending && version === lookupVersion && token === lastToken) {
+          const changed = ["status","last_entry_at","last_exit_at","carona_redeemed_at"].some(key => updated[key] !== currentTicket[key]);
+          if (!completedAction || changed) { if(changed) completedAction = ""; renderTicket(updated); }
+        }
+      }
+    } catch (_) { /* Keep the displayed result; the next poll retries. */ }
+    finally { syncPending = false; }
+  }
+
   let stream = null;
   let detector = null;
   let scanFrame = 0;
@@ -111,6 +157,7 @@
   function renderTicket(ticket) {
     if (selectedEventId && ticket.event_id !== selectedEventId) throw new Error("Este ingresso pertence a outro evento. Abra o evento correto antes de validar.");
     currentTicket = ticket;
+    qs("[data-ticket-result]").onclick = null;
     const result = qs("[data-ticket-result]");
     const statusLabels = { reserved:"Reservado", active:"Ativo", checked_in:"Dentro do evento", cancelled:"Cancelado", refunded:"Reembolsado", blocked:"Bloqueado" };
     const paidActive = ["active", "checked_in"].includes(ticket.status);
@@ -125,9 +172,11 @@
       <header><div><span>${escapeHtml(({expo:"Expo",carona:"Carona Radical",combo:"Expo + Carona Radical"})[ticket.ticket_kind || "expo"])}</span><strong>${escapeHtml(ticket.ticket_code)}</strong></div><b>${escapeHtml(displayStatus)}</b></header>
       <div class="admin-ticket-driver"><i>${escapeHtml(String(ticket.driver_name || "O").charAt(0).toUpperCase())}</i><div><span>Titular do ingresso</span><strong>${escapeHtml(ticket.driver_name)}</strong><small>${escapeHtml(ticket.driver_phone || "Telefone não informado")}</small></div></div>
       <dl><div><dt>Veículo</dt><dd>${ticket.ticket_kind === "carona" ? "Não inclui vaga Expo" : escapeHtml([ticket.vehicle_make,ticket.vehicle_model,ticket.vehicle_year].filter(Boolean).join(" "))}</dd></div><div><dt>Placa</dt><dd class="plate">${escapeHtml(ticket.vehicle_plate)}</dd></div><div><dt>Evento</dt><dd>${escapeHtml(ticket.event_name)}</dd></div><div><dt>Última entrada</dt><dd>${dateTime(ticket.last_entry_at)}</dd></div><div><dt>Última saída</dt><dd>${dateTime(ticket.last_exit_at)}</dd></div></dl>
+      ${isInside ? '<p class="admin-gate-already">Entrada já confirmada. Não libere uma segunda entrada.</p>' : ""}
       <div class="admin-ticket-checkin-actions">
         <button class="primary" type="button" data-ticket-action="${entryAction}" ${allowed && !isInside ? "" : "disabled"}>${entryLabel}</button>
-        <button type="button" data-ticket-action="exit" ${isInside ? "" : "disabled"}>Registrar saída</button>
+        ${isInside ? '<button type="button" data-ticket-action="exit">Registrar saída</button><button type="button" data-ticket-action="undo">Desfazer entrada</button>' : ""}
+        <button type="button" data-next-ticket>Ler próximo QR Code</button>
         ${hasCarona ? `<button class="primary" type="button" data-ticket-action="carona" ${paidActive && !ticket.carona_redeemed_at ? "" : "disabled"}>${ticket.carona_redeemed_at ? "Carona já utilizada" : "Validar uso da Carona"}</button>` : ""}
       </div>${hasCarona ? `<p>${ticket.carona_redeemed_at ? "Utilizada em "+dateTime(ticket.carona_redeemed_at) : "A validação da Carona é independente da entrada Expo."}</p>` : ""}<p data-ticket-action-feedback></p>
     </article>`;
@@ -136,9 +185,13 @@
   async function inspectToken(value) {
     const token = normalizeQrValue(value);
     if (!token || token.length < 16) throw new Error("QR Code incompleto ou inválido.");
+    clearTicket();
+    const version = ++lookupVersion;
+    completedAction = "";
     lastToken = token;
     setScannerFeedback("Consultando ingresso...", "loading");
     const ticket = await client.rest("rpc/admin_inspect_event_ticket", { method:"POST", body:{ p_qr_token:token } });
+    if (version !== lookupVersion) return;
     renderTicket(ticket);
     setScannerFeedback("Ingresso localizado. Confira os dados antes de confirmar.", "success");
     stopScanner();
@@ -146,6 +199,7 @@
 
   function selectSearchResult(ticket) {
     if (!ticket?.qr_token) throw new Error("Este ingresso não possui uma credencial válida para movimentação.");
+    lookupVersion++; completedAction = "";
     lastToken = ticket.qr_token;
     renderTicket(ticket);
     setScannerFeedback("Ingresso selecionado. Confira os dados antes de confirmar.", "success");
@@ -173,8 +227,12 @@
     const query = String(value || "").trim();
     if (!selectedEventId) throw new Error("Selecione o evento antes de pesquisar.");
     if (query.length < 2) throw new Error("Digite ao menos 2 caracteres para pesquisar.");
+    if (actionPending) return;
+    stopScanner(); clearTicket(); qs("[data-scanner-input]").value = query;
+    const version = ++lookupVersion;
     setScannerFeedback("Pesquisando ingressos...", "loading");
     const tickets = await client.rest("rpc/admin_search_event_tickets", { method:"POST", body:{ p_event_id:selectedEventId, p_query:query } }) || [];
+    if (version !== lookupVersion) return;
     if (!tickets.length) throw new Error("Nenhum ingresso encontrado com esses dados.");
     renderSearchResults(tickets, query);
   }
@@ -222,6 +280,8 @@
   }
 
   async function startScanner() {
+    if (actionPending || scanning) return;
+    stopScanner(); clearTicket();
     if (!navigator.mediaDevices?.getUserMedia) {
       setScannerFeedback("Este navegador não permite acesso à câmera. Tente abrir no Chrome ou Safari atualizado.", "warning");
       return;
@@ -406,6 +466,8 @@
 
   function switchEventView(view) {
     if (gateOnly && view !== "gate") return;
+    if (!["gate","management","coupons","courtesy"].includes(view)) view = "gate";
+    saveGateLocation(view);
     qsa("[data-event-view]").forEach((section) => { section.hidden = section.dataset.eventView !== view; });
     qsa("[data-event-view-button]").forEach((button) => {
       const active = button.dataset.eventViewButton === view;
@@ -421,20 +483,25 @@
   }
 
   async function loadTicketStats() {
-    if (!selectedEventId || gateOnly) return;
+    if (!selectedEventId) return;
+    const eventId = selectedEventId;
     try {
-      const data = await client.rest("rpc/admin_event_gate_summary_for_event", { method:"POST", body:{ p_event_id:selectedEventId } });
+      const data = await client.rest("rpc/admin_event_gate_summary_for_event", { method:"POST", body:{ p_event_id:eventId } });
+      if (eventId !== selectedEventId) return;
       qs("[data-ticket-stat-active]").textContent = data.active_tickets || 0;
       qs("[data-ticket-stat-inside]").textContent = data.inside_event || 0;
       qs("[data-ticket-stat-today]").textContent = data.movements_today || 0;
+      const activity = qs("[data-ticket-activity]");
+      activity.innerHTML = data.recent_activity?.length ? data.recent_activity.map((item) => `<article><i data-action="${escapeHtml(item.action)}"></i><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.action_label)}</span></div><time>${dateTime(item.created_at)}</time></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma movimentação registrada ainda.</div>';
+      if (!gateOnly && !syncPending) {
       const sales = await client.rest("rpc/admin_ticket_sales_summary", { method:"POST", body:{ p_event_id:selectedEventId } });
       qs("[data-ticket-stat-sold]").textContent = sales.sold_tickets || 0;
       qs("[data-ticket-stat-revenue]").textContent = money(sales.net_revenue_cents);
       qs("[data-ticket-stat-discount]").textContent = `${money(sales.discount_cents)} em descontos`;
-      const activity = qs("[data-ticket-activity]");
-      activity.innerHTML = data.recent_activity?.length ? data.recent_activity.map((item) => `<article><i data-action="${escapeHtml(item.action)}"></i><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.action_label)}</span></div><time>${dateTime(item.created_at)}</time></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma movimentação registrada ainda.</div>';
+      }
     } catch (error) {
-      setScannerFeedback("Execute a migração do leitor de ingressos para ativar esta área.", "warning");
+      const activity = qs("[data-ticket-activity]");
+      if (!activity.children.length) activity.textContent = "Não foi possível atualizar o histórico. Tentaremos novamente automaticamente.";
     }
   }
 
@@ -507,7 +574,7 @@
   }
 
   async function refreshEventData() {
-    if (gateOnly) return;
+    if (gateOnly) { await loadTicketStats(); return; }
     await Promise.all([loadTicketStats(), loadTicketCoupons(), loadTicketSales(), loadConfirmationPhotos(), loadRefundRequests()]);
   }
 
@@ -519,9 +586,11 @@
     try {
       const events = await client.rest("rpc/admin_event_gate_events", { method:"POST", body:{} });
       root.innerHTML = events?.length ? events.map((event) => `<button type="button" data-gate-event="${escapeHtml(event.id)}" data-gate-event-name="${escapeHtml(event.name)}" data-gate-event-date="${escapeHtml(new Date(event.starts_at).toLocaleDateString("pt-BR"))}"><span>${new Date(event.starts_at).toLocaleDateString("pt-BR")}</span><strong>${escapeHtml(event.name)}</strong><small>${escapeHtml(event.venue_name || "Local a confirmar")} · ${Number(event.ticket_count || 0)} ${Number(event.ticket_count || 0) === 1 ? "ingresso" : "ingressos"}</small><i>→</i></button>`).join("") : '<div class="admin-ticket-activity-empty">Nenhum evento cadastrado.</div>';
+      const savedUrl = new URL(location.href);
       root.onclick = async (clickEvent) => {
         const button = clickEvent.target.closest("[data-gate-event]");
         if (!button) return;
+        clearTicket();
         selectedEventId = button.dataset.gateEvent;
         document.dispatchEvent(new CustomEvent("only:admin-event-selected", { detail:{ id:selectedEventId, name:button.dataset.gateEventName } }));
         couponFilter = "current";
@@ -538,11 +607,14 @@
         gate.hidden = false;
         switchEventView("gate");
         stopScanner();
-        qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Nenhum ingresso lido</strong><span>Os dados do titular e do veículo aparecerão aqui antes da confirmação.</span></div>';
+        qs("[data-ticket-result]").innerHTML = '<div class="admin-ticket-empty"><i>⌁</i><strong>Pronto para ler um ingresso</strong><span>Os dados do titular e do veículo aparecerão aqui antes da confirmação.</span></div>';
         setScannerFeedback("Evento selecionado. Inicie a câmera ou utilize a leitura manual.", "success");
         await refreshEventData();
         gate.scrollIntoView({ behavior:"smooth", block:"start" });
       };
+      const savedEvent = savedUrl.searchParams.get("event");
+      const savedButton = qsa("[data-gate-event]", root).find(button => button.dataset.gateEvent === savedEvent);
+      if (savedButton) { await root.onclick({target:savedButton}); switchEventView(gateOnly ? "gate" : savedUrl.searchParams.get("eventView") || "gate"); }
     } catch (error) {
       root.innerHTML = `<div class="admin-ticket-activity-empty">${escapeHtml(error.message || "Não foi possível carregar os eventos.")}</div>`;
     }
@@ -703,6 +775,7 @@
     qs("[data-admin-event-back]")?.addEventListener("click", () => {
       stopScanner();
       selectedEventId = null;
+      clearTicket(); saveGateLocation();
       ticketCoupons = [];
       couponFilter = "current";
       qs("[data-ticket-coupon-form]").hidden = true;
@@ -717,19 +790,41 @@
       qsa("[data-gate-event]").forEach((item) => item.classList.remove("active"));
     });
     qs("[data-ticket-result]").addEventListener("click", async (event) => {
+      if (actionPending) return;
+      if (event.target.closest("[data-next-ticket]")) { clearTicket(); await startScanner(); return; }
       const button = event.target.closest("[data-ticket-action]");
-      if (!button || !lastToken || !currentTicket) return;
-      const feedback = qs("[data-ticket-action-feedback]");
-      button.disabled = true;
-      feedback.textContent = "Registrando movimentação...";
+      if (!button || button.disabled || !lastToken || !currentTicket) return;
+      actionPending = true;
+      const token = lastToken, ticket = currentTicket, version = ++lookupVersion;
+      const action = button.dataset.ticketAction;
+      let reason = null;
       try {
-        const ride = button.dataset.ticketAction === "carona";
-        const updated = await client.rest(ride ? "rpc/admin_redeem_carona" : "rpc/admin_checkin_event_ticket", { method:"POST", body:ride ? {p_qr_token:lastToken} : { p_qr_token:lastToken, p_action:button.dataset.ticketAction, p_reason:null } });
+        if (action === "exit" && !window.confirm(`Registrar a saída de ${ticket.driver_name} (${ticket.vehicle_plate})? Faça isso somente quando o veículo sair do evento.`)) return;
+        if (action === "undo") { reason = await askUndo(ticket); if (!reason) return; }
+        qsa("[data-ticket-action], [data-next-ticket], [data-scanner-search], [data-admin-event-back], [data-scanner-start]").forEach(node => node.disabled = true);
+        qs("[data-ticket-action-feedback]").textContent = "Salvando no sistema...";
+        const ride = action === "carona", undo = action === "undo";
+        const updated = await client.rest(undo ? "rpc/admin_undo_event_entry" : ride ? "rpc/admin_redeem_carona" : "rpc/admin_checkin_event_ticket", { method:"POST", body:undo ? {p_qr_token:token,p_expected_entry_at:ticket.last_entry_at,p_reason:reason} : ride ? {p_qr_token:token} : {p_qr_token:token,p_action:action,p_reason:null} });
+        if (version !== lookupVersion) return;
+        completedAction = action;
         renderTicket(updated);
-        qs("[data-ticket-action-feedback]").textContent = "Movimentação registrada e sincronizada para a equipe.";
+        const label = {entry:"Entrada confirmada",reentry:"Reentrada confirmada",exit:"Saída registrada",carona:"Carona validada",undo:"Entrada desfeita"}[action];
+        qs("[data-ticket-result]").insertAdjacentHTML("afterbegin", `<div class="admin-gate-success" role="status" tabindex="-1"><span aria-hidden="true">✓</span><h3>${label}</h3><p>${escapeHtml(ticket.driver_name)} · ${escapeHtml(ticket.vehicle_plate || ticket.ticket_code)}</p><p>${undo ? "O ingresso já pode ser validado novamente." : "Registro salvo. Você já pode atender a próxima pessoa."}</p><button class="primary" type="button" data-next-ticket>Ler próximo QR Code →</button></div>`);
+        qs(".admin-gate-success").focus();
+        qs(".admin-gate-success").scrollIntoView({behavior:"smooth",block:"center"});
+        setScannerFeedback(label + ". Registro salvo no sistema.", "success");
         await loadTicketStats();
-      } catch (error) { feedback.textContent = error.message; button.disabled = false; }
+      } catch (error) {
+        // A competing operator may have just validated this ticket. Fetch the authoritative state.
+        try { const updated=await client.rest("rpc/admin_inspect_event_ticket",{method:"POST",body:{p_qr_token:token}}); if(version===lookupVersion)renderTicket(updated); } catch (_) {}
+        setScannerFeedback(error.message || "Não foi possível salvar. Consulte o ingresso antes de tentar novamente.", "error");
+      } finally {
+        actionPending = false;
+        qsa("[data-next-ticket], [data-scanner-search], [data-admin-event-back], [data-scanner-start]").forEach(node => node.disabled = false);
+      }
     });
+    window.setInterval(syncGate, 4000);
+    window.addEventListener("focus", syncGate);
     document.addEventListener("visibilitychange", () => { if (document.hidden) stopScanner(); });
     loadGateEvents();
   }

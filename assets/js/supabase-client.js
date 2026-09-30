@@ -85,18 +85,35 @@
     }
   }
 
+  let refreshPending = null;
   async function refreshSession(session) {
-    if (!session?.refresh_token) return null;
-    try {
-      const refreshed = await request("/auth/v1/token?grant_type=refresh_token", {
-        method: "POST",
-        body: { refresh_token: session.refresh_token }
-      });
-      return storeSession(refreshed);
-    } catch (error) {
-      localStorage.removeItem(STORAGE_KEY);
-      throw error;
-    }
+    if (refreshPending) return refreshPending;
+    const refresh = async () => {
+      const latest = readStoredSession();
+      if (!latest) return null;
+      if (latest.access_token !== session.access_token || Number(latest.expires_at) > Date.now() / 1000 + 60) return latest;
+      if (!latest.refresh_token) return null;
+      try {
+        const refreshed = await request("/auth/v1/token?grant_type=refresh_token", {
+          method: "POST", body: { refresh_token: latest.refresh_token }
+        });
+        // Never resurrect a session after a concurrent sign-out/account change.
+        if (readStoredSession()?.refresh_token !== latest.refresh_token) return readStoredSession();
+        return storeSession(refreshed);
+      } catch (error) {
+        const current = readStoredSession();
+        if (current?.refresh_token !== latest.refresh_token) return current;
+        const code = error?.details?.error_code || error?.details?.code;
+        if (["refresh_token_not_found", "refresh_token_already_used", "session_not_found"].includes(code)) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        // Network errors and service failures must not erase the login.
+        throw error;
+      }
+    };
+    refreshPending = (navigator.locks?.request
+      ? navigator.locks.request("onlycars-session-refresh", refresh) : refresh()).finally(() => { refreshPending = null; });
+    return refreshPending;
   }
 
   async function getSession() {
@@ -154,7 +171,8 @@
       token: session.access_token,
       body: { password }
     });
-    storeSession({ ...session, user });
+    const current = readStoredSession();
+    if (current?.access_token === session.access_token) storeSession({ ...current, user });
     return user;
   }
 
@@ -182,7 +200,8 @@
     const session = await getSession();
     if (!session) return null;
     const user = await authenticatedRequest("/auth/v1/user", { token: session.access_token });
-    storeSession({ ...session, user });
+    const current = readStoredSession();
+    if (current?.access_token === session.access_token) storeSession({ ...current, user });
     return user;
   }
 

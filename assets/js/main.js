@@ -1130,9 +1130,11 @@ function ageFromBirthDate(value) {
 async function getStorePurchaseEligibility() {
   const client = window.OnlySupabase;
   if (!client) return { allowed:false, reason:"unavailable" };
-  const user = await client.getUser().catch(() => null);
+  let user;
+  try { user = await client.getUser(); } catch (_) { return {allowed:false,reason:"connection"}; }
   if (!user) return { allowed:false, reason:"login" };
-  const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`).catch(() => []);
+  let profiles;
+  try { profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=birth_date`); } catch (_) { return {allowed:false,reason:"connection"}; }
   const birthDate = profiles?.[0]?.birth_date;
   if (!birthDate) return { allowed:false, reason:"missing_birth_date" };
   return { allowed:ageFromBirthDate(birthDate) >= 17, reason:"underage" };
@@ -1446,7 +1448,7 @@ function setupCartPage() {
     const eligibility = await getStorePurchaseEligibility();
     if (eligibility.allowed) { location.assign("entrega.html"); return; }
     if (eligibility.reason === "login") { sessionStorage.setItem("onlycars.afterLogin", "carrinho.html"); location.assign("login.html?next=entrega.html"); return; }
-    message.textContent = eligibility.reason === "missing_birth_date"
+    message.textContent = eligibility.reason === "connection" ? "Não foi possível verificar sua sessão. Confira a conexão e tente novamente." : eligibility.reason === "missing_birth_date"
       ? "Cadastre sua data de nascimento em Minha conta antes de continuar."
       : "Esta conta não possui idade mínima para comprar. Utilize a conta de um responsável com 17 anos ou mais.";
     checkoutButton.removeAttribute("aria-disabled"); checkoutButton.textContent = "Continuar";
@@ -1627,7 +1629,8 @@ async function setupCheckoutCustomer(deliveryForm) {
     setStatus("Não foi possível carregar o acesso à sua conta.", "error");
     return null;
   }
-  const user = await client.getUser().catch(() => null);
+  let user;
+  try { user = await client.getUser(); } catch (_) { setStatus("Não foi possível verificar sua sessão. Confira a conexão e tente novamente.", "error"); return null; }
   if (!user) {
     location.replace("login.html?next=entrega.html");
     return null;
@@ -1904,6 +1907,7 @@ async function setupCheckoutFlow() {
   if (!deliveryForm && !paymentForm) return;
   if (deliveryForm) {
     const eligibility = await getStorePurchaseEligibility();
+    if (eligibility.reason === "connection") { const error = qs("[data-checkout-error]", deliveryForm); if(error) error.textContent = "Não foi possível verificar sua sessão. Confira a conexão e atualize a página."; return; }
     if (!eligibility.allowed) { location.replace(eligibility.reason === "login" ? "login.html?next=entrega.html" : "carrinho.html?idade=bloqueada"); return; }
   }
   const paymentReturnParams = new URLSearchParams(location.search);

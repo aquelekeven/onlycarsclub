@@ -134,8 +134,13 @@
 /* Restricted gate workspace: backend checks remain the authorization boundary. */
 .admin-gate-only [data-admin-panel]:not([data-admin-panel="tickets"]),
 .admin-gate-only [data-event-view]:not([data-event-view="gate"]),
-.admin-gate-only [data-event-view-button]:not([data-event-view-button="gate"]),
-.admin-gate-only .admin-ticket-activity { display:none !important; }
+.admin-gate-only [data-event-view-button]:not([data-event-view-button="gate"]) { display:none !important; }
 .club-role-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; }
 .club-role-controls label { display:grid; gap:5px; font-size:13px; }
 .club-role-controls select { background:#fff; color:#161616; border:1px solid #ccc; border-radius:8px; padding:10px; font:inherit; }
+
+.admin-gate-success{padding:28px;border:1px solid #84cb9d;border-radius:18px;background:#effbf3;color:#163b24;text-align:center;margin-bottom:18px;outline:none}
+.admin-gate-success>span{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#166b38;color:white;font-size:28px}
+.admin-gate-success h3{font-size:26px;margin:12px 0;color:#163b24}.admin-gate-success p{color:#315d40;margin:8px 0}.admin-gate-success button{margin-top:12px;min-height:48px;width:100%}
+.admin-gate-already{padding:12px;border-radius:8px;background:#fff3cf;color:#634000!important;font-weight:700}
+.admin-gate-dialog{max-width:460px;width:calc(100% - 32px);border:0;border-radius:18px;padding:24px;background:#fff;color:#181818}.admin-gate-dialog::backdrop{background:#0009}.admin-gate-dialog p{line-height:1.5}.admin-gate-dialog label{display:block;font-weight:700}.admin-gate-dialog textarea{display:block;box-sizing:border-box;width:100%;min-height:90px;margin-top:8px;padding:12px;color:#181818;background:#f5f5f5;border:1px solid #aaa;border-radius:8px}.admin-gate-dialog footer{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.admin-gate-dialog button{padding:12px;border-radius:8px;border:1px solid #aaa;cursor:pointer}.admin-gate-dialog .primary{background:#171717;color:white}
