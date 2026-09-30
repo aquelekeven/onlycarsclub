@@ -28,7 +28,7 @@
       const result=await rpc('owner_user_directory',{p_search:$('[data-club-user-search]').value,p_offset:offset,p_sort:$('[data-club-user-sort]').value});
       if(id!==requestId)return;
       total=result.total;status.textContent=`${total} usuário(s) · página ${Math.floor(offset/30)+1}`;
-      const userCard=u=>`<article class="club-user"><div><strong>${safe(u.display_name||'Sem nome cadastrado')}</strong><span>${safe(u.email)}</span><span>${u.is_owner?'Proprietário':u.role==='admin'?'Administrador':'Participante'} · cadastro em ${safe(date(u.created_at))}</span></div>${u.is_owner?'<b>Conta protegida</b>':`<button type="button" data-club-role-user="${safe(u.id)}" data-grant-admin="${u.role!=='admin'}">${u.role==='admin'?'Remover acesso de admin':'Dar acesso de admin'}</button>`}</article>`;
+      const userCard=u=>`<article class="club-user"><div><strong>${safe(u.display_name||'Sem nome cadastrado')}</strong><span>${safe(u.email)}</span><span>${u.is_owner?'Proprietário':u.role==='admin'?'Administrador':u.role==='gate'?'Portaria':'Participante'} · cadastro em ${safe(date(u.created_at))}</span></div>${u.is_owner?'<b>Conta protegida</b>':`<div class="club-role-controls"><label>Cargo<select data-club-role-select="${safe(u.id)}" aria-label="Cargo de ${safe(u.display_name||u.email)}">${[['customer','Participante'],['gate','Portaria'],['admin','Administrador']].map(([value,label])=>`<option value="${value}" ${u.role===value?'selected':''}>${label}</option>`).join('')}</select></label><button type="button" data-club-role-user="${safe(u.id)}">Salvar cargo</button></div>`}</article>`;
       list.innerHTML=result.users.length?result.users.map(userCard).join(''):'<p class="club-status">Nenhum usuário encontrado.</p>';
       $('[data-club-admins]').innerHTML=result.admins.length?result.admins.map(userCard).join(''):'<p>Nenhum administrador corresponde à busca.</p>';
       $('[data-club-users-prev]').disabled=offset===0;$('[data-club-users-next]').disabled=offset+30>=total;
@@ -52,7 +52,7 @@
     if(e.target.closest('[data-club-users-next]')&&offset+30<total){offset+=30;users();}
     const retry=e.target.closest('[data-club-retry]');if(retry){if(retry.closest('[data-club-ranking]'))ranking();else if(retry.closest('[data-club-users]'))users();else account();}
     const button=e.target.closest('[data-club-role-user]');if(!button)return;
-    document.querySelectorAll(`[data-club-role-user="${button.dataset.clubRoleUser}"]`).forEach(b=>b.disabled=true);const grant=button.dataset.grantAdmin==='true';
-    try{await rpc('owner_set_admin',{p_user_id:button.dataset.clubRoleUser,p_admin:grant});await users();$('[data-club-users-status]').textContent=grant?'Acesso de administrador concedido.':'Acesso de administrador removido.';}catch(error){$('[data-club-users-status]').textContent=error.message;document.querySelectorAll(`[data-club-role-user="${button.dataset.clubRoleUser}"]`).forEach(b=>b.disabled=false);}
+    document.querySelectorAll(`[data-club-role-user="${button.dataset.clubRoleUser}"]`).forEach(b=>b.disabled=true);const role=button.closest('.club-user').querySelector('[data-club-role-select]').value;
+    try{await rpc('owner_set_user_role',{p_user_id:button.dataset.clubRoleUser,p_role:role});await users();$('[data-club-users-status]').textContent=`Cargo atualizado para ${{customer:'Participante',gate:'Portaria',admin:'Administrador'}[role]}.`;}catch(error){$('[data-club-users-status]').textContent=error.message;document.querySelectorAll(`[data-club-role-user="${button.dataset.clubRoleUser}"]`).forEach(b=>b.disabled=false);}
   });
 })();
