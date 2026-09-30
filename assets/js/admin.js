@@ -729,7 +729,7 @@
       if (!user) return location.replace("/");
       const profiles = await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=role,display_name`);
       profile = profiles?.[0];
-      if (profile?.role !== "admin") return location.replace("/");
+      if (!["admin", "gate"].includes(profile?.role)) return location.replace("/");
     } catch (_) {
       return location.replace("/");
     }
@@ -739,7 +739,20 @@
     loading.hidden = true;
     content.hidden = false;
     document.body.classList.remove("admin-access-pending");
+    const gateOnly = profile.role === "gate";
+    if (gateOnly) {
+      document.body.classList.add("admin-gate-only");
+      qsa('[data-admin-tab]:not([data-admin-tab="tickets"])').forEach(node => node.remove());
+      qsa('[data-event-view-button]:not([data-event-view-button="gate"])').forEach(node => node.hidden = true);
+      qs('.admin-hero h1').textContent = "Portaria";
+      qs('.admin-hero h1 + p').textContent = "Leia o QR Code ou busque um ingresso para validar o acesso.";
+      qs('.admin-nav-brand span').textContent = "Only Portaria";
+      showTab("tickets");
+      document.dispatchEvent(new CustomEvent("only:gate-ready", {detail:{user, gateOnly:true}}));
+      return;
+    }
     bindInteractions();
+    document.dispatchEvent(new CustomEvent("only:gate-ready", {detail:{user, gateOnly:false}}));
     document.dispatchEvent(new CustomEvent("only:admin-ready", {detail:{user}}));
 
     try {
