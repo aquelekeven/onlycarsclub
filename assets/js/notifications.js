@@ -3,13 +3,16 @@
  const client=window.OnlySupabase, $=(s,r=document)=>r.querySelector(s);
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const rpc=(name,body={})=>client.rest('rpc/'+name,{method:'POST',body});
- let items=[],busy=false,panel,button,badge;
+ let items=[],busy=false,panel,button,badge,unreadCount=0,filter='all';
+ const dayKey=v=>new Date(v).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+ const period=v=>{const today=dayKey(Date.now()),day=dayKey(v);return day===today?'today':(Date.parse(today)-Date.parse(day)<7*86400000?'week':'earlier');};
  const date=v=>new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
  function render(data){
   const expanded=new Set([...panel.querySelectorAll('[data-open-notification][aria-expanded="true"]')].map(n=>n.dataset.openNotification));
-  items=data.items||[]; badge.textContent=data.unread_count>99?'99+':data.unread_count;badge.hidden=!data.unread_count;
+  unreadCount=data.unread_count;items=data.items||[]; badge.textContent=data.unread_count>99?'99+':data.unread_count;badge.hidden=!data.unread_count;
   button.setAttribute('aria-label',`Notificações: ${data.unread_count} não lidas`);
-  $('[data-notification-list]',panel).innerHTML=items.length?items.map(n=>`<article class="only-notification ${n.read_at?'':'unread'}"><button type="button" data-open-notification="${safe(n.id)}" aria-expanded="false"><span class="notification-dot" aria-label="Não lida" ${n.read_at?'hidden':''}></span><strong>${safe(n.title)}</strong><time>${date(n.created_at)}</time></button><div data-notification-body="${safe(n.id)}" hidden><p>${safe(n.body)}</p></div>${n.read_at?'<small>Lida</small>':`<button type="button" data-read-notification="${safe(n.id)}">Marcar como lida</button>`}</article>`).join(''):'<p class="only-notification-empty">Nenhuma notificação por enquanto.</p>';
+  const visible=items.filter(n=>filter==='all'||period(n.created_at)===filter);
+  $('[data-notification-list]',panel).innerHTML=visible.length?visible.map(n=>`<article class="only-notification ${n.read_at?'':'unread'}"><button type="button" data-open-notification="${safe(n.id)}" aria-expanded="false"><span class="notification-dot" aria-label="Não lida" ${n.read_at?'hidden':''}></span><i class="notification-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></i><strong>${safe(n.title)}</strong><span class="notification-excerpt">${safe(n.body)}</span><time>${date(n.created_at)}</time></button><div data-notification-body="${safe(n.id)}" hidden><p>${safe(n.body)}</p></div>${n.read_at?'<small>Lida</small>':`<button type="button" data-read-notification="${safe(n.id)}">Marcar como lida</button>`}</article>`).join(''):'<p class="only-notification-empty">Nenhuma notificação neste período.</p>';
   panel.querySelectorAll('[data-open-notification]').forEach(n=>{if(expanded.has(n.dataset.openNotification)){n.setAttribute('aria-expanded','true');$('[data-notification-body]',n.parentElement).hidden=false;}});
  }
  async function refresh(){if(busy||document.hidden)return;busy=true;try{render(await rpc('my_site_notifications'));$('[data-notification-feedback]',panel).textContent='';}catch(e){$('[data-notification-feedback]',panel).textContent='Não foi possível atualizar. Tente novamente.';}finally{busy=false;}}
@@ -23,12 +26,13 @@
    button=document.createElement('button');button.type='button';button.className='only-notification-bell';button.setAttribute('aria-label','Notificações');button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','only-notifications');
    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><b hidden></b>';badge=$('b',button);$('.header').append(button);
    panel=document.createElement('section');panel.id='only-notifications';panel.className='only-notifications';panel.hidden=true;panel.setAttribute('aria-label','Notificações');
-   panel.innerHTML='<header><div><span>ONLY CARS</span><h2>Notificações</h2></div><button type="button" data-close-notifications aria-label="Fechar notificações">×</button></header><p data-notification-feedback role="status"></p><div data-notification-list></div><button type="button" data-refresh-notifications>Atualizar</button>';document.body.append(panel);
+   panel.innerHTML='<header><div><span>ONLY CARS</span><h2>Notificações</h2></div><button type="button" data-notification-filter="all">Ver todas</button><button type="button" data-close-notifications aria-label="Fechar notificações">×</button></header><nav class="notification-periods" aria-label="Período das notificações"><button type="button" data-notification-filter="today">Hoje</button><button type="button" data-notification-filter="week">Esta semana</button><button type="button" data-notification-filter="earlier">Anteriores</button></nav><p data-notification-feedback role="status"></p><div data-notification-list></div><button type="button" data-refresh-notifications>Atualizar</button>';document.body.append(panel);
    button.onclick=()=>{panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)refresh();};
    $('[data-close-notifications]',panel).onclick=()=>{close();button.focus();};$('[data-refresh-notifications]',panel).onclick=refresh;
    document.addEventListener('click',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!button.contains(e.target))close();});
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){close();button.focus();}});
    panel.addEventListener('click',async e=>{
+    const periodButton=e.target.closest('[data-notification-filter]');if(periodButton){filter=periodButton.dataset.notificationFilter;panel.querySelectorAll('[data-notification-filter]').forEach(b=>{b.classList.toggle('active',b===periodButton);b.setAttribute('aria-pressed',String(b===periodButton));});render({items,unread_count:unreadCount});return;}
     const open=e.target.closest('[data-open-notification]');let read=e.target.closest('[data-read-notification]');
     if(open){const content=$('[data-notification-body]',open.parentElement);content.hidden=!content.hidden;open.setAttribute('aria-expanded',String(!content.hidden));if(!content.hidden)read=$('[data-read-notification]',open.parentElement);}
     if(read){read.disabled=true;try{await rpc('read_site_notification',{p_id:read.dataset.readNotification});await refresh();}catch(error){$('[data-notification-feedback]',panel).textContent='Não foi possível marcar como lida.';read.disabled=false;}}
