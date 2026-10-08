@@ -1,5 +1,5 @@
 :root{--only-brand-yellow:#ffd41f}
-.store-paused [data-store-ui],.store-paused .cart-shortcut,.store-paused .cart-toast,.store-paused [data-launch-promo],.store-paused [data-account-tab="orders"],.store-paused [data-account-tab="address"],.store-paused [data-account-view="orders"],.store-paused [data-account-view="address"]{display:none!important}
+.store-paused [data-store-ui],.store-paused .cart-shortcut,.store-paused .cart-toast,.store-paused [data-launch-promo]{display:none!important}
 [hidden]{display:none!important}
 .club-empty{min-height:calc(100svh - 170px);display:grid;place-content:center;justify-items:center;text-align:center;padding:70px 24px 120px;max-width:900px;margin:auto}
 .club-kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#9d9d92;font-weight:800}

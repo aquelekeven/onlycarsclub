@@ -332,8 +332,8 @@
   }
 
   function showAccountView(name) {
+    if (name === "address") name = "profile";
     if (!qsa("[data-account-tab]").some(button => button.dataset.accountTab === name)) name = "overview";
-    if (window.OnlyClubConfig?.storeEnabled === false && ["orders", "address"].includes(name)) name = "overview";
     const url = new URL(location.href); url.searchParams.set("view", name); history.replaceState(null, "", url);
     qsa("[data-account-tab]").forEach((button) => button.classList.toggle("active", button.dataset.accountTab === name));
     qsa("[data-account-view]").forEach((view) => {
@@ -382,8 +382,8 @@
       catch (claimError) { courtesyClaimError = claimError.message || "Não foi possível consultar suas cortesias agora."; }
       const [profiles, addresses, orders, ticketOrders, isAdmin, ticketCredit, isOwner, canAccessGate] = await Promise.all([
         client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role,display_name,phone,tax_id,birth_date`),
-        window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
-        window.OnlyClubConfig?.storeEnabled === false ? [] : client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
+        client.rest(`addresses?user_id=eq.${encodeURIComponent(user.id)}&select=id,label,recipient_name,postal_code,street,number,complement,neighborhood,city,state,is_default,created_at&order=is_default.desc,created_at.asc&limit=3`),
+        client.rest(`orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,order_number,status,fulfillment_status,delivery_method,subtotal_cents,shipping_cents,total_cents,shipping_quote,expires_at,created_at,order_items(product_name,size,color,quantity,unit_price_cents,line_total_cents,metadata),shipments(service_name,carrier_name,status,tracking_code,tracking_url,posted_at,delivered_at,updated_at)&order=created_at.desc&limit=20`),
         client.rest("rpc/customer_event_tickets", { method:"POST", body:{} }).catch(() => []),
         client.rest("rpc/is_admin", { method:"POST", body:{} }).then((result) => result === true).catch(() => false),
         client.rest("rpc/customer_ticket_credit_status", { method:"POST", body:{} }).catch(() => null),
