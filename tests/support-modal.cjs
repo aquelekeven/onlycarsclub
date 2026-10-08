@@ -1,0 +1,12 @@
+const {JSDOM}=require('jsdom');
+const fs=require('fs'),assert=require('node:assert/strict');
+const source=fs.readFileSync(require('path').join(__dirname,'../assets/js/admin-event-tools.js'),'utf8');
+const dom=new JSDOM('<div data-refund-requests></div><p data-refund-feedback></p>',{runScripts:'outside-only'});
+const w=dom.window,d=w.document;let updates=0;
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true};
+w.HTMLDialogElement.prototype.close=function(){this.dispatchEvent(new w.Event('close'))};
+w.confirm=()=>false;
+w.client={rest:async(path,options)=>{if(path.includes('admin_update')){updates++;return {}};return ['ONE','TWO'].map(ticket_code=>({id:'request',ticket_code,status:'requested',driver_name:'<script>bad</script>',customer_email:'test@example.com',total_cents:7000,reason:'Teste',vehicle_plate:'ABC1234'}));}};
+w.eval(`const client=window.client;const qs=(s,r=document)=>r.querySelector(s);const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const money=v=>'R$ '+v/100;const dateTime=v=>'data';let selectedEventId='event';${source.slice(source.indexOf('  let refundRequests'),source.indexOf('  const normalizeInstagram'))};window.load=loadRefundRequests;window.openRequest=openRefundRequest;`);
+const tick=()=>new Promise(r=>setTimeout(r,10));
+(async()=>{await w.load();assert.equal(d.querySelectorAll('.admin-refund-row').length,1);w.openRequest('request');assert.equal(d.querySelectorAll('dialog').length,1);assert.equal(d.querySelectorAll('script').length,0);assert(d.querySelector('dialog').textContent.includes('TWO'));d.querySelector('[data-refund-status=approved]').click();await tick();assert.equal(updates,0);w.confirm=()=>true;d.querySelector('[data-refund-status=rejected]').click();await tick();assert.equal(updates,0);d.querySelector('textarea').value='Motivo';d.querySelector('[data-refund-status=approved]').click();d.querySelector('[data-refund-status=approved]').click();await tick();assert.equal(updates,1);assert.equal(d.querySelectorAll('dialog').length,0);assert(d.querySelector('[data-refund-feedback]').textContent.includes('estorno'));w.close();console.log('PASS: grouping, escaped content, modal, confirmation, rejection reason, single submit, success');})().catch(e=>{console.error(e);process.exit(1)});
