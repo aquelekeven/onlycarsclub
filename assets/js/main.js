@@ -2584,6 +2584,7 @@ function setupOnlyCarsAppMetadata() {
 }
 
 function setupAccountShortcut() {
+  if (document.body.dataset.page === "conta" && document.body.classList.contains("only-drawer-layout")) return;
   const header = qs(".header");
   if (!header || qs(".account-shortcut,.admin-account-link", header)) return;
   if (qs(".cart-shortcut", header)) header.classList.add("has-cart-shortcut");

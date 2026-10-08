@@ -23,6 +23,8 @@
    const user=await client.getUser();if(!user)return;
    const profiles=await client.rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=role`);
    if(profiles?.[0]?.role!=='admin')return;
+   await setupSender(user.id);
+   if(document.body.dataset.page!=='conta')return;
    button=document.createElement('button');button.type='button';button.className='only-notification-bell';button.setAttribute('aria-label','Notificações');button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','only-notifications');
    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><b hidden></b>';badge=$('b',button);$('.header').append(button);
    panel=document.createElement('section');panel.id='only-notifications';panel.className='only-notifications';panel.hidden=true;panel.setAttribute('aria-label','Notificações');
@@ -38,7 +40,6 @@
     if(read){read.disabled=true;try{await rpc('read_site_notification',{p_id:read.dataset.readNotification});await refresh();}catch(error){$('[data-notification-feedback]',panel).textContent='Não foi possível marcar como lida.';read.disabled=false;}}
    });
    await refresh();setInterval(()=>{if(panel.hidden)refresh();},30000);window.addEventListener('focus',refresh);
-   await setupSender(user.id);
   }catch(error){ /* No notification access until an admin session is available. */ }
  }
  async function setupSender(userId){
@@ -58,7 +59,7 @@
    $('[data-confirm]',preview).onclick=async()=>{
     const current=JSON.stringify([recipient,title,body]);if(current!==snapshot||!requestKey){requestKey=crypto.randomUUID();snapshot=current;}
     preview.querySelectorAll('button').forEach(b=>b.disabled=true);preview.oncancel=e=>e.preventDefault();
-    try{await rpc('admin_send_site_notification',{p_recipient:recipient,p_title:title,p_body:body,p_key:requestKey});form.reset();requestKey=null;preview.close();feedback.textContent='Notificação enviada. Ela já está disponível no sininho do destinatário.';await refresh();}
+    try{await rpc('admin_send_site_notification',{p_recipient:recipient,p_title:title,p_body:body,p_key:requestKey});form.reset();requestKey=null;preview.close();feedback.textContent='Notificação enviada. Ela já está disponível no sininho do destinatário.';if(panel)await refresh();}
     catch(error){preview.close();feedback.textContent=error.message||'Não foi possível enviar. Tente novamente.';}
    };
   });
