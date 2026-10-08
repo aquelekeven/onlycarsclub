@@ -507,6 +507,24 @@
 
   let refundRequests = [];
   const refundLabels = {requested:"Nova",under_review:"Em análise",approved:"Aprovada · estorno pendente",rejected:"Recusada",refunded:"Reembolsada",cancelled:"Cancelada"};
+  function showRefundDecision(item, status, notes, completed = false) {
+    return new Promise((resolve) => {
+      const titles = {approved:"Aprovar solicitação",rejected:"Recusar solicitação",under_review:"Colocar em análise"};
+      const effects = {approved:"A solicitação será aprovada. Os ingressos permanecem como estão e o estorno precisa ser feito no pagamento original.",rejected:"A solicitação será recusada. Os ingressos permanecem como estão e nenhum estorno será realizado.",under_review:"A solicitação ficará em análise. Os ingressos e o pagamento permanecem como estão."};
+      const doneEffects = {approved:"Solicitação aprovada. O estorno ainda precisa ser feito no pagamento original. Os ingressos não foram cancelados por esta ação.",rejected:"Solicitação recusada. Os ingressos foram mantidos como estavam. Nenhum estorno foi realizado.",under_review:"Solicitação colocada em análise. Os ingressos e o pagamento foram mantidos como estavam."};
+      const modal = document.createElement("dialog");
+      modal.className = "admin-refund-dialog admin-refund-decision";
+      modal.setAttribute("aria-labelledby", "refund-decision-title");
+      modal.innerHTML = `<header><div><p class="eyebrow">ONLY CARS · ATENDIMENTO</p><h2 id="refund-decision-title">${completed ? "Decisão registrada" : "Confirmar decisão"}</h2></div><span class="refund-decision-icon" aria-hidden="true">${completed ? "✓" : "?"}</span></header><p class="refund-decision-label">${escapeHtml(completed ? refundLabels[status] : titles[status])}</p><dl><dt>Participante</dt><dd>${escapeHtml(item.driver_name)}</dd><dt>Ingresso(s)</dt><dd>${item.tickets.map(ticket => `${escapeHtml(ticket.ticket_code)} · ${escapeHtml(ticket.vehicle_plate)}`).join("<br>")}</dd><dt>Valor do pedido</dt><dd>${money(item.total_cents)}</dd></dl><div class="refund-decision-effect">${escapeHtml(completed ? doneEffects[status] : effects[status])}</div>${notes ? `<div class="refund-decision-note"><strong>Mensagem para o cliente</strong><p>${escapeHtml(notes)}</p></div>` : ""}<footer>${completed ? '<button type="button" class="primary" data-decision-accept autofocus>Concluir</button>' : '<button type="button" data-decision-back autofocus>Voltar</button><button type="button" class="primary" data-decision-accept>Confirmar decisão</button>'}</footer>`;
+      let accepted = false;
+      modal.addEventListener("close", () => { modal.remove(); resolve(accepted); }, {once:true});
+      modal.querySelector("[data-decision-back]")?.addEventListener("click", () => modal.close());
+      modal.querySelector("[data-decision-accept]").addEventListener("click", () => { accepted = true; modal.close(); });
+      document.body.append(modal);
+      modal.showModal();
+    });
+  }
+
   function openRefundRequest(id) {
     const item = refundRequests.find((request) => request.id === id);
     if (!item) return;
@@ -532,15 +550,15 @@
       const notes = dialog.querySelector("textarea").value.trim();
       const feedback = dialog.querySelector("[data-refund-modal-feedback]");
       if (status === "rejected" && !notes) { feedback.textContent = "Informe o motivo da recusa para o cliente."; dialog.querySelector("textarea").focus(); return; }
-      if (status === "approved" && !window.confirm("Aprovar esta solicitação? Isso não cancela os ingressos nem faz o estorno. A devolução precisa ser feita no pagamento original.")) return;
-      if (status === "rejected" && !window.confirm("Recusar esta solicitação? O ingresso será mantido como está e a observação ficará visível para o cliente.")) return;
       saving = true;
+      if (!await showRefundDecision(item, status, notes)) { saving = false; return; }
       dialog.querySelectorAll("button").forEach((element) => element.disabled = true);
       feedback.textContent = "Salvando...";
       try {
         await client.rest("rpc/admin_update_ticket_refund_request", {method:"POST",body:{p_request_id:item.id,p_status:status,p_admin_notes:notes || null}});
         await loadRefundRequests();
         dialog.close();
+        await showRefundDecision(item, status, notes, true);
         qs("[data-refund-feedback]").textContent = status === "approved" ? "Solicitação aprovada. O estorno ainda precisa ser realizado no pagamento original." : "Solicitação atualizada.";
       } catch (error) { feedback.textContent = error.message || "Não foi possível salvar. Tente novamente."; }
       finally { saving = false; dialog.querySelectorAll("button").forEach((element) => element.disabled = false); }
