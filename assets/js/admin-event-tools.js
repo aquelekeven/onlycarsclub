@@ -505,16 +505,67 @@
     }
   }
 
+  let refundRequests = [];
+  const refundLabels = {requested:"Nova",under_review:"Em análise",approved:"Aprovada · estorno pendente",rejected:"Recusada",refunded:"Reembolsada",cancelled:"Cancelada"};
+  function openRefundRequest(id) {
+    const item = refundRequests.find((request) => request.id === id);
+    if (!item) return;
+    const dialog = document.createElement("dialog");
+    dialog.className = "admin-refund-dialog";
+    dialog.setAttribute("aria-labelledby", "refund-dialog-title");
+    const terminal = ["refunded", "cancelled"].includes(item.status);
+    dialog.innerHTML = `<header><div><p class="eyebrow">Atendimento</p><h2 id="refund-dialog-title">Solicitação de reembolso</h2></div><button type="button" data-close-refund aria-label="Fechar">×</button></header>
+      <p class="admin-refund-status">${escapeHtml(refundLabels[item.status] || item.status)}</p>
+      <dl><dt>Participante</dt><dd>${escapeHtml(item.driver_name)} · ${escapeHtml(item.customer_email)}</dd><dt>Ingressos do pedido</dt><dd>${item.tickets.map((ticket) => `${escapeHtml(ticket.ticket_code)} · ${escapeHtml(ticket.vehicle_plate)}`).join("<br>")}</dd><dt>Valor do pedido</dt><dd>${money(item.total_cents)}</dd><dt>Solicitado em</dt><dd>${dateTime(item.created_at)}</dd><dt>Motivo</dt><dd>${escapeHtml(item.reason)}</dd>${item.details ? `<dt>Detalhes</dt><dd>${escapeHtml(item.details)}</dd>` : ""}</dl>
+      <aside><strong>Como funciona</strong><p>Em análise: sinaliza que a equipe está verificando o pedido.</p><p>Aprovar: autoriza a solicitação, mas não cancela o ingresso nem transfere dinheiro.</p><p>Recusar: encerra a solicitação e mantém o ingresso como está.</p><p>Para estornar uma compra pelo Mercado Pago, abra o pagamento original na conta que recebeu a venda e faça a devolução por lá. Confira o pedido e todos os ingressos envolvidos antes de devolver.</p><p>Depois, confira a atualização do pagamento e dos ingressos no site. Se continuarem válidos, solicite a regularização à administração. Pix recebido diretamente deve ser devolvido pela conta que recebeu o valor.</p></aside>
+      <label for="refund-notes">Observação para o cliente</label><textarea id="refund-notes" rows="3" maxlength="800" ${terminal ? "readonly" : ""} placeholder="Explique a decisão e os próximos passos">${escapeHtml(item.admin_notes || "")}</textarea>
+      <p data-refund-modal-feedback role="status" aria-live="polite"></p><footer>${terminal ? "" : `<button type="button" data-refund-status="under_review">Colocar em análise</button><button type="button" class="primary" data-refund-status="approved">Aprovar solicitação</button><button type="button" data-refund-status="rejected">Recusar solicitação</button>`}</footer>`;
+    document.body.append(dialog);
+    dialog.addEventListener("close", () => dialog.remove());
+    dialog.querySelector("[data-close-refund]").onclick = () => dialog.close();
+    let saving = false;
+    dialog.addEventListener("cancel", (event) => { if (saving) event.preventDefault(); });
+    dialog.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-refund-status]");
+      if (!button || saving) return;
+      const status = button.dataset.refundStatus;
+      const notes = dialog.querySelector("textarea").value.trim();
+      const feedback = dialog.querySelector("[data-refund-modal-feedback]");
+      if (status === "rejected" && !notes) { feedback.textContent = "Informe o motivo da recusa para o cliente."; dialog.querySelector("textarea").focus(); return; }
+      if (status === "approved" && !window.confirm("Aprovar esta solicitação? Isso não cancela os ingressos nem faz o estorno. A devolução precisa ser feita no pagamento original.")) return;
+      if (status === "rejected" && !window.confirm("Recusar esta solicitação? O ingresso será mantido como está e a observação ficará visível para o cliente.")) return;
+      saving = true;
+      dialog.querySelectorAll("button").forEach((element) => element.disabled = true);
+      feedback.textContent = "Salvando...";
+      try {
+        await client.rest("rpc/admin_update_ticket_refund_request", {method:"POST",body:{p_request_id:item.id,p_status:status,p_admin_notes:notes || null}});
+        await loadRefundRequests();
+        dialog.close();
+        qs("[data-refund-feedback]").textContent = status === "approved" ? "Solicitação aprovada. O estorno ainda precisa ser realizado no pagamento original." : "Solicitação atualizada.";
+      } catch (error) { feedback.textContent = error.message || "Não foi possível salvar. Tente novamente."; }
+      finally { saving = false; dialog.querySelectorAll("button").forEach((element) => element.disabled = false); }
+    });
+    dialog.showModal();
+  }
+
   async function loadRefundRequests() {
     const root = qs("[data-refund-requests]");
     const feedback = qs("[data-refund-feedback]");
     if (!root || !selectedEventId) return;
+    const eventId = selectedEventId;
     feedback.textContent = "Carregando solicitações...";
     try {
-      const requests = await client.rest("rpc/admin_ticket_refund_requests", { method:"POST", body:{ p_event_id:selectedEventId } }) || [];
-      root.innerHTML = requests.length ? requests.map((item) => `<article class="admin-refund-card" data-refund-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.ticket_code)} · ${escapeHtml(item.driver_name)}</strong><span>${escapeHtml(item.vehicle_plate)} · ${escapeHtml(item.customer_email)}</span></div><b data-status="${escapeHtml(item.status)}">${escapeHtml({requested:"Nova",under_review:"Em análise",approved:"Aprovada",rejected:"Recusada",refunded:"Reembolsada",cancelled:"Cancelada"}[item.status] || item.status)}</b></header><div><span>Motivo</span><strong>${escapeHtml(item.reason)}</strong>${item.details ? `<p>${escapeHtml(item.details)}</p>` : ""}<small>${dateTime(item.created_at)} · ${(Number(item.total_cents || 0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small></div><footer><textarea data-refund-notes rows="2" maxlength="800" placeholder="Observação para o cliente">${escapeHtml(item.admin_notes || "")}</textarea><div><button type="button" data-refund-status="under_review">Marcar em análise</button><button class="primary" type="button" data-refund-status="approved">Aprovar solicitação</button><button type="button" data-refund-status="rejected">Recusar</button></div></footer></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma solicitação de cancelamento ou reembolso.</div>';
+      const requests = await client.rest("rpc/admin_ticket_refund_requests", { method:"POST", body:{ p_event_id:eventId } }) || [];
+      if (eventId !== selectedEventId) return;
+      const grouped = new Map();
+      requests.forEach((item) => {
+        if (!grouped.has(item.id)) grouped.set(item.id, {...item,tickets:[]});
+        grouped.get(item.id).tickets.push(item);
+      });
+      refundRequests = [...grouped.values()];
+      root.innerHTML = refundRequests.length ? refundRequests.map((item) => `<article class="admin-refund-row"><div><strong>${escapeHtml(item.driver_name)}</strong><span>${item.tickets.length} ingresso(s) · ${money(item.total_cents)} · ${dateTime(item.created_at)}</span></div><b class="admin-refund-status">${escapeHtml(refundLabels[item.status] || item.status)}</b><button type="button" data-open-refund="${escapeHtml(item.id)}">Ver solicitação</button></article>`).join("") : '<div class="admin-ticket-activity-empty">Nenhuma solicitação de cancelamento ou reembolso.</div>';
       feedback.textContent = "";
-    } catch (error) { root.innerHTML = ""; feedback.textContent = error.message || "Não foi possível carregar as solicitações."; }
+    } catch (error) { if (eventId !== selectedEventId) return; root.innerHTML = ""; feedback.textContent = error.message || "Não foi possível carregar as solicitações."; }
   }
 
   const normalizeInstagram = (value) => String(value || "").trim().replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/$/, "");
@@ -722,17 +773,9 @@
         button.disabled = false;
       }
     });
-    qs("[data-refund-requests]")?.addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-refund-status]");
-      if (!button) return;
-      const card = button.closest("[data-refund-id]");
-      const notes = qs("[data-refund-notes]", card)?.value.trim() || null;
-      button.disabled = true;
-      qs("[data-refund-feedback]").textContent = "Atualizando solicitação...";
-      try {
-        await client.rest("rpc/admin_update_ticket_refund_request", { method:"POST", body:{ p_request_id:card.dataset.refundId, p_status:button.dataset.refundStatus, p_admin_notes:notes } });
-        await loadRefundRequests();
-      } catch (error) { qs("[data-refund-feedback]").textContent = error.message || "Não foi possível atualizar."; button.disabled = false; }
+    qs("[data-refund-requests]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-open-refund]");
+      if (button) openRefundRequest(button.dataset.openRefund);
     });
     qs(".admin-photo-filters")?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-photo-filter]");
