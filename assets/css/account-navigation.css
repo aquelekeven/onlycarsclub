@@ -22,3 +22,7 @@ body.only-drawer-layout .header .only-menu-toggle svg,body.only-drawer-layout .h
 @media(max-width:600px){body[data-page="admin"].only-drawer-layout .header .admin-account-link{font-size:0!important;width:36px;min-height:38px;padding:0!important;left:64px;display:grid;place-items:center}body[data-page="admin"].only-drawer-layout .header .admin-account-link::after{content:'↗';font-size:20px}body.only-drawer-layout .header .only-menu-toggle,body.only-drawer-layout .header .only-notification-bell{width:38px!important;height:38px!important}}
 
 .admin-account-link svg{display:none}@media(max-width:600px){body[data-page="admin"].only-drawer-layout .header .admin-account-link::after{content:none}.admin-account-link span{display:none}.admin-account-link svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8}}
+/* Match home header height as well as logo size. */
+body.only-drawer-layout .header{height:92px!important;box-sizing:border-box}
+body.only-drawer-layout .account-page,body.only-drawer-layout .admin-page{padding-top:116px!important}
+@media(max-width:900px){body.only-drawer-layout .header{height:80px!important}body.only-drawer-layout .account-page,body.only-drawer-layout .admin-page{padding-top:104px!important}.only-notifications{top:92px!important;max-height:calc(100dvh - 108px)!important}}
