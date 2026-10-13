@@ -158,11 +158,41 @@
     });
   }
 
+  function parseSignupBirthDate(value, today = new Date()) {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+    if (!match) return null;
+    const [, day, month, year] = match.map(Number);
+    const date = new Date(year, month - 1, day);
+    if (year < 1900 || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+    if (date > new Date(today.getFullYear(), today.getMonth(), today.getDate())) return null;
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+
+  function setupSignupBirthDate(input) {
+    const validate = () => input.setCustomValidity(input.value && !parseSignupBirthDate(input.value)
+      ? "Informe uma data válida em DD/MM/AAAA, que não seja no futuro." : "");
+    input.addEventListener("input", () => {
+      const value = input.value;
+      const caret = input.selectionStart ?? value.length;
+      const digitsBefore = value.slice(0, caret).replace(/\D/g, "").length;
+      const digits = value.replace(/\D/g, "").slice(0, 8);
+      input.value = digits.slice(0, 2) + (digits.length > 2 ? "/" + digits.slice(2, 4) : "")
+        + (digits.length > 4 ? "/" + digits.slice(4) : "");
+      const position = Math.min(input.value.length, digitsBefore + (digitsBefore > 2 ? 1 : 0) + (digitsBefore > 4 ? 1 : 0));
+      input.setSelectionRange(position, position);
+      input.setCustomValidity("");
+    });
+    input.addEventListener("blur", validate);
+    return validate;
+  }
+
   function setupSignup() {
     const form = qs("[data-signup-form]");
     if (!form) return;
+    const validateBirthDate = setupSignupBirthDate(form.birth_date);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      validateBirthDate();
       if (!form.reportValidity()) return;
       setFeedback(form, "");
       const password = form.password.value;
@@ -170,8 +200,8 @@
       if (password !== form.password_confirmation.value) return setFeedback(form, "As senhas não coincidem.");
       if (!form.privacy.checked) return setFeedback(form, "Aceite a Política de Privacidade para continuar.");
       if (!form.age_attestation.checked) return setFeedback(form, "Confirme que a data de nascimento informada é verdadeira.");
-      const birthDate = form.birth_date.value;
-      if (!birthDate || new Date(`${birthDate}T12:00:00`).getTime() > Date.now()) return setFeedback(form, "Informe uma data de nascimento válida.");
+      const birthDate = parseSignupBirthDate(form.birth_date.value);
+      if (!birthDate) return setFeedback(form, "Informe uma data de nascimento válida.");
       const signupEmail = form.email.value.trim();
       setSubmitting(form, true, "Criando conta...");
       try {
