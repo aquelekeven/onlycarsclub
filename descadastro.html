@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>Preferências de e-mail | Only Cars Club</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at top,#3a310a 0,#0b0b0b 65%);color:#f5f4ee;font-family:Arial,sans-serif}main{width:100%;max-width:500px;padding:36px 28px;background:#121212;border:1px solid #363329;border-radius:24px}.brand{color:#efd311;font-size:12px;font-weight:800;letter-spacing:2px}h1{font-size:30px;line-height:1.15;margin:24px 0 18px}p{color:#c9c8c0;line-height:1.65}button,.home{display:block;width:100%;border:0;border-radius:12px;padding:16px 20px;background:#efd311;color:#111;font:700 16px Arial;text-align:center;cursor:pointer;text-decoration:none;margin-top:24px}button:disabled{opacity:.6;cursor:wait}button:focus-visible,a:focus-visible{outline:3px solid white;outline-offset:4px}.secondary{display:block;text-align:center;margin-top:20px;color:#c9c8c0;font-size:14px}.note{font-size:13px;color:#96958e;margin-top:22px}#status{color:#efd311;font-size:14px}[hidden]{display:none!important}
+</style>
+</head>
+<body><main>
+<div class="brand">ONLY CARS CLUB</div>
+<h1 id="title">Quer parar de receber nossos lembretes?</h1>
+<p id="description">Ao confirmar, você deixa de receber contagens regressivas de eventos, lembretes de carrinho e pedidos de foto para os posts de confirmados.</p>
+<p class="note">Sua conta e seus ingressos continuam ativos. E-mails de confirmação de cadastro, recuperação de senha e compras continuam chegando normalmente.</p>
+<button id="confirm" type="button">Confirmar descadastro</button>
+<p id="status" role="status" aria-live="polite"></p>
+<a id="home" class="secondary" href="/">Voltar ao site</a>
+<noscript><p>Ative o JavaScript para confirmar o descadastro.</p></noscript>
+</main>
+<script>
+(() => {
+  const token = new URLSearchParams(location.hash.slice(1)).get('token');
+  const button = document.getElementById('confirm');
+  const status = document.getElementById('status');
+  // Keep the bearer token out of subsequent navigation and copied page URLs.
+  history.replaceState(null, '', location.pathname);
+  if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
+    button.hidden = true;
+    status.textContent = 'Abra esta página pelo link de descadastro recebido no seu e-mail.';
+    return;
+  }
+  button.addEventListener('click', async () => {
+    button.disabled = true; button.textContent = 'Salvando…'; status.textContent = '';
+    try {
+      const response = await fetch('https://wxxgcnyolpioyiaepkvs.supabase.co/functions/v1/unsubscribe-only-emails', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token })
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || 'Não foi possível salvar. Tente novamente.');
+      }
+      document.getElementById('title').textContent = 'Descadastro confirmado!';
+      document.getElementById('description').textContent = 'Sua preferência foi salva. Você não receberá novos e-mails opcionais da Only Cars Club.';
+      button.hidden = true; document.getElementById('home').className = 'home';
+    } catch (error) {
+      status.textContent = error.message || 'Confira sua conexão e tente novamente.';
+      button.disabled = false; button.textContent = 'Tentar novamente';
+    }
+  });
+})();
+</script></body></html>
