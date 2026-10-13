@@ -43,14 +43,32 @@ Deno.serve(async(req)=>{
   if(!response.ok) return Response.json({ok:false,error:result?.message||"Falha no provedor"},{status:502});
   return Response.json({ok:true,provider_message_id:result.id});
  }
- await db.rpc("enqueue_only_emails");
- await db.rpc("enqueue_ticket_photo_reminders");
- const {data:rows,error}=await db.from("transactional_email_outbox").select("*").in("status",["pending","failed"]).lte("scheduled_at",new Date().toISOString()).lt("attempts",4).order("scheduled_at").limit(20);
+ if(body?.action!=="notification_preview"){
+  await db.rpc("enqueue_only_emails");
+  await db.rpc("enqueue_ticket_photo_reminders");
+  await db.rpc("enqueue_notification_digests");
+ }
+ let queueQuery=db.from("transactional_email_outbox").select("*").in("status",["pending","failed"]).lte("scheduled_at",new Date().toISOString()).lt("attempts",4).order("scheduled_at");
+ if(body?.action==="notification_preview") queueQuery=queueQuery.eq("dedupe_key",String(body?.dedupe_key||"invalid")).eq("template","notification_digest");
+ const {data:rows,error}=await queueQuery.limit(20);
  if(error) return Response.json({error:error.message},{status:500});
  const dryRun=body?.dry_run===true; let sent=0,failed=0,suppressed=0;
  for(const row of rows||[]){
   const p=row.payload||{}; let html="",attachments:any[]=[];
-  if(row.template==="ticket_purchase"){
+  if(row.template==="notification_digest"){
+   let count=Number(p.unread_count||3);
+   if(p.preview!==true){
+    const {data:current,error:statusError}=await db.rpc("notification_digest_status",{p_batch:row.id});
+    if(statusError){failed++;continue;}
+    if(!current||current.batch_unread_count<3||current.unread_count<3){
+     if(!dryRun) await db.from("transactional_email_outbox").update({status:"suppressed",error_message:"Notificações já lidas ou removidas",updated_at:new Date().toISOString()}).eq("id",row.id).in("status",["pending","failed"]);
+     suppressed++;continue;
+    }
+    count=Number(current.unread_count);
+    row.subject=`Você tem ${count} notificações não lidas no Only`;
+   }
+   html=shell(`Você tem ${count} notificações não lidas`,"Tem novidade esperando por você no Only Cars Club.",`<p style="font-size:16px;line-height:1.6">Abra suas notificações para conferir os avisos e novidades da comunidade.</p><p style="margin:26px 0"><a href="${SITE}/minha-conta.html?notifications=1" style="display:inline-block;background:#efd311;color:#111;padding:16px 24px;border-radius:12px;text-decoration:none;font-weight:bold">Ver minhas notificações</a></p><p style="font-size:12px;color:#777">${p.preview===true?"Este é um e-mail de teste. A quantidade acima é ilustrativa.":"A quantidade pode mudar se você já tiver aberto alguma notificação no site."}</p>`,EVENT_IMAGE,true);
+  }else if(row.template==="ticket_purchase"){
    const ticketItems=Array.isArray(p.tickets)&&p.tickets.length?p.tickets:[{ticket_code:p.ticket_code,qr_token:p.qr_token,vehicle_plate:p.vehicle_plate}];
    attachments=await Promise.all(ticketItems.map(async(ticket:any,index:number)=>{const qr=await QRCode.toDataURL(String(ticket.qr_token),{width:360,margin:2,errorCorrectionLevel:"H"});return{filename:`ingresso-only-${index+1}.png`,content:qr.split(",")[1],content_id:`ticket-qr-${index+1}`};}));
    const cards=ticketItems.map((ticket:any,index:number)=>`<div style="margin:${index?"14px":"0"} 0 0;padding:20px;background:#fff;border-radius:16px"><b>${esc(ticket.ticket_code)}</b><p>${esc(({expo:"Expo",carona:"Carona Radical",combo:"Expo + Carona Radical"} as Record<string,string>)[ticket.ticket_kind || "expo"])}</p><p>${esc(ticket.vehicle_plate || ticket.driver_name || "")}${ticket.vehicle_make?` · ${esc(ticket.vehicle_make)} ${esc(ticket.vehicle_model)}`:""}</p><img src="cid:ticket-qr-${index+1}" width="250" style="display:block;margin:20px auto"><p style="text-align:center;font-size:12px">QR Code individual do ingresso ${index+1}.</p></div>`).join("");
@@ -59,7 +77,7 @@ Deno.serve(async(req)=>{
   }else if(row.template==="event_countdown") html=shell(p.days===1?"É amanhã":`Faltam ${p.days} dias`,p.days===1?"Amanhã a cultura automotiva toma conta da cidade. Deixe seu ingresso pronto.":"A contagem regressiva começou. Prepare o carro e confira os detalhes do evento.",`<p><a href="${SITE}/proximo-evento.html" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Ver informações do evento</a></p>`,EVENT_IMAGE,true);
   else if(row.template==="ticket_photo_reminder") html=shell("Quer aparecer no post de confirmados?",`${p.driver_name}, seu ingresso está garantido — agora falta mostrar o carro para a comunidade.`,`<div style="padding:20px;background:#fff;border-radius:16px"><b>${esc(p.ticket_code)}</b><p>${esc(p.vehicle_plate)} · ${esc(p.vehicle_make)} ${esc(p.vehicle_model)}</p><p>Envie uma foto do carro para a equipe avaliar e usar no post de confirmados do evento.</p></div><p><a href="${SITE}/minha-conta.html?ticket=${encodeURIComponent(String(p.ticket_code))}" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Enviar foto do carro</a></p><p style="font-size:12px;color:#777">Se você já enviou a foto recentemente, pode ignorar esta mensagem.</p>`,EVENT_IMAGE,true);
   else {const isTicket=p.kind==="ticket";html=shell(isTicket?"Seu ingresso ainda está esperando":"Seus produtos continuam aqui",isTicket?"Seu pagamento do evento ainda não foi concluído.":"Você deixou produtos no carrinho ou iniciou um pedido e ainda não concluiu o pagamento.",`<p><a href="${SITE}/${isTicket?"ingresso.html":"carrinho.html"}" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Continuar agora</a></p>`,isTicket?EVENT_IMAGE:ORDER_IMAGE,isTicket);}
-  const optional=["event_countdown","checkout_recovery","ticket_photo_reminder"].includes(row.template);
+  const optional=["event_countdown","checkout_recovery","ticket_photo_reminder","notification_digest"].includes(row.template);
   let emailHeaders:Record<string,string>|undefined;
   if(optional){
    const {data:preferences,error:preferenceError}=await db.rpc("only_email_preference",{p_email:row.recipient_email});
