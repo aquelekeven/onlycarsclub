@@ -47,7 +47,7 @@ Deno.serve(async(req)=>{
  await db.rpc("enqueue_ticket_photo_reminders");
  const {data:rows,error}=await db.from("transactional_email_outbox").select("*").in("status",["pending","failed"]).lte("scheduled_at",new Date().toISOString()).lt("attempts",4).order("scheduled_at").limit(20);
  if(error) return Response.json({error:error.message},{status:500});
- const dryRun=body?.dry_run===true; let sent=0,failed=0;
+ const dryRun=body?.dry_run===true; let sent=0,failed=0,suppressed=0;
  for(const row of rows||[]){
   const p=row.payload||{}; let html="",attachments:any[]=[];
   if(row.template==="ticket_purchase"){
@@ -59,10 +59,30 @@ Deno.serve(async(req)=>{
   }else if(row.template==="event_countdown") html=shell(p.days===1?"É amanhã":`Faltam ${p.days} dias`,p.days===1?"Amanhã a cultura automotiva toma conta da cidade. Deixe seu ingresso pronto.":"A contagem regressiva começou. Prepare o carro e confira os detalhes do evento.",`<p><a href="${SITE}/proximo-evento.html" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Ver informações do evento</a></p>`,EVENT_IMAGE,true);
   else if(row.template==="ticket_photo_reminder") html=shell("Quer aparecer no post de confirmados?",`${p.driver_name}, seu ingresso está garantido — agora falta mostrar o carro para a comunidade.`,`<div style="padding:20px;background:#fff;border-radius:16px"><b>${esc(p.ticket_code)}</b><p>${esc(p.vehicle_plate)} · ${esc(p.vehicle_make)} ${esc(p.vehicle_model)}</p><p>Envie uma foto do carro para a equipe avaliar e usar no post de confirmados do evento.</p></div><p><a href="${SITE}/minha-conta.html?ticket=${encodeURIComponent(String(p.ticket_code))}" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Enviar foto do carro</a></p><p style="font-size:12px;color:#777">Se você já enviou a foto recentemente, pode ignorar esta mensagem.</p>`,EVENT_IMAGE,true);
   else {const isTicket=p.kind==="ticket";html=shell(isTicket?"Seu ingresso ainda está esperando":"Seus produtos continuam aqui",isTicket?"Seu pagamento do evento ainda não foi concluído.":"Você deixou produtos no carrinho ou iniciou um pedido e ainda não concluiu o pagamento.",`<p><a href="${SITE}/${isTicket?"ingresso.html":"carrinho.html"}" style="display:inline-block;background:#efd311;color:#111;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">Continuar agora</a></p>`,isTicket?EVENT_IMAGE:ORDER_IMAGE,isTicket);}
+  const optional=["event_countdown","checkout_recovery","ticket_photo_reminder"].includes(row.template);
+  let emailHeaders:Record<string,string>|undefined;
+  if(optional){
+   const {data:preferences,error:preferenceError}=await db.rpc("only_email_preference",{p_email:row.recipient_email});
+   const preference=preferences?.[0];
+   // Fail closed: never send an optional message if its preference cannot be read.
+   if(preferenceError||!preference){failed++;continue;}
+   if(preference.unsubscribed_at){
+    suppressed++;
+    if(!dryRun) await db.from("transactional_email_outbox").update({status:"suppressed",error_message:"Destinatário descadastrado de e-mails opcionais",updated_at:new Date().toISOString()}).eq("id",row.id).in("status",["pending","failed"]);
+    continue;
+   }
+   const token=encodeURIComponent(preference.unsubscribe_token);
+   const unsubscribePage=`${SITE}/descadastro.html#token=${token}`;
+   const unsubscribeEndpoint=`${url}/functions/v1/unsubscribe-only-emails?token=${token}`;
+   html=html.replace("Mensagem automática da Only Cars Club.",`Mensagem automática da Only Cars Club.<br><br><a href="${esc(unsubscribePage)}" style="color:#65645d;text-decoration:underline">Não quero receber estes lembretes</a><br><span style="font-size:11px">O descadastro não afeta sua conta, ingressos ou e-mails de compras e segurança.</span>`);
+   emailHeaders={"List-Unsubscribe":`<${unsubscribeEndpoint}>`,"List-Unsubscribe-Post":"List-Unsubscribe=One-Click"};
+  }
   if(dryRun) continue;
   if(!resend){failed++;await db.from("transactional_email_outbox").update({status:"failed",attempts:row.attempts+1,error_message:"RESEND_API_KEY ausente",updated_at:new Date().toISOString()}).eq("id",row.id);continue;}
-  await db.from("transactional_email_outbox").update({status:"sending",attempts:row.attempts+1,updated_at:new Date().toISOString()}).eq("id",row.id);
-  try{const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[row.recipient_email],subject:row.subject,html,attachments})});const result=await response.json();if(!response.ok)throw new Error(result?.message||"Falha no provedor");await db.from("transactional_email_outbox").update({status:"sent",sent_at:new Date().toISOString(),provider_message_id:result.id,error_message:null,updated_at:new Date().toISOString()}).eq("id",row.id);sent++;}catch(e){failed++;await db.from("transactional_email_outbox").update({status:"failed",error_message:e instanceof Error?e.message:"Falha",updated_at:new Date().toISOString()}).eq("id",row.id);}
+  const {data:claimed,error:claimError}=await db.from("transactional_email_outbox").update({status:"sending",attempts:row.attempts+1,updated_at:new Date().toISOString()}).eq("id",row.id).in("status",["pending","failed"]).select("status").maybeSingle();
+  if(claimError){failed++;continue;}
+  if(!claimed||claimed.status!=="sending"){suppressed++;continue;}
+  try{const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${resend}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[row.recipient_email],subject:row.subject,html,attachments,headers:emailHeaders})});const result=await response.json();if(!response.ok)throw new Error(result?.message||"Falha no provedor");await db.from("transactional_email_outbox").update({status:"sent",sent_at:new Date().toISOString(),provider_message_id:result.id,error_message:null,updated_at:new Date().toISOString()}).eq("id",row.id);sent++;}catch(e){failed++;await db.from("transactional_email_outbox").update({status:"failed",error_message:e instanceof Error?e.message:"Falha",updated_at:new Date().toISOString()}).eq("id",row.id);}
  }
- return Response.json({ok:true,queued:(rows||[]).length,sent,failed,dry_run:dryRun});
+ return Response.json({ok:true,queued:(rows||[]).length,sent,failed,suppressed,dry_run:dryRun});
 });
