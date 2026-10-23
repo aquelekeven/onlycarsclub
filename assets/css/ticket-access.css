@@ -1,0 +1,12 @@
+body.ticket-access-open{overflow:hidden}
+.ticket-access-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:calc(100% - 32px);max-width:440px;max-height:calc(100dvh - 32px);overflow:auto;padding:30px 26px 22px;border:1px solid #63551e;border-radius:24px;background:radial-gradient(ellipse at top,#30290d,#111 70%);color:#fff;text-align:center;box-shadow:0 28px 100px #0009;font-family:inherit}
+.ticket-access-dialog::backdrop{background:#000c;backdrop-filter:blur(5px)}
+.ticket-access-close{position:absolute;right:8px;top:8px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#fff;font-size:30px;cursor:pointer}
+.ticket-access-logo{display:block;object-fit:contain;width:130px;height:78px;margin:0 auto 18px}
+.ticket-access-eyebrow{display:block;color:#f5d315;font-size:11px;letter-spacing:2px;font-weight:800}
+.ticket-access-dialog h2{margin:14px 0;font-size:clamp(25px,6vw,32px);line-height:1.18;letter-spacing:-.6px;color:#fff}
+.ticket-access-dialog p{margin:0;color:#d2d0c7;font-size:16px;line-height:1.6}
+.ticket-access-primary{display:flex;justify-content:center;gap:18px;align-items:center;min-height:60px;margin:24px 0 16px;padding:16px 22px;border-radius:14px;background:#f5d315;color:#111!important;text-decoration:none!important;font-size:20px;font-weight:800}
+.ticket-access-dialog .ticket-access-help{font-size:13px;color:#b6b3a8}
+.ticket-access-later{min-height:44px;margin:14px 0 0;padding:8px 16px;border:0;background:transparent;color:#ccc;font-family:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
+.ticket-access-dialog a:focus-visible,.ticket-access-dialog button:focus-visible{outline:3px solid #fff;outline-offset:4px}

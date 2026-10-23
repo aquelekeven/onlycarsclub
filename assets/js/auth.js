@@ -400,6 +400,11 @@
     };
 
     if (!user) {
+      if (new URLSearchParams(location.search).get("view") === "tickets") {
+        guest.querySelectorAll('a[href="login.html"],a[href="cadastro.html"]').forEach(link => {
+          link.href = `${link.getAttribute("href")}?next=${encodeURIComponent("minha-conta.html?view=tickets")}`;
+        });
+      }
       loading.hidden = true;
       guest.hidden = false;
       return;
