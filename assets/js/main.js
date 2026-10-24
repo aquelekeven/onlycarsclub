@@ -384,7 +384,7 @@ function setupBottomNavigationStructure() {
     <a href="loja.html" data-page="loja" aria-label="Loja">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l1 13H5L6 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
     </a>
-    <a href="proximo-evento.html" data-page="proximo-evento" class="next-event-nav" aria-label="Próximo evento">
+    <a href="proximo-evento.html" data-page="proximo-evento" class="next-event-nav" aria-label="Último evento · fotos e vídeos" title="Conteúdo do último evento">
       <span class="next-event-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="m9 15 2 2 4-5"/></svg></span>
     </a>
     <a href="sobre.html" data-page="sobre" aria-label="O clube">
@@ -1164,37 +1164,6 @@ function saveCart(cart) {
   if (window.OnlySupabase && document.body.dataset.page !== "admin") {
     window.OnlySupabase.rest("rpc/sync_customer_cart_recovery", { method:"POST", body:{ p_cart:normalizedCart } }).catch(() => null);
   }
-}
-
-function setupHomeEventDiscovery() {
-  if (document.body.dataset.page !== "home") return;
-  const eventButton = qs(".bottom-nav .next-event-nav");
-  if (!eventButton) return;
-  const hint = document.createElement("div");
-  hint.className = "event-nav-hint";
-  hint.setAttribute("role", "status");
-  hint.innerHTML = "<strong>Tem evento novo no Only.</strong><span>Toque no botão amarelo para ver data, cronograma e garantir seu ingresso.</span>";
-  document.body.appendChild(hint);
-  const placeHint = () => {
-    if (!hint.isConnected) return;
-    const buttonBox = eventButton.getBoundingClientRect();
-    const hintWidth = Math.min(310, window.innerWidth - 24);
-    const center = buttonBox.left + buttonBox.width / 2;
-    const safeCenter = Math.max(hintWidth / 2 + 12, Math.min(window.innerWidth - hintWidth / 2 - 12, center));
-    hint.style.setProperty("--event-hint-left", `${safeCenter}px`);
-    hint.style.setProperty("--event-hint-bottom", `${Math.max(82, window.innerHeight - buttonBox.top + 14)}px`);
-    hint.style.setProperty("--event-hint-arrow", `${Math.max(22, Math.min(hintWidth - 22, center - (safeCenter - hintWidth / 2)))}px`);
-  };
-  placeHint();
-  window.addEventListener("resize", placeHint, { passive:true });
-  const dismiss = () => {
-    if (!hint.isConnected || hint.classList.contains("is-leaving")) return;
-    window.removeEventListener("resize", placeHint);
-    hint.classList.add("is-leaving");
-    window.setTimeout(() => hint.remove(), 320);
-  };
-  window.setTimeout(dismiss, 10000);
-  eventButton.addEventListener("click", dismiss, { once:true });
 }
 
 function setupCheckoutSteps() {
@@ -2639,7 +2608,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupLaunchPromotionCountdown();
   setupPageTransitions();
   setupBottomNavigationStructure();
-  setupHomeEventDiscovery();
   setActiveNavigation();
   setupTypingReplay();
   setupStats();
